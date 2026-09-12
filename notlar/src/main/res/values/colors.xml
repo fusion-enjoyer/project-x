@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tasarım dili v0.2 — açık tema -->
+    <color name="zemin">#FFFFFF</color>
+    <color name="kart">#F5F4F2</color>
+    <color name="metin">#171614</color>
+    <color name="metin_ikincil">#8A867E</color>
+    <color name="ayrac">#ECEAE6</color>
+    <color name="vurgu">#B05E00</color>
+    <color name="vurgu_pastel">#F7EDE2</color>
+    <color name="pill_metin">#FFFFFF</color>
+</resources>

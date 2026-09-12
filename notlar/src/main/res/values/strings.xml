@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Notlar</string>
+    <string name="ara">Ara</string>
+    <string name="yeni_not">Yeni not</string>
+    <string name="bos_durum">Henüz not yok.\nAlttaki düğmeyle ilk notunu oluştur.</string>
+    <string name="bos_arama">Aramanla eşleşen not bulunamadı.</string>
+    <string name="klasor_sec">Not klasörünü seç</string>
+    <string name="cop_kutusu">Çöp kutusu</string>
+    <string name="tema">Tema</string>
+    <string name="sabitle">Sabitle</string>
+    <string name="sabit_kaldir">Sabitlemeyi kaldır</string>
+    <string name="sil">Sil</string>
+    <string name="paylas">Paylaş</string>
+    <string name="geri_yukle">Geri yükle</string>
+    <string name="kalici_sil">Kalıcı olarak sil</string>
+    <string name="not_kaydedildi">Not kaydedildi</string>
+    <string name="cope_tasindi">Çöp kutusuna taşındı</string>
+    <string name="cop_bos">Çöp kutusu boş.</string>
+    <string name="tema_sistem">Sistemle aynı</string>
+    <string name="tema_acik">Açık</string>
+    <string name="tema_siyah">Saf siyah</string>
+    <string name="not_ipucu">Notunu yaz…\nİlk satır başlık olur.</string>
+    <string name="geri">Geri</string>
+    <string name="menu">Menü</string>
+    <string name="izin_yok_rozet">İnternet izni yok</string>
+</resources>

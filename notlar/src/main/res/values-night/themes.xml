@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Notlar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/zemin</item>
+        <item name="android:statusBarColor">@color/zemin</item>
+        <item name="android:navigationBarColor">@color/zemin</item>
+        <item name="android:textColorPrimary">@color/metin</item>
+        <item name="android:textColorSecondary">@color/metin_ikincil</item>
+        <item name="colorAccent">@color/vurgu</item>
+        <item name="colorControlActivated">@color/vurgu</item>
+        <item name="android:textCursorDrawable">@null</item>
+    </style>
+</resources>
