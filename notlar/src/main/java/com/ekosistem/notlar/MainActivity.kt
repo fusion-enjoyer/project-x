@@ -17,7 +17,6 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -91,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         seritEylem.setTextColor(vurgu)
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
-        findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { v -> menuGoster(v) }
+        findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { menuGoster() }
 
         findViewById<EditText>(R.id.arama).addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -552,39 +551,37 @@ class MainActivity : AppCompatActivity() {
 
     // --- Menü ---
 
-    private fun menuGoster(v: View) {
-        val menu = PopupMenu(this, v)
-        menu.menu.add(0, 1, 0, R.string.gorevler)
-        menu.menu.add(0, 2, 1, R.string.cop_kutusu)
-        menu.menu.add(0, 3, 2, R.string.siralama)
-        menu.menu.add(0, 4, 3, R.string.ayarlar)
-        menu.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                1 -> startActivity(Intent(this, GorevlerActivity::class.java))
-                2 -> startActivity(Intent(this, TrashActivity::class.java))
-                3 -> siralamaSec()
-                4 -> startActivity(Intent(this, AyarlarActivity::class.java))
+    private fun menuGoster() {
+        AltSayfa(this)
+            .madde(R.drawable.ic_bicim_onay, getString(R.string.gorevler)) {
+                startActivity(Intent(this, GorevlerActivity::class.java))
             }
-            true
-        }
-        menu.show()
+            .madde(R.drawable.ic_sil, getString(R.string.cop_kutusu)) {
+                startActivity(Intent(this, TrashActivity::class.java))
+            }
+            .madde(R.drawable.ic_sirala, getString(R.string.siralama)) { siralamaSec() }
+            .madde(R.drawable.ic_ayarlar, getString(R.string.ayarlar)) {
+                startActivity(Intent(this, AyarlarActivity::class.java))
+            }
+            .goster()
     }
 
     private fun siralamaSec() {
-        val etiketler = arrayOf(
-            getString(R.string.siralama_yeni),
-            getString(R.string.siralama_eski),
-            getString(R.string.siralama_ad_az),
-            getString(R.string.siralama_ad_za)
+        val etiketler = listOf(
+            R.string.siralama_yeni,
+            R.string.siralama_eski,
+            R.string.siralama_ad_az,
+            R.string.siralama_ad_za
         )
-        AlertDialog.Builder(this)
-            .setTitle(R.string.siralama)
-            .setSingleChoiceItems(etiketler, Prefs.siralama(this)) { dialog, hangi ->
-                Prefs.siralamaKaydet(this, hangi)
-                dialog.dismiss()
+        val secili = Prefs.siralama(this)
+        val sayfa = AltSayfa(this).baslik(getString(R.string.siralama))
+        etiketler.forEachIndexed { indeks, etiket ->
+            sayfa.madde(R.drawable.ic_sirala, getString(etiket), secili = indeks == secili) {
+                Prefs.siralamaKaydet(this, indeks)
                 yenile()
             }
-            .show()
+        }
+        sayfa.goster()
     }
 
     private companion object {

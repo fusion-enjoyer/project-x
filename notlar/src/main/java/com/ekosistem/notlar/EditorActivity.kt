@@ -1,6 +1,7 @@
 package com.ekosistem.notlar
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
@@ -12,12 +13,15 @@ import android.text.style.AbsoluteSizeSpan
 import android.text.style.StyleSpan
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.PopupMenu
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import java.util.Locale
 
 class EditorActivity : AppCompatActivity() {
@@ -25,6 +29,9 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var depo: NotDeposu
     private lateinit var metinAlani: NotEditText
     private lateinit var bicimci: MarkdownBicimci
+    private lateinit var bicimCubugu: LinearLayout
+    private lateinit var bicimKaydirici: View
+    private lateinit var btnOkuma: ImageButton
 
     private var uri: Uri? = null
     private var hedefKlasor: String? = null
@@ -34,6 +41,7 @@ class EditorActivity : AppCompatActivity() {
     private var bicimleniyor = false
     private var satirEklendi = false
     private var aktifSatirBasi = -1
+    private var okumaModu = false
 
     // Geri al / yinele
     private val gecmis = ArrayDeque<Durum>()
@@ -41,8 +49,8 @@ class EditorActivity : AppCompatActivity() {
     private var bekleyen: Durum? = null
     private var sonKayit = 0L
     private var geriAliniyor = false
-    private lateinit var btnGeriAl: ImageButton
-    private lateinit var btnYinele: ImageButton
+    private var btnGeriAl: ImageButton? = null
+    private var btnYinele: ImageButton? = null
 
     // Bul ve değiştir
     private lateinit var bulCubugu: View
@@ -61,8 +69,9 @@ class EditorActivity : AppCompatActivity() {
         depo = NotDeposu(this)
         bicimci = MarkdownBicimci(this)
         metinAlani = findViewById(R.id.metinAlani)
-        btnGeriAl = findViewById(R.id.btnGeriAl)
-        btnYinele = findViewById(R.id.btnYinele)
+        bicimCubugu = findViewById(R.id.bicimCubugu)
+        bicimKaydirici = findViewById(R.id.bicimKaydirici)
+        btnOkuma = findViewById(R.id.btnOkuma)
 
         ipucuKur()
         bicimCubuguKur()
@@ -98,9 +107,8 @@ class EditorActivity : AppCompatActivity() {
         }
 
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }
-        findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { v -> menuGoster(v) }
-        btnGeriAl.setOnClickListener { geriAl() }
-        btnYinele.setOnClickListener { yinele() }
+        findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { menuGoster() }
+        btnOkuma.setOnClickListener { okumaModunuDegistir() }
         dugmeleriGuncelle()
     }
 
@@ -143,7 +151,7 @@ class EditorActivity : AppCompatActivity() {
                 listeyiSurdur(s)
             }
             aktifSatirBasi = satirBasiBul(metinAlani.selectionStart)
-            bicimci.uygula(s, metinAlani.selectionStart, metinGenisligi())
+            bicimci.uygula(s, imlecKonumu(), metinGenisligi())
             bicimleniyor = false
             if (bulCubugu.visibility == View.VISIBLE) eslesmeleriBul(false)
         }
@@ -152,9 +160,12 @@ class EditorActivity : AppCompatActivity() {
     private fun bicimlendir() {
         val s = metinAlani.text ?: return
         bicimleniyor = true
-        bicimci.uygula(s, metinAlani.selectionStart, metinGenisligi())
+        bicimci.uygula(s, imlecKonumu(), metinGenisligi())
         bicimleniyor = false
     }
+
+    /** Okuma modunda hiçbir satır "aktif" değildir; tüm işaretler gizlenir. */
+    private fun imlecKonumu(): Int = if (okumaModu) -1 else metinAlani.selectionStart
 
     private fun metinGenisligi(): Int =
         metinAlani.width - metinAlani.totalPaddingLeft - metinAlani.totalPaddingRight
@@ -166,10 +177,6 @@ class EditorActivity : AppCompatActivity() {
         return s.toString().lastIndexOf('\n', sinir - 1).let { if (it < 0) 0 else it + 1 }
     }
 
-    /**
-     * Alanın kendi boyutu başlık boyutudur (24sp); gövde satırları span ile
-     * küçültülür. Böylece imleç her satırda o satırın boyutuyla çizilir.
-     */
     private fun ipucuKur() {
         val baslik = getString(R.string.baslik_ipucu)
         val govde = getString(R.string.notunu_yaz)
@@ -184,7 +191,7 @@ class EditorActivity : AppCompatActivity() {
         metinAlani.hint = ipucu
     }
 
-    /** Enter'a basınca liste/onay kutusu satırını kendiliğinden sürdürür. */
+    /** Enter'a basınca liste/onay/numaralı madde satırını kendiliğinden sürdürür. */
     private fun listeyiSurdur(s: Editable) {
         val imlec = metinAlani.selectionStart
         if (imlec <= 0 || imlec > s.length) return
@@ -199,7 +206,13 @@ class EditorActivity : AppCompatActivity() {
             s.delete(satirBasi, satirSonu)
             return
         }
-        val yeniOnek = if (onek.contains('[')) eslesme.groupValues[1] + "- [ ] " else onek
+        val girinti = eslesme.groupValues[1]
+        val numara = eslesme.groupValues[2]
+        val yeniOnek = when {
+            numara.isNotEmpty() -> girinti + ((numara.toIntOrNull() ?: 0) + 1) + ". "
+            onek.contains('[') -> girinti + "- [ ] "
+            else -> onek
+        }
         s.insert(imlec, yeniOnek)
     }
 
@@ -233,10 +246,14 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun dugmeleriGuncelle() {
-        btnGeriAl.isEnabled = gecmis.isNotEmpty()
-        btnGeriAl.alpha = if (gecmis.isEmpty()) 0.3f else 1f
-        btnYinele.isEnabled = gelecek.isNotEmpty()
-        btnYinele.alpha = if (gelecek.isEmpty()) 0.3f else 1f
+        btnGeriAl?.let {
+            it.isEnabled = gecmis.isNotEmpty()
+            it.alpha = if (gecmis.isEmpty()) 0.3f else 1f
+        }
+        btnYinele?.let {
+            it.isEnabled = gelecek.isNotEmpty()
+            it.alpha = if (gelecek.isEmpty()) 0.3f else 1f
+        }
     }
 
     // --- Onay kutusuna dokunma ---
@@ -269,32 +286,90 @@ class EditorActivity : AppCompatActivity() {
 
     // --- Biçim çubuğu ---
 
+    private data class Arac(val ikon: Int, val etiket: Int, val eylem: () -> Unit)
+
     private fun bicimCubuguKur() {
-        findViewById<ImageButton>(R.id.bicimBaslik).setOnClickListener { onekDegistir("## ") }
-        findViewById<ImageButton>(R.id.bicimListe).setOnClickListener { onekDegistir("- ") }
-        findViewById<ImageButton>(R.id.bicimOnay).setOnClickListener { onekDegistir("- [ ] ") }
-        findViewById<ImageButton>(R.id.bicimKalin).setOnClickListener { sarmala("**") }
-        findViewById<ImageButton>(R.id.bicimItalik).setOnClickListener { sarmala("*") }
+        val araclar = listOf(
+            Arac(R.drawable.ic_geri_al, R.string.geri_al) { geriAl() },
+            Arac(R.drawable.ic_yinele, R.string.yinele) { yinele() },
+            Arac(R.drawable.ic_bicim_baslik, R.string.bicim_baslik) { onekDegistir("## ") },
+            Arac(R.drawable.ic_bicim_kalin, R.string.bicim_kalin) { sarmala("**") },
+            Arac(R.drawable.ic_bicim_italik, R.string.bicim_italik) { sarmala("*") },
+            Arac(R.drawable.ic_bicim_cizili, R.string.bicim_cizili) { sarmala("~~") },
+            Arac(R.drawable.ic_bicim_kod, R.string.bicim_kod) { sarmala("`") },
+            Arac(R.drawable.ic_bicim_alinti, R.string.bicim_alinti) { onekDegistir("> ") },
+            Arac(R.drawable.ic_bicim_liste, R.string.bicim_liste) { onekDegistir("- ") },
+            Arac(R.drawable.ic_bicim_numarali, R.string.bicim_numarali) { onekDegistir("1. ") },
+            Arac(R.drawable.ic_bicim_onay, R.string.bicim_onay) { onekDegistir("- [ ] ") },
+            Arac(R.drawable.ic_girinti_arti, R.string.girinti_arti) { girintiDegistir(true) },
+            Arac(R.drawable.ic_girinti_eksi, R.string.girinti_eksi) { girintiDegistir(false) }
+        )
+
+        val y = resources.displayMetrics.density
+        val renk = ContextCompat.getColor(this, R.color.metin_ikincil)
+        bicimCubugu.removeAllViews()
+        for (arac in araclar) {
+            val dugme = ImageButton(this)
+            dugme.setImageResource(arac.ikon)
+            dugme.imageTintList = ColorStateList.valueOf(renk)
+            dugme.contentDescription = getString(arac.etiket)
+            dugme.setBackgroundResource(android.R.color.transparent)
+            dugme.setOnClickListener { arac.eylem() }
+            bicimCubugu.addView(
+                dugme,
+                LinearLayout.LayoutParams((46 * y).toInt(), ViewGroup.LayoutParams.MATCH_PARENT)
+            )
+            when (arac.ikon) {
+                R.drawable.ic_geri_al -> btnGeriAl = dugme
+                R.drawable.ic_yinele -> btnYinele = dugme
+            }
+        }
+    }
+
+    private fun satirSinirlari(): Pair<Int, Int> {
+        val s = metinAlani.text ?: return 0 to 0
+        val imlec = metinAlani.selectionStart.coerceAtLeast(0)
+        val duzMetin = s.toString()
+        val bas = if (imlec == 0) 0 else {
+            duzMetin.lastIndexOf('\n', imlec - 1).let { if (it < 0) 0 else it + 1 }
+        }
+        var son = duzMetin.indexOf('\n', bas)
+        if (son < 0) son = s.length
+        return bas to son
     }
 
     private fun onekDegistir(onek: String) {
         val s = metinAlani.text ?: return
-        val imlec = metinAlani.selectionStart.coerceAtLeast(0)
-        val duzMetin = s.toString()
-        val satirBasi = if (imlec == 0) 0 else {
-            duzMetin.lastIndexOf('\n', imlec - 1).let { if (it < 0) 0 else it + 1 }
-        }
-        var satirSonu = duzMetin.indexOf('\n', satirBasi)
-        if (satirSonu < 0) satirSonu = s.length
-        val satir = duzMetin.substring(satirBasi, satirSonu)
+        val (satirBasi, satirSonu) = satirSinirlari()
+        val satir = s.subSequence(satirBasi, satirSonu).toString()
+        val girintisiz = satir.trimStart(' ', '\t')
+        val girinti = satir.length - girintisiz.length
 
-        val mevcut = ONEKLER.firstOrNull { satir.startsWith(it) }
+        val mevcut = ONEKLER.firstOrNull { girintisiz.startsWith(it) }
+            ?: NUMARA.find(girintisiz)?.value
         if (mevcut != null) {
-            s.delete(satirBasi, satirBasi + mevcut.length)
-            if (mevcut != onek) s.insert(satirBasi, onek)
+            s.delete(satirBasi + girinti, satirBasi + girinti + mevcut.length)
+            if (mevcut != onek) s.insert(satirBasi + girinti, onek)
         } else {
-            s.insert(satirBasi, onek)
+            s.insert(satirBasi + girinti, onek)
         }
+    }
+
+    private fun girintiDegistir(artir: Boolean) {
+        val s = metinAlani.text ?: return
+        val (satirBasi, satirSonu) = satirSinirlari()
+        if (artir) {
+            s.insert(satirBasi, "  ")
+            return
+        }
+        val satir = s.subSequence(satirBasi, satirSonu).toString()
+        val silinecek = when {
+            satir.startsWith("  ") -> 2
+            satir.startsWith(" ") -> 1
+            satir.startsWith("\t") -> 1
+            else -> 0
+        }
+        if (silinecek > 0) s.delete(satirBasi, satirBasi + silinecek)
     }
 
     private fun sarmala(isaret: String) {
@@ -311,6 +386,41 @@ class EditorActivity : AppCompatActivity() {
             s.insert(ilk, isaret)
             metinAlani.setSelection(ilk + isaret.length, ikinci + isaret.length)
         }
+    }
+
+    // --- Görüntüleme modları ---
+
+    private fun okumaModunuDegistir() {
+        okumaModu = !okumaModu
+        if (okumaModu) {
+            klavyeyiGizle()
+            metinAlani.clearFocus()
+        }
+        metinAlani.isFocusable = !okumaModu
+        metinAlani.isFocusableInTouchMode = !okumaModu
+        metinAlani.isCursorVisible = !okumaModu
+        bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
+        btnOkuma.setImageResource(
+            if (okumaModu) R.drawable.ic_duzenle else R.drawable.ic_okuma
+        )
+        btnOkuma.imageTintList = ColorStateList.valueOf(
+            if (okumaModu) Renkler.vurgu(this) else ContextCompat.getColor(this, R.color.metin)
+        )
+        btnOkuma.contentDescription = getString(
+            if (okumaModu) R.string.duzenleme_gorunumu else R.string.okuma_gorunumu
+        )
+        bicimlendir()
+    }
+
+    private fun kaynakModunuDegistir() {
+        Prefs.kaynakModuKaydet(this, !Prefs.kaynakModu(this))
+        bicimci.kaynakModu = Prefs.kaynakModu(this)
+        bicimlendir()
+    }
+
+    private fun klavyeyiGizle() {
+        val yonetici = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+        yonetici?.hideSoftInputFromWindow(metinAlani.windowToken, 0)
     }
 
     // --- Bul ve değiştir ---
@@ -422,6 +532,14 @@ class EditorActivity : AppCompatActivity() {
 
     // --- Kayıt ve menü ---
 
+    override fun onResume() {
+        super.onResume()
+        if (bicimci.kaynakModu != Prefs.kaynakModu(this)) {
+            bicimci.kaynakModu = Prefs.kaynakModu(this)
+            bicimlendir()
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         kaydet()
@@ -443,26 +561,34 @@ class EditorActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun menuGoster(v: View) {
-        val menu = PopupMenu(this, v)
+    private fun menuGoster() {
         val mevcutUri = uri
+        val sayfa = AltSayfa(this).baslik(getString(R.string.not_islemleri))
+
         if (mevcutUri != null) {
             val sabit = Prefs.sabitler(this).contains(mevcutUri.toString())
-            menu.menu.add(0, 1, 0, if (sabit) R.string.sabit_kaldir else R.string.sabitle)
-        }
-        menu.menu.add(0, 4, 1, R.string.bul_degistir)
-        menu.menu.add(0, 2, 2, R.string.paylas)
-        if (mevcutUri != null) menu.menu.add(0, 3, 3, R.string.sil)
-        menu.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                1 -> mevcutUri?.let { Prefs.sabitDegistir(this, it.toString()) }
-                2 -> paylas()
-                3 -> sil()
-                4 -> bulCubuguAc()
+            sayfa.madde(
+                R.drawable.ic_sabit_24,
+                getString(if (sabit) R.string.sabit_kaldir else R.string.sabitle),
+                secili = sabit
+            ) {
+                Prefs.sabitDegistir(this, mevcutUri.toString())
             }
-            true
         }
-        menu.show()
+
+        sayfa.madde(
+            R.drawable.ic_kaynak,
+            getString(R.string.kaynak_modu),
+            secili = Prefs.kaynakModu(this)
+        ) { kaynakModunuDegistir() }
+
+        sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
+        sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
+
+        if (mevcutUri != null) {
+            sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { sil() }
+        }
+        sayfa.goster()
     }
 
     private fun paylas() {
@@ -491,7 +617,8 @@ class EditorActivity : AppCompatActivity() {
         const val BIRLESTIRME_MS = 700L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")
-        val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- )")
+        val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- |(\\d+)\\. )")
+        val NUMARA = Regex("^\\d+\\. ")
         val ONEKLER = listOf("- [ ] ", "- [x] ", "- [X] ", "- ", "### ", "## ", "# ", "> ")
     }
 }

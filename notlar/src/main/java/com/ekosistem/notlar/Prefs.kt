@@ -35,6 +35,12 @@ object Prefs {
         sp(c).edit().putInt("vurgu", indeks).apply()
     }
 
+    fun kaynakModu(c: Context): Boolean = sp(c).getBoolean("kaynak_modu", false)
+
+    fun kaynakModuKaydet(c: Context, acik: Boolean) {
+        sp(c).edit().putBoolean("kaynak_modu", acik).apply()
+    }
+
     fun siralama(c: Context): Int = sp(c).getInt("siralama", 0)
 
     fun siralamaKaydet(c: Context, s: Int) {

@@ -63,4 +63,20 @@
         <item name="colorAccent">@color/vurgu_8</item>
         <item name="colorControlActivated">@color/vurgu_8</item>
     </style>
+
+    <style name="AltSayfaTemasi" parent="Theme.AppCompat.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.45</item>
+        <item name="android:windowAnimationStyle">@style/AltSayfaAnimasyon</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/zemin</item>
+    </style>
+
+    <style name="AltSayfaAnimasyon">
+        <item name="android:windowEnterAnimation">@anim/alt_sayfa_gir</item>
+        <item name="android:windowExitAnimation">@anim/alt_sayfa_cik</item>
+    </style>
 </resources>

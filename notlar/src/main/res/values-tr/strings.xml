@@ -108,4 +108,15 @@
     <string name="widget_liste">Not listesi</string>
     <string name="widget_not_sec">Gösterilecek notu seç</string>
     <string name="widget_bos">Not yok</string>
+    <string name="okuma_gorunumu">Okuma görünümü</string>
+    <string name="duzenleme_gorunumu">Düzenlemeye dön</string>
+    <string name="kaynak_modu">Kaynak modu</string>
+    <string name="canli_onizleme">Canlı önizleme</string>
+    <string name="bicim_cizili">Üstü çizili</string>
+    <string name="bicim_kod">Kod</string>
+    <string name="bicim_alinti">Alıntı</string>
+    <string name="bicim_numarali">Numaralı liste</string>
+    <string name="girinti_arti">Girintiyi artır</string>
+    <string name="girinti_eksi">Girintiyi azalt</string>
+    <string name="not_islemleri">Not işlemleri</string>
 </resources>

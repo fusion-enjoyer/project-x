@@ -27,20 +27,12 @@
             android:layout_weight="1" />
 
         <ImageButton
-            android:id="@+id/btnGeriAl"
+            android:id="@+id/btnOkuma"
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/geri_al"
-            android:src="@drawable/ic_geri_al" />
-
-        <ImageButton
-            android:id="@+id/btnYinele"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/yinele"
-            android:src="@drawable/ic_yinele" />
+            android:contentDescription="@string/okuma_gorunumu"
+            android:src="@drawable/ic_okuma" />
 
         <ImageButton
             android:id="@+id/btnEditorMenu"
@@ -69,7 +61,7 @@
 
             <EditText
                 android:id="@+id/bulAlani"
-        android:importantForAutofill="no"
+                android:importantForAutofill="no"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
@@ -88,8 +80,8 @@
                 android:id="@+id/bulSayac"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="44dp"
                 android:gravity="center"
+                android:minWidth="44dp"
                 android:textColor="@color/metin_ikincil"
                 android:textSize="12sp" />
 
@@ -128,7 +120,7 @@
 
             <EditText
                 android:id="@+id/degistirAlani"
-        android:importantForAutofill="no"
+                android:importantForAutofill="no"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
@@ -181,68 +173,30 @@
         android:paddingLeft="20dp"
         android:paddingTop="8dp"
         android:paddingRight="20dp"
-        android:paddingBottom="24dp"
+        android:paddingBottom="16dp"
         android:textColor="@color/metin"
         android:textColorHint="@color/metin_ikincil"
         android:textSize="24sp" />
 
-    <View
+    <HorizontalScrollView
+        android:id="@+id/bicimKaydirici"
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="@color/ayrac" />
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="12dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_arac_cubugu"
+        android:scrollbars="none">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:baselineAligned="false"
-        android:orientation="horizontal"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp">
-
-        <ImageButton
-            android:id="@+id/bicimBaslik"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/bicim_baslik"
-            android:src="@drawable/ic_bicim_baslik" />
-
-        <ImageButton
-            android:id="@+id/bicimKalin"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/bicim_kalin"
-            android:src="@drawable/ic_bicim_kalin" />
-
-        <ImageButton
-            android:id="@+id/bicimItalik"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/bicim_italik"
-            android:src="@drawable/ic_bicim_italik" />
-
-        <ImageButton
-            android:id="@+id/bicimListe"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/bicim_liste"
-            android:src="@drawable/ic_bicim_liste" />
-
-        <ImageButton
-            android:id="@+id/bicimOnay"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/bicim_onay"
-            android:src="@drawable/ic_bicim_onay" />
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/bicimCubugu"
+            android:layout_width="wrap_content"
+            android:layout_height="52dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp" />
+    </HorizontalScrollView>
 
 </LinearLayout>

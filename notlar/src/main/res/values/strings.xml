@@ -108,4 +108,15 @@
     <string name="widget_liste">Note list</string>
     <string name="widget_not_sec">Choose a note to show</string>
     <string name="widget_bos">No notes</string>
+    <string name="okuma_gorunumu">Reading view</string>
+    <string name="duzenleme_gorunumu">Back to editing</string>
+    <string name="kaynak_modu">Source mode</string>
+    <string name="canli_onizleme">Live preview</string>
+    <string name="bicim_cizili">Strikethrough</string>
+    <string name="bicim_kod">Code</string>
+    <string name="bicim_alinti">Quote</string>
+    <string name="bicim_numarali">Numbered list</string>
+    <string name="girinti_arti">Increase indent</string>
+    <string name="girinti_eksi">Decrease indent</string>
+    <string name="not_islemleri">Note actions</string>
 </resources>

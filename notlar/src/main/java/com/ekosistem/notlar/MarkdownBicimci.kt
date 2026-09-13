@@ -30,9 +30,18 @@ class MarkdownBicimci(private val context: Context) {
         vurguUzeri = Renkler.vurguUzeri(context)
     }
 
+    /** Kaynak modunda hiçbir biçim uygulanmaz; ham Markdown görünür. */
+    var kaynakModu = Prefs.kaynakModu(context)
+
     fun uygula(s: Editable, imlec: Int, genislik: Int) {
         temizle(s)
         if (s.isEmpty()) return
+
+        if (kaynakModu) {
+            s.setSpan(AbsoluteSizeSpan(GOVDE_SP, true), 0, s.length, EE)
+            s.setSpan(TypefaceSpan("monospace"), 0, s.length, EE)
+            return
+        }
 
         // Çok büyük notlarda yazarken takılmamak için sade biçimlendirmeye düşülür.
         if (s.length > BUYUK_NOT_SINIRI) {

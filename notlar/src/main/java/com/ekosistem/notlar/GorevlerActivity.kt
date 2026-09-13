@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -48,7 +47,7 @@ class GorevlerActivity : AppCompatActivity() {
         liste.adapter = adapter
 
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }
-        findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { v -> menuGoster(v) }
+        findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { menuGoster() }
     }
 
     override fun onResume() {
@@ -78,17 +77,17 @@ class GorevlerActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun menuGoster(v: View) {
-        val menu = PopupMenu(this, v)
-        val madde = menu.menu.add(0, 1, 0, R.string.tamamlananlari_goster)
-        madde.isCheckable = true
-        madde.isChecked = tamamlananlar
-        menu.setOnMenuItemClickListener {
-            tamamlananlar = !tamamlananlar
-            yenile()
-            true
-        }
-        menu.show()
+    private fun menuGoster() {
+        AltSayfa(this)
+            .madde(
+                R.drawable.ic_kutu_dolu,
+                getString(R.string.tamamlananlari_goster),
+                secili = tamamlananlar
+            ) {
+                tamamlananlar = !tamamlananlar
+                yenile()
+            }
+            .goster()
     }
 }
 
