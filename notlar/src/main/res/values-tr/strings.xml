@@ -189,4 +189,8 @@
         <item quantity="one">%d satır değişmedi</item>
         <item quantity="other">%d satır değişmedi</item>
     </plurals>
+
+    <!-- Görseller -->
+    <string name="gorsel_ekle">Görsel ekle</string>
+    <string name="gorsel_hata">Görsel eklenemedi</string>
 </resources>

@@ -81,6 +81,10 @@ class EditorActivity : AppCompatActivity() {
         bicimKaydirici = findViewById(R.id.bicimKaydirici)
         btnOkuma = findViewById(R.id.btnOkuma)
 
+        bicimci.depo = depo
+        // Görsel arka planda çözülünce satır yüksekliği yeniden hesaplanmalı.
+        bicimci.gorselHazir = { if (!isFinishing) bicimlendir() }
+
         ipucuKur()
         bicimCubuguKur()
         onayKutusuDokunmaKur()
@@ -160,6 +164,19 @@ class EditorActivity : AppCompatActivity() {
                 if (sonuc != RESULT_OK) return
                 val surum = veri?.getStringExtra("surum")?.let(Uri::parse) ?: return
                 surumuGeriYukle(surum)
+            }
+            ISTEK_GORSEL -> {
+                if (sonuc != RESULT_OK || veri == null) return
+                val secilenler = mutableListOf<Uri>()
+                val coklu = veri.clipData
+                if (coklu != null) {
+                    for (i in 0 until coklu.itemCount) {
+                        coklu.getItemAt(i).uri?.let { secilenler.add(it) }
+                    }
+                } else {
+                    veri.data?.let { secilenler.add(it) }
+                }
+                gorselleriEkle(secilenler)
             }
         }
     }
@@ -397,6 +414,7 @@ class EditorActivity : AppCompatActivity() {
             Arac(R.drawable.ic_bicim_liste, R.string.bicim_liste) { onekDegistir("- ") },
             Arac(R.drawable.ic_bicim_numarali, R.string.bicim_numarali) { onekDegistir("1. ") },
             Arac(R.drawable.ic_bicim_onay, R.string.bicim_onay) { onekDegistir("- [ ] ") },
+            Arac(R.drawable.ic_gorsel, R.string.gorsel_ekle) { gorselSec() },
             Arac(R.drawable.ic_girinti_arti, R.string.girinti_arti) { girintiDegistir(true) },
             Arac(R.drawable.ic_girinti_eksi, R.string.girinti_eksi) { girintiDegistir(false) }
         )
@@ -502,6 +520,49 @@ class EditorActivity : AppCompatActivity() {
         while (bas > 0 && !s[bas - 1].isWhitespace() && s[bas - 1] != '*') bas--
         while (son < s.length && !s[son].isWhitespace() && s[son] != '*') son++
         return if (son > bas) bas to son else null
+    }
+
+    // --- Görsel ekleme ---
+
+    private fun gorselSec() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .setType("image/*")
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        Kilit.sistemAraciBekleniyor = true
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, ISTEK_GORSEL)
+    }
+
+    /**
+     * Seçilen görseller `ekler/` klasörüne kopyalanır ve nota Markdown bağlantısı
+     * yazılır. Kopyalama sırasında editör beklemez; bittiğinde satır eklenir.
+     */
+    private fun gorselleriEkle(secilenler: List<Uri>) {
+        if (secilenler.isEmpty()) return
+        val mevcutUri = uri
+        Thread {
+            val klasor = hedefKlasor ?: mevcutUri?.let { depo.notunKlasoru(it) }
+            val yollar = secilenler.mapNotNull { Gorseller.iceAl(this, depo, it, klasor) }
+            runOnUiThread {
+                if (yollar.isEmpty()) {
+                    Toast.makeText(this, R.string.gorsel_hata, Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                yollar.forEach { gorselSatiriEkle(it) }
+            }
+        }.start()
+    }
+
+    private fun gorselSatiriEkle(yol: String) {
+        val s = metinAlani.text ?: return
+        var konum = metinAlani.selectionEnd.coerceIn(0, s.length)
+        // Görsel kendi satırında dursun; satır ortasındaysa önce alt satıra geç.
+        val onek = if (konum == 0 || s[konum - 1] == '\n') "" else "\n"
+        val metin = "$onek![]($yol)\n"
+        s.insert(konum, metin)
+        konum += metin.length
+        metinAlani.setSelection(konum.coerceIn(0, s.length))
     }
 
     // --- Görüntüleme modları ---
@@ -879,6 +940,7 @@ class EditorActivity : AppCompatActivity() {
     private companion object {
         const val ISTEK_KILIT = 9
         const val ISTEK_GECMIS = 10
+        const val ISTEK_GORSEL = 11
         const val BIRLESTIRME_MS = 700L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")

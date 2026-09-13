@@ -60,11 +60,25 @@ class NotDeposu(private val context: Context) {
         return if (olustur) k.createDirectory(".trash") else null
     }
 
+    /**
+     * Görsellerin kopyalandığı klasör. Gizli değil — kullanıcı dosya
+     * yöneticisinde ya da Obsidian'da görsellerini görebilsin diye. Buna karşılık
+     * uygulamada klasör olarak listelenmez, içinde not aranmaz.
+     */
+    fun eklerKlasoru(olustur: Boolean): DocumentFile? {
+        val k = kok()
+        val mevcut = k.findFile(Gorseller.EKLER)
+        if (mevcut != null && mevcut.isDirectory) return mevcut
+        return if (olustur) k.createDirectory(Gorseller.EKLER) else null
+    }
+
+    private fun ozelKlasor(ad: String): Boolean = ad.startsWith(".") || ad == Gorseller.EKLER
+
     // --- Klasörler ---
 
     fun klasorAdlari(): List<String> =
         kok().listFiles()
-            .filter { it.isDirectory && !(it.name ?: ".").startsWith(".") }
+            .filter { it.isDirectory && !ozelKlasor(it.name ?: ".") }
             .mapNotNull { it.name }
             .sortedWith(compareBy(Collator.getInstance(tr)) { it })
 
@@ -143,7 +157,7 @@ class NotDeposu(private val context: Context) {
         for (f in dir.listFiles()) {
             val ad = f.name ?: continue
             if (f.isDirectory) {
-                if (!ad.startsWith(".")) topla(f, sonuc, sabitler, sorgu, etiket ?: ad)
+                if (!ozelKlasor(ad)) topla(f, sonuc, sabitler, sorgu, etiket ?: ad)
                 continue
             }
             if (!notDosyasi(ad)) continue
@@ -250,6 +264,9 @@ class NotDeposu(private val context: Context) {
     /** Kart önizlemesi için satırdaki Markdown işaretlerini söker. */
     private fun mdTemizle(satir: String): String =
         satir.trim()
+            // Görsel bağlantısı önizlemede ham metin olarak görünmesin.
+            .replace(MarkdownBicimci.GORSEL, "")
+            .replace(MarkdownBicimci.GORSEL_WIKI, "")
             .trimStart('#', '>', ' ')
             .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
             .replace(ISARETLER, "")

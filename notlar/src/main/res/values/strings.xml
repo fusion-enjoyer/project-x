@@ -189,4 +189,8 @@
         <item quantity="one">%d unchanged line</item>
         <item quantity="other">%d unchanged lines</item>
     </plurals>
+
+    <!-- Images -->
+    <string name="gorsel_ekle">Insert image</string>
+    <string name="gorsel_hata">Couldn\'t add that image</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.ekosistem.notlar
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
@@ -93,6 +94,98 @@ class AlintiSpan(private val renk: Int, private val yogunluk: Float) : LeadingMa
             alt.toFloat()
         )
         c.drawRoundRect(kutu, genislik / 2f, genislik / 2f, boya)
+    }
+}
+
+/**
+ * `![](ekler/ad.jpg)` satırını görselin kendisiyle değiştirir. Bit eşlem henüz
+ * çözülmediyse (ya da dosya bulunamadıysa) yerine adı yazan bir yer tutucu çizer;
+ * böylece satır yüksekliği zıplamadan görsel gelince yerine oturur.
+ */
+class GorselSpan(
+    private val bitmap: Bitmap?,
+    private val enFazlaGenislik: Int,
+    private val etiket: String,
+    private val cerceveRengi: Int,
+    private val yaziRengi: Int,
+    private val yogunluk: Float
+) : ReplacementSpan() {
+
+    private val boya = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private fun genislik(): Int =
+        (bitmap?.width ?: enFazlaGenislik).coerceIn(1, enFazlaGenislik.coerceAtLeast(1))
+
+    private fun yukseklik(): Int = bitmap?.height ?: (YER_TUTUCU_DP * yogunluk).toInt()
+
+    override fun getSize(
+        paint: Paint,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        fm: Paint.FontMetricsInt?
+    ): Int {
+        val h = yukseklik()
+        val bosluk = (BOSLUK_DP * yogunluk).toInt()
+        if (fm != null) {
+            // Satır, görselin tamamını içine alacak kadar yükselir.
+            fm.ascent = -(h + bosluk)
+            fm.top = fm.ascent
+            fm.descent = 0
+            fm.bottom = 0
+        }
+        return genislik()
+    }
+
+    override fun draw(
+        canvas: Canvas,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        x: Float,
+        top: Int,
+        y: Int,
+        bottom: Int,
+        paint: Paint
+    ) {
+        val h = yukseklik()
+        val ust = (y - h).toFloat()
+        if (bitmap != null) {
+            canvas.drawBitmap(bitmap, x, ust, null)
+            return
+        }
+        boya.color = cerceveRengi
+        boya.style = Paint.Style.STROKE
+        boya.strokeWidth = yogunluk
+        val kose = 12f * yogunluk
+        val kutu = RectF(x, ust, x + genislik(), y.toFloat())
+        canvas.drawRoundRect(kutu, kose, kose, boya)
+
+        boya.style = Paint.Style.FILL
+        boya.color = yaziRengi
+        boya.textSize = paint.textSize * 0.85f
+        val yazi = kisalt(etiket, kutu.width() - 24 * yogunluk)
+        canvas.drawText(
+            yazi,
+            x + 12 * yogunluk,
+            ust + h / 2f - (boya.ascent() + boya.descent()) / 2f,
+            boya
+        )
+    }
+
+    private fun kisalt(metin: String, alan: Float): String {
+        if (alan <= 0f) return ""
+        if (boya.measureText(metin) <= alan) return metin
+        var kesilen = metin
+        while (kesilen.isNotEmpty() && boya.measureText("$kesilen…") > alan) {
+            kesilen = kesilen.dropLast(1)
+        }
+        return "$kesilen…"
+    }
+
+    private companion object {
+        const val YER_TUTUCU_DP = 44f
+        const val BOSLUK_DP = 6f
     }
 }
 

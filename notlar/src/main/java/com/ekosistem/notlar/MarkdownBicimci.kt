@@ -34,8 +34,18 @@ class MarkdownBicimci(private val context: Context) {
     /** Kaynak modunda hiçbir biçim uygulanmaz; ham Markdown görünür. */
     var kaynakModu = Prefs.kaynakModu(context)
 
+    /** Görselleri çözmek için gereken depo; yoksa yer tutucu çizilir. */
+    var depo: NotDeposu? = null
+
+    /** Arka planda çözülen görsel gelince biçimlendirme yenilensin. */
+    var gorselHazir: (() -> Unit)? = null
+
+    /** Görselin sığacağı genişlik; her biçimlendirmede tazelenir. */
+    private var satirGenisligi = 0
+
     fun uygula(s: Editable, imlec: Int, genislik: Int) {
         temizle(s)
+        satirGenisligi = genislik
         if (s.isEmpty()) return
 
         if (kaynakModu) {
@@ -74,6 +84,7 @@ class MarkdownBicimci(private val context: Context) {
         for (span in s.getSpans(0, s.length, AlintiSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, AyracSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, MaddeSpan::class.java)) s.removeSpan(span)
+        for (span in s.getSpans(0, s.length, GorselSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, UnderlineSpan::class.java)) s.removeSpan(span)
     }
 
@@ -182,12 +193,17 @@ class MarkdownBicimci(private val context: Context) {
         return true
     }
 
-    /** Satır içi işaretler: kod, kalın, italik, üstü çizili. */
+    /** Satır içi işaretler: görsel, kod, kalın, italik, üstü çizili. */
     private fun satirIci(s: Editable, bas: Int, son: Int, aktif: Boolean) {
         if (son <= bas) return
         val metin = s.subSequence(bas, son).toString()
 
+        // Görsel önce: kapladığı aralıkta başka işaret aranmaz, yoksa dosya
+        // adındaki * ya da _ yüzünden görselin üstüne span binerdi.
+        val gorseller = gorselleriIsle(s, bas, metin, aktif)
+
         for (m in KOD.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range)) continue
             val ic = m.groups[1] ?: continue
             s.setSpan(TypefaceSpan("monospace"), bas + ic.range.first, bas + ic.range.last + 1, EE)
             s.setSpan(
@@ -201,6 +217,7 @@ class MarkdownBicimci(private val context: Context) {
         }
 
         for (m in KALIN.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range)) continue
             val ic = m.groups[1] ?: continue
             s.setSpan(
                 StyleSpan(Typeface.BOLD),
@@ -213,6 +230,7 @@ class MarkdownBicimci(private val context: Context) {
         }
 
         for (m in ITALIK.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range)) continue
             val ic = m.groups[1] ?: continue
             s.setSpan(
                 StyleSpan(Typeface.ITALIC),
@@ -225,6 +243,7 @@ class MarkdownBicimci(private val context: Context) {
         }
 
         for (m in CIZILI.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range)) continue
             val ic = m.groups[1] ?: continue
             s.setSpan(StrikethroughSpan(), bas + ic.range.first, bas + ic.range.last + 1, EE)
             isaret(s, bas + m.range.first, bas + ic.range.first, aktif)
@@ -233,6 +252,7 @@ class MarkdownBicimci(private val context: Context) {
 
         // #etiket: tamamı vurgu renginde, işaret gizlenmez (aranabilir kalsın)
         for (m in ETIKET.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range)) continue
             s.setSpan(
                 ForegroundColorSpan(vurgu),
                 bas + m.range.first,
@@ -243,6 +263,7 @@ class MarkdownBicimci(private val context: Context) {
 
         // [[bağlantı]]: içerik vurgu renginde ve altı çizili, köşeli parantezler gizli
         for (m in BAGLANTI.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range)) continue
             val ic = m.groups[1] ?: continue
             s.setSpan(ForegroundColorSpan(vurgu), bas + ic.range.first, bas + ic.range.last + 1, EE)
             s.setSpan(UnderlineSpan(), bas + ic.range.first, bas + ic.range.last + 1, EE)
@@ -250,6 +271,63 @@ class MarkdownBicimci(private val context: Context) {
             isaret(s, bas + ic.range.last + 1, bas + m.range.last + 1, aktif)
         }
     }
+
+    /**
+     * `![](ekler/ad.jpg)` ve Obsidian'ın `![[ad.jpg]]` biçimini görsele çevirir.
+     * İmleç o satırdayken ham metin kalır — yoksa görseli düzenlemek imkânsız olurdu.
+     */
+    private fun gorselleriIsle(
+        s: Editable,
+        bas: Int,
+        metin: String,
+        aktif: Boolean
+    ): List<IntRange> {
+        val araliklar = mutableListOf<IntRange>()
+        val bulunanlar = GORSEL.findAll(metin).map { it to it.groupValues[2] } +
+            GORSEL_WIKI.findAll(metin).map { it to it.groupValues[1] }
+
+        for ((m, yol) in bulunanlar) {
+            araliklar.add(m.range)
+            if (aktif) {
+                // Düzenlenebilir kalsın; sadece soluklaştırılır.
+                s.setSpan(
+                    ForegroundColorSpan(soluk),
+                    bas + m.range.first,
+                    bas + m.range.last + 1,
+                    EE
+                )
+                continue
+            }
+            val yerelDepo = depo
+            val adres = if (yerelDepo == null) null else {
+                Gorseller.adres(yerelDepo, yol) { gorselHazir?.invoke() }
+            }
+            val bitmap = if (adres == null || satirGenisligi <= 0) null else {
+                Gorseller.bitmap(adres, satirGenisligi).also { hazirBitmap ->
+                    if (hazirBitmap == null) {
+                        Gorseller.yukle(context, adres, satirGenisligi) { gorselHazir?.invoke() }
+                    }
+                }
+            }
+            s.setSpan(
+                GorselSpan(
+                    bitmap,
+                    satirGenisligi,
+                    yol.substringAfterLast('/'),
+                    soluk,
+                    soluk,
+                    yogunluk
+                ),
+                bas + m.range.first,
+                bas + m.range.last + 1,
+                EE
+            )
+        }
+        return araliklar
+    }
+
+    private fun kapsaniyor(araliklar: List<IntRange>, aralik: IntRange): Boolean =
+        araliklar.any { aralik.first <= it.last && it.first <= aralik.last }
 
     /** İşaret karakterleri: imleç o satırdaysa soluk görünür, değilse gizlenir. */
     private fun isaret(s: Editable, bas: Int, son: Int, aktif: Boolean) {
@@ -277,6 +355,9 @@ class MarkdownBicimci(private val context: Context) {
         private val ITALIK = Regex("(?<![*\\w])\\*([^*\\n]+)\\*(?![*\\w])")
         private val CIZILI = Regex("~~([^~\\n]+)~~")
         val ETIKET = Regex("(?<![\\w/])#([\\p{L}\\p{N}_-]{1,40})")
-        val BAGLANTI = Regex("\\[\\[([^\\[\\]\\n]{1,80})]]")
+        // "!" ile başlayan gömme görseldir, bağlantı değil.
+        val BAGLANTI = Regex("(?<!!)\\[\\[([^\\[\\]\\n]{1,80})]]")
+        val GORSEL = Regex("!\\[([^\\]\\n]*)]\\(([^)\\n]+)\\)")
+        val GORSEL_WIKI = Regex("!\\[\\[([^\\[\\]\\n]{1,120})]]")
     }
 }

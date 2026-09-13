@@ -24,7 +24,7 @@ object Yedekleme {
             var sayi = 0
             context.contentResolver.openOutputStream(hedef)?.use { akis ->
                 ZipOutputStream(akis.buffered()).use { zip ->
-                    sayi = klasoruYaz(depo, depo.kok(), "", zip)
+                    sayi = klasoruYaz(context, depo, depo.kok(), "", zip)
                 }
             } ?: return -1
             sayi
@@ -34,6 +34,7 @@ object Yedekleme {
     }
 
     private fun klasoruYaz(
+        context: Context,
         depo: NotDeposu,
         dizin: DocumentFile,
         onek: String,
@@ -44,7 +45,12 @@ object Yedekleme {
             val ad = f.name ?: continue
             if (ad.startsWith(".")) continue
             if (f.isDirectory) {
-                sayi += klasoruYaz(depo, f, "$onek$ad/", zip)
+                sayi += klasoruYaz(context, depo, f, "$onek$ad/", zip)
+                continue
+            }
+            // Görseller metin değil: ham bayt kopyalanır ve not sayılmaz.
+            if (onek == Gorseller.EKLER + "/") {
+                baytYaz(context, f.uri, "$onek$ad", zip)
                 continue
             }
             if (!ad.endsWith(".md", true) && !ad.endsWith(".txt", true)) continue
@@ -56,6 +62,18 @@ object Yedekleme {
         return sayi
     }
 
+    private fun baytYaz(context: Context, kaynak: Uri, yol: String, zip: ZipOutputStream) {
+        try {
+            context.contentResolver.openInputStream(kaynak)?.use { giris ->
+                zip.putNextEntry(ZipEntry(yol))
+                giris.copyTo(zip, 64 * 1024)
+                zip.closeEntry()
+            }
+        } catch (_: Exception) {
+            // Tek bir görsel okunamazsa yedeğin tamamı yanmasın.
+        }
+    }
+
     /** Başarılıysa içe aktarılan not sayısı, hata olduysa -1. */
     fun iceAktar(context: Context, depo: NotDeposu, kaynak: Uri): Int {
         return try {
@@ -65,7 +83,15 @@ object Yedekleme {
                     var girdi = zip.nextEntry
                     while (girdi != null) {
                         val yol = girdi.name
-                        if (!girdi.isDirectory && (yol.endsWith(".md", true) ||
+                        if (!girdi.isDirectory && yol.startsWith(Gorseller.EKLER + "/")) {
+                            // Yoldaki dizin kısmı atılır; zip'ten çıkış yapılamasın.
+                            Gorseller.geriYukle(
+                                context,
+                                depo,
+                                yol.substringAfterLast('/'),
+                                zip.readBytes()
+                            )
+                        } else if (!girdi.isDirectory && (yol.endsWith(".md", true) ||
                                 yol.endsWith(".txt", true))
                         ) {
                             val icerik = zip.readBytes().toString(Charsets.UTF_8)
