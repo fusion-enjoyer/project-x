@@ -4,7 +4,11 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatEditText
 
-/** İmleç satır değiştirdiğinde haber veren metin alanı (canlı Markdown için). */
+/**
+ * İmleç satır değiştirdiğinde ve metin kaydırıldığında haber veren metin alanı.
+ * Kaydırma bilgisi, üstteki ikonları aşağı inince gizleyip yukarı çıkınca geri
+ * getirmek için gerekiyor (Obsidian'daki davranış).
+ */
 class NotEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -13,8 +17,16 @@ class NotEditText @JvmOverloads constructor(
 
     var secimDegisti: ((Int, Int) -> Unit)? = null
 
+    /** (yeniKonum, oncekiKonum) — dikey kaydırma konumu piksel cinsinden. */
+    var kaydirildi: ((Int, Int) -> Unit)? = null
+
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
         secimDegisti?.invoke(selStart, selEnd)
+    }
+
+    override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+        super.onScrollChanged(l, t, oldl, oldt)
+        kaydirildi?.invoke(t, oldt)
     }
 }

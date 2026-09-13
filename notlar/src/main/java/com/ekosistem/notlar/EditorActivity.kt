@@ -32,6 +32,10 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var bicimCubugu: LinearLayout
     private lateinit var bicimKaydirici: View
     private lateinit var btnOkuma: ImageButton
+    private lateinit var ustCubuk: View
+
+    /** Üstteki ikonlar şu an görünür mü? (kaydırmayla gizlenip geri gelirler) */
+    private var ustCubukAcik = true
 
     private var uri: Uri? = null
     private var hedefKlasor: String? = null
@@ -80,6 +84,8 @@ class EditorActivity : AppCompatActivity() {
         bicimCubugu = findViewById(R.id.bicimCubugu)
         bicimKaydirici = findViewById(R.id.bicimKaydirici)
         btnOkuma = findViewById(R.id.btnOkuma)
+        ustCubuk = findViewById(R.id.ustCubuk)
+        kaydirmaKur()
 
         bicimci.depo = depo
         // Görsel arka planda çözülünce satır yüksekliği yeniden hesaplanmalı.
@@ -124,6 +130,34 @@ class EditorActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { menuGoster() }
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
         dugmeleriGuncelle()
+    }
+
+    /**
+     * Aşağı kaydırınca üstteki ikonlar kaçar, yukarı kaydırınca döner —
+     * yazarken ekranın tamamı metne kalsın diye (Obsidian'daki davranış).
+     */
+    private fun kaydirmaKur() {
+        metinAlani.kaydirildi = { yeni, onceki ->
+            val fark = yeni - onceki
+            when {
+                // Notun en başındayken çubuk her zaman açık kalır.
+                yeni <= 0 -> ustCubuguGoster(true)
+                fark > ESIK -> ustCubuguGoster(false)
+                fark < -ESIK -> ustCubuguGoster(true)
+            }
+        }
+    }
+
+    private fun ustCubuguGoster(acik: Boolean) {
+        if (acik == ustCubukAcik) return
+        // Bul çubuğu açıkken üst ikonlar zaten gizli; karışmasınlar.
+        if (bulCubugu.visibility == View.VISIBLE) return
+        ustCubukAcik = acik
+        ustCubuk.animate()
+            .translationY(if (acik) 0f else -ustCubuk.height.toFloat() * 1.4f)
+            .alpha(if (acik) 1f else 0f)
+            .setDuration(160)
+            .start()
     }
 
     private fun notuYukle(adres: Uri) {
@@ -341,6 +375,7 @@ class EditorActivity : AppCompatActivity() {
             val satirSonu = duzen.getLineEnd(satir)
             if (satirBasi >= satirSonu) return@setOnTouchListener false
             val dokunulan = duzen.getOffsetForHorizontal(satir, x)
+            if (gorseleDokunuldu(dokunulan)) return@setOnTouchListener true
             if (baglantiyaDokunuldu(dokunulan)) return@setOnTouchListener true
 
             val metin = s.subSequence(satirBasi, satirSonu).toString()
@@ -415,6 +450,7 @@ class EditorActivity : AppCompatActivity() {
             Arac(R.drawable.ic_bicim_numarali, R.string.bicim_numarali) { onekDegistir("1. ") },
             Arac(R.drawable.ic_bicim_onay, R.string.bicim_onay) { onekDegistir("- [ ] ") },
             Arac(R.drawable.ic_gorsel, R.string.gorsel_ekle) { gorselSec() },
+            Arac(R.drawable.ic_etiket, R.string.etiket_ekle) { etiketEkle() },
             Arac(R.drawable.ic_girinti_arti, R.string.girinti_arti) { girintiDegistir(true) },
             Arac(R.drawable.ic_girinti_eksi, R.string.girinti_eksi) { girintiDegistir(false) }
         )
@@ -565,6 +601,109 @@ class EditorActivity : AppCompatActivity() {
         metinAlani.setSelection(konum.coerceIn(0, s.length))
     }
 
+    // --- Etiket ---
+
+    /**
+     * Etiket `#ad` olarak notun içine yazılır — ayrı bir alan yok, dosya düz
+     * Markdown kalsın diye. Var olan etiketler listelenir ki yazım tutarlı olsun.
+     */
+    private fun etiketEkle() {
+        Thread {
+            val etiketler = depo.etiketleriListele()
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.etiket_ekle))
+                sayfa.girdi(
+                    ipucu = getString(R.string.yeni_etiket),
+                    dugmeMetni = getString(R.string.ekle)
+                ) { ad -> etiketiYaz(ad) }
+                for (etiket in etiketler) {
+                    sayfa.madde(R.drawable.ic_etiket, "#$etiket") { etiketiYaz(etiket) }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    private fun etiketiYaz(ham: String) {
+        val temiz = ham.trim().trimStart('#').replace(Regex("[^\\p{L}\\p{N}_-]"), "").take(40)
+        if (temiz.isEmpty()) return
+        val s = metinAlani.text ?: return
+        val konum = metinAlani.selectionEnd.coerceIn(0, s.length)
+        val onek = if (konum == 0 || s[konum - 1].isWhitespace()) "" else " "
+        val metin = "$onek#$temiz "
+        s.insert(konum, metin)
+        metinAlani.setSelection((konum + metin.length).coerceIn(0, s.length))
+    }
+
+    // --- Görsele dokunma ---
+
+    /** Yerleştirilmiş görsele dokunulduysa taşıma/silme menüsünü açar. */
+    private fun gorseleDokunuldu(konum: Int): Boolean {
+        val s = metinAlani.text ?: return false
+        val spanlar = s.getSpans(konum, konum, GorselSpan::class.java)
+        val span = spanlar.firstOrNull() ?: return false
+        val bas = s.getSpanStart(span)
+        if (bas < 0) return false
+        AltSayfa(this)
+            .baslik(getString(R.string.gorsel))
+            .madde(R.drawable.ic_geri_al, getString(R.string.yukari_tasi)) {
+                satiriTasi(bas, true)
+            }
+            .madde(R.drawable.ic_yinele, getString(R.string.asagi_tasi)) {
+                satiriTasi(bas, false)
+            }
+            .madde(R.drawable.ic_sil, getString(R.string.gorseli_kaldir), tehlikeli = true) {
+                satiriSil(bas)
+            }
+            .goster()
+        return true
+    }
+
+    /** [konum]'un bulunduğu satırı bir üstteki/alttaki satırla yer değiştirir. */
+    private fun satiriTasi(konum: Int, yukari: Boolean) {
+        val s = metinAlani.text ?: return
+        val metin = s.toString()
+        val bas = satirBasi(metin, konum)
+        val son = satirSonu(metin, bas)
+        val satir = metin.substring(bas, son)
+
+        if (yukari) {
+            if (bas == 0) return
+            val oncekiBas = satirBasi(metin, bas - 1)
+            val onceki = metin.substring(oncekiBas, bas - 1)
+            s.replace(oncekiBas, son, "$satir\n$onceki")
+            metinAlani.setSelection(oncekiBas.coerceIn(0, s.length))
+        } else {
+            if (son >= metin.length) return
+            val sonrakiSon = satirSonu(metin, son + 1)
+            val sonraki = metin.substring(son + 1, sonrakiSon)
+            s.replace(bas, sonrakiSon, "$sonraki\n$satir")
+            metinAlani.setSelection((bas + sonraki.length + 1).coerceIn(0, s.length))
+        }
+    }
+
+    private fun satiriSil(konum: Int) {
+        val s = metinAlani.text ?: return
+        val metin = s.toString()
+        val bas = satirBasi(metin, konum)
+        val son = satirSonu(metin, bas)
+        // Satır sonundaki yeni satır karakteri de gitsin, boş satır kalmasın.
+        val bitis = if (son < metin.length) son + 1 else son
+        s.delete(bas, bitis)
+        metinAlani.setSelection(bas.coerceIn(0, s.length))
+    }
+
+    private fun satirBasi(metin: String, konum: Int): Int {
+        if (konum <= 0) return 0
+        val i = metin.lastIndexOf('\n', (konum - 1).coerceAtMost(metin.length - 1))
+        return if (i < 0) 0 else i + 1
+    }
+
+    private fun satirSonu(metin: String, bas: Int): Int {
+        val i = metin.indexOf('\n', bas)
+        return if (i < 0) metin.length else i
+    }
+
     // --- Görüntüleme modları ---
 
     private fun okumaModunuDegistir() {
@@ -623,11 +762,14 @@ class EditorActivity : AppCompatActivity() {
 
     private fun bulCubuguAc() {
         bulCubugu.visibility = View.VISIBLE
+        // Bul çubuğu üst ikonların yerini alır; ikisi üst üste binmesin.
+        ustCubuk.visibility = View.GONE
         bulAlani.requestFocus()
     }
 
     private fun bulCubuguKapat() {
         bulCubugu.visibility = View.GONE
+        ustCubuk.visibility = View.VISIBLE
         eslesmeler = emptyList()
         eslesmeSirasi = -1
         metinAlani.requestFocus()
@@ -960,6 +1102,9 @@ class EditorActivity : AppCompatActivity() {
         const val ISTEK_KILIT = 9
         const val ISTEK_GECMIS = 10
         const val ISTEK_GORSEL = 11
+
+        /** Çubuğu gizleyip göstermek için gereken en küçük kaydırma (piksel). */
+        const val ESIK = 12
         const val BIRLESTIRME_MS = 700L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")

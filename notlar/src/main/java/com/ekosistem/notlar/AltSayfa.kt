@@ -257,8 +257,11 @@ class AltSayfa(private val activity: Activity) {
         dialog.show()
         girdiAlani?.let { alan ->
             alan.requestFocus()
+            // ADJUST_RESIZE olmadan sayfa klavyenin altında kalıyor ve onay
+            // düğmesine ulaşılamıyordu.
             dialog.window?.setSoftInputMode(
-                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
             )
         }
     }

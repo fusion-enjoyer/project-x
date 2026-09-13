@@ -41,9 +41,15 @@ class OnayKutusuSpan(
         val boy = kutuBoyu(paint)
         val orta = y + (paint.ascent() + paint.descent()) / 2f
         val ust = orta - boy / 2f
-        val kutu = RectF(x, ust, x + boy, ust + boy)
         val kose = boy * 0.28f
         val kalinlik = boy * 0.11f
+        /*
+         * Çerçeve yolun üstüne ortalanarak çizilir: kutuyu tam x'ten başlatırsak
+         * çizginin sol yarısı metin alanının kırpma sınırının dışında kalır ve
+         * sol kenar ince görünür. Yarım çizgi kalınlığı kadar içeri alınıyor.
+         */
+        val ic = kalinlik / 2f
+        val kutu = RectF(x + ic, ust + ic, x + boy - ic, ust + boy - ic)
 
         if (isaretli) {
             boya.style = Paint.Style.FILL
@@ -54,12 +60,12 @@ class OnayKutusuSpan(
             boya.color = soluk
             boya.strokeWidth = kalinlik * 1.2f
             boya.strokeCap = Paint.Cap.ROUND
-            val solX = kutu.left + boy * 0.26f
-            val ortaX = kutu.left + boy * 0.44f
-            val sagX = kutu.left + boy * 0.75f
-            val ortaY = kutu.top + boy * 0.52f
-            val altY = kutu.top + boy * 0.70f
-            val ustY = kutu.top + boy * 0.32f
+            val solX = x + boy * 0.26f
+            val ortaX = x + boy * 0.44f
+            val sagX = x + boy * 0.75f
+            val ortaY = ust + boy * 0.52f
+            val altY = ust + boy * 0.70f
+            val ustY = ust + boy * 0.32f
             canvas.drawLine(solX, ortaY, ortaX, altY, boya)
             canvas.drawLine(ortaX, altY, sagX, ustY, boya)
         } else {

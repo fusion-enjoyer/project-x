@@ -205,4 +205,13 @@
     <string name="sablon_gunluk">Daily note\n## Today\n-\u0020\n## Tasks\n- [ ]\u0020\n## Notes\n</string>
     <string name="sablon_toplanti">{{date}} meeting\n## Present\n-\u0020\n## Discussed\n-\u0020\n## Decisions\n- [ ]\u0020\n</string>
     <string name="sablon_alisveris">Shopping list {{date}}\n- [ ]\u0020\n- [ ]\u0020\n- [ ]\u0020\n</string>
+
+    <!-- Tags and image actions -->
+    <string name="etiket_ekle">Add a tag</string>
+    <string name="yeni_etiket">New tag</string>
+    <string name="ekle">Add</string>
+    <string name="gorsel">Image</string>
+    <string name="yukari_tasi">Move up</string>
+    <string name="asagi_tasi">Move down</string>
+    <string name="gorseli_kaldir">Remove from note</string>
 </resources>

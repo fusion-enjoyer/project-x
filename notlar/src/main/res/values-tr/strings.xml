@@ -205,4 +205,13 @@
     <string name="sablon_gunluk">Günlük not\n## Bugün\n-\u0020\n## Görevler\n- [ ]\u0020\n## Notlar\n</string>
     <string name="sablon_toplanti">{{tarih}} toplantısı\n## Katılanlar\n-\u0020\n## Konuşulanlar\n-\u0020\n## Kararlar\n- [ ]\u0020\n</string>
     <string name="sablon_alisveris">Alışveriş listesi {{tarih}}\n- [ ]\u0020\n- [ ]\u0020\n- [ ]\u0020\n</string>
+
+    <!-- Etiket ve görsel işlemleri -->
+    <string name="etiket_ekle">Etiket ekle</string>
+    <string name="yeni_etiket">Yeni etiket</string>
+    <string name="ekle">Ekle</string>
+    <string name="gorsel">Görsel</string>
+    <string name="yukari_tasi">Yukarı taşı</string>
+    <string name="asagi_tasi">Aşağı taşı</string>
+    <string name="gorseli_kaldir">Nottan kaldır</string>
 </resources>

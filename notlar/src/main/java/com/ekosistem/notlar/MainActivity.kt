@@ -99,6 +99,8 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { menuGoster() }
+        findViewById<ImageButton>(R.id.btnGunluk).setOnClickListener { bugununNotu() }
+        sablonlariHazirla()
 
         intent?.getStringExtra("etiket")?.let { etiket ->
             seciliEtiket = etiket
@@ -578,6 +580,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     // --- Günlük not ve şablonlar ---
+
+    /**
+     * Örnek şablonlar ilk açılışta sessizce oluşturulur; kullanıcı şablon
+     * ekranına girdiğinde onları hazır bulur. Yalnızca bir kez denenir:
+     * şablonları silen kullanıcıya her açılışta geri getirmeyelim.
+     */
+    private fun sablonlariHazirla() {
+        if (Prefs.sablonlarKuruldu(this)) return
+        Thread {
+            Sablonlar.ornekleriOlustur(this, depo)
+            Prefs.sablonlarKurulduKaydet(this)
+            runOnUiThread { yenile() }
+        }.start()
+    }
 
     /** Bugünün notu varsa açılır, yoksa `gunluk` şablonundan oluşturulur. */
     private fun bugununNotu() {

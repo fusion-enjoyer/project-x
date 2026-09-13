@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Metnin üstünde yüzen ikon kabı: zemin renginde ki altındaki yazı okunmasın. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/zemin" />
+    <corners android:radius="24dp" />
+    <stroke android:width="0.5dp" android:color="@color/ayrac" />
+</shape>

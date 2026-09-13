@@ -53,6 +53,13 @@ object Prefs {
         sp(c).edit().putBoolean("kaynak_modu", acik).apply()
     }
 
+    /** Örnek şablonlar bir kez oluşturuldu mu? (silinirse geri getirilmez) */
+    fun sablonlarKuruldu(c: Context): Boolean = sp(c).getBoolean("sablonlar_kuruldu", false)
+
+    fun sablonlarKurulduKaydet(c: Context) {
+        sp(c).edit().putBoolean("sablonlar_kuruldu", true).apply()
+    }
+
     fun siralama(c: Context): Int = sp(c).getInt("siralama", 0)
 
     fun siralamaKaydet(c: Context, s: Int) {
