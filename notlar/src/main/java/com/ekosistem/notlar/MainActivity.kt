@@ -231,29 +231,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun klasorSecenekleri(ad: String) {
-        val secenekler = arrayOf(
-            getString(R.string.yeniden_adlandir),
-            getString(R.string.klasoru_sil)
-        )
-        AlertDialog.Builder(this)
-            .setTitle(ad)
-            .setItems(secenekler) { _, hangi ->
-                when (hangi) {
-                    0 -> klasorYenidenAdlandir(ad)
-                    1 -> klasorSilOnayi(ad)
-                }
+        AltSayfa(this)
+            .baslik(ad)
+            .madde(R.drawable.ic_duzenle, getString(R.string.yeniden_adlandir)) {
+                klasorYenidenAdlandir(ad)
             }
-            .show()
+            .madde(R.drawable.ic_sil, getString(R.string.klasoru_sil), tehlikeli = true) {
+                klasorSilOnayi(ad)
+            }
+            .goster()
     }
 
     private fun klasorYenidenAdlandir(eski: String) {
-        val giris = metinGirisi(eski)
-        AlertDialog.Builder(this)
-            .setTitle(R.string.yeniden_adlandir)
-            .setView(giris.first)
-            .setPositiveButton(R.string.olustur) { _, _ ->
-                val yeni = giris.second.text.toString().trim()
-                if (yeni.isEmpty()) return@setPositiveButton
+        AltSayfa(this)
+            .baslik(getString(R.string.yeniden_adlandir))
+            .girdi(
+                ipucu = getString(R.string.klasor_adi),
+                baslangic = eski,
+                dugmeMetni = getString(R.string.yeniden_adlandir)
+            ) { yeni ->
                 Thread {
                     val oldu = depo.klasorYenidenAdlandir(eski, yeni)
                     runOnUiThread {
@@ -262,15 +258,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }.start()
             }
-            .setNegativeButton(R.string.iptal, null)
-            .show()
+            .goster()
     }
 
     private fun klasorSilOnayi(ad: String) {
-        AlertDialog.Builder(this)
-            .setTitle(ad)
-            .setMessage(R.string.klasoru_sil_ozet)
-            .setPositiveButton(R.string.sil) { _, _ ->
+        AltSayfa(this)
+            .baslik(getString(R.string.klasoru_sil_ozet))
+            .madde(R.drawable.ic_sil, getString(R.string.klasoru_sil), tehlikeli = true) {
                 Thread {
                     val oldu = depo.klasorSil(ad)
                     runOnUiThread {
@@ -282,21 +276,16 @@ class MainActivity : AppCompatActivity() {
                     }
                 }.start()
             }
-            .setNegativeButton(R.string.iptal, null)
-            .show()
+            .goster()
     }
 
     private fun yeniKlasorDialog(tasinacak: List<Not>?) {
-        val giris = metinGirisi("")
-        AlertDialog.Builder(this)
-            .setTitle(R.string.yeni_klasor)
-            .setView(giris.first)
-            .setPositiveButton(R.string.olustur) { _, _ ->
-                val ad = giris.second.text.toString().trim()
-                if (ad.isEmpty()) {
-                    yenile()
-                    return@setPositiveButton
-                }
+        AltSayfa(this)
+            .baslik(getString(R.string.yeni_klasor))
+            .girdi(
+                ipucu = getString(R.string.klasor_adi),
+                dugmeMetni = getString(R.string.olustur)
+            ) { ad ->
                 Thread {
                     depo.klasorOlustur(ad)
                     tasinacak?.forEach { depo.klasoreTasi(it.uri, ad) }
@@ -306,28 +295,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }.start()
             }
-            .setNegativeButton(R.string.iptal) { _, _ -> yenile() }
-            .setOnCancelListener { yenile() }
-            .show()
-    }
-
-    private fun metinGirisi(baslangic: String): Pair<View, EditText> {
-        val giris = EditText(this)
-        giris.setText(baslangic)
-        giris.setSelection(baslangic.length)
-        giris.hint = getString(R.string.klasor_adi)
-        giris.setSingleLine()
-        val kutu = FrameLayout(this)
-        val y = resources.displayMetrics.density
-        kutu.setPadding((20 * y).toInt(), (8 * y).toInt(), (20 * y).toInt(), 0)
-        kutu.addView(
-            giris,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
-        return kutu to giris
+            .goster()
     }
 
     // --- Seçim modu ---
@@ -487,21 +455,25 @@ class MainActivity : AppCompatActivity() {
         if (notlar.isEmpty()) return
         Thread {
             val klasorler = depo.klasorAdlari()
+            val mevcutKlasor = notlar.firstOrNull()?.klasor
             runOnUiThread {
-                val etiketler = mutableListOf(getString(R.string.ana_klasor))
-                etiketler.addAll(klasorler)
-                etiketler.add(getString(R.string.yeni_klasor) + "…")
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.klasore_tasi)
-                    .setItems(etiketler.toTypedArray()) { _, hangi ->
-                        when (hangi) {
-                            0 -> tasi(notlar, null)
-                            etiketler.size - 1 -> yeniKlasorDialog(notlar)
-                            else -> tasi(notlar, klasorler[hangi - 1])
-                        }
-                    }
-                    .setOnCancelListener { yenile() }
-                    .show()
+                val sayfa = AltSayfa(this).baslik(getString(R.string.klasore_tasi))
+                sayfa.madde(
+                    R.drawable.ic_tasi,
+                    getString(R.string.ana_klasor),
+                    secili = notlar.all { it.klasor == null }
+                ) { tasi(notlar, null) }
+                for (klasor in klasorler) {
+                    sayfa.madde(
+                        R.drawable.ic_tasi,
+                        klasor,
+                        secili = mevcutKlasor == klasor && notlar.all { it.klasor == klasor }
+                    ) { tasi(notlar, klasor) }
+                }
+                sayfa.madde(R.drawable.ic_arti_koyu, getString(R.string.yeni_klasor)) {
+                    yeniKlasorDialog(notlar)
+                }
+                sayfa.goster()
             }
         }.start()
     }

@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -30,6 +31,24 @@ class AltSayfa(private val activity: Activity) {
 
     private val maddeler = mutableListOf<Madde>()
     private var basligi: String? = null
+    private var girdiIpucu: String? = null
+    private var girdiBaslangic: String = ""
+    private var girdiEylem: ((String) -> Unit)? = null
+    private var girdiDugmesi: String? = null
+
+    /** Sayfanın üstüne metin alanı ve onay düğmesi ekler (klasör adı gibi). */
+    fun girdi(
+        ipucu: String,
+        baslangic: String = "",
+        dugmeMetni: String,
+        tamamlandi: (String) -> Unit
+    ): AltSayfa {
+        girdiIpucu = ipucu
+        girdiBaslangic = baslangic
+        girdiDugmesi = dugmeMetni
+        girdiEylem = tamamlandi
+        return this
+    }
 
     fun baslik(metin: String): AltSayfa {
         basligi = metin
@@ -77,6 +96,52 @@ class AltSayfa(private val activity: Activity) {
         val vurgu = Renkler.vurgu(activity)
         val metinRengi = ContextCompat.getColor(activity, R.color.metin)
         val tehlikeRengi = 0xFFE24B4A.toInt()
+
+        val ipucu = girdiIpucu
+        var girdiAlani: EditText? = null
+        if (ipucu != null) {
+            val alan = EditText(activity)
+            alan.hint = ipucu
+            alan.setText(girdiBaslangic)
+            alan.setSelection(girdiBaslangic.length)
+            alan.setSingleLine()
+            alan.textSize = 16f
+            alan.setTextColor(metinRengi)
+            alan.setHintTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
+            alan.setBackgroundResource(R.drawable.bg_arama_pill)
+            alan.setPadding((16 * y).toInt(), 0, (16 * y).toInt(), 0)
+            val alanLp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (48 * y).toInt()
+            )
+            alanLp.leftMargin = (24 * y).toInt()
+            alanLp.rightMargin = (24 * y).toInt()
+            alanLp.bottomMargin = (12 * y).toInt()
+            kok.addView(alan, alanLp)
+            girdiAlani = alan
+
+            val dugme = TextView(activity)
+            dugme.text = girdiDugmesi
+            dugme.textSize = 16f
+            dugme.setTypeface(null, android.graphics.Typeface.BOLD)
+            dugme.gravity = Gravity.CENTER
+            dugme.setTextColor(Renkler.vurguUzeri(activity))
+            dugme.setBackgroundResource(R.drawable.bg_pill_buton)
+            dugme.backgroundTintList = ColorStateList.valueOf(vurgu)
+            val dugmeLp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (48 * y).toInt()
+            )
+            dugmeLp.leftMargin = (24 * y).toInt()
+            dugmeLp.rightMargin = (24 * y).toInt()
+            dugmeLp.bottomMargin = (4 * y).toInt()
+            dugme.setOnClickListener {
+                val deger = girdiAlani?.text?.toString()?.trim().orEmpty()
+                dialog.dismiss()
+                if (deger.isNotEmpty()) girdiEylem?.invoke(deger)
+            }
+            kok.addView(dugme, dugmeLp)
+        }
 
         for (madde in maddeler) {
             val satir = LinearLayout(activity)
@@ -152,6 +217,12 @@ class AltSayfa(private val activity: Activity) {
             setGravity(Gravity.BOTTOM)
         }
         dialog.show()
+        girdiAlani?.let { alan ->
+            alan.requestFocus()
+            dialog.window?.setSoftInputMode(
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+            )
+        }
     }
 
     private fun secilebilirZemin(): Int {

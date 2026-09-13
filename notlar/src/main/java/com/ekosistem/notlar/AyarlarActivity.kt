@@ -141,20 +141,21 @@ class AyarlarActivity : AppCompatActivity() {
     }
 
     private fun temaSec() {
-        val etiketler = arrayOf(
-            getString(R.string.tema_sistem),
-            getString(R.string.tema_acik),
-            getString(R.string.tema_siyah)
-        )
-        AlertDialog.Builder(this)
-            .setTitle(R.string.tema)
-            .setSingleChoiceItems(etiketler, Prefs.tema(this)) { dialog, hangi ->
-                Prefs.temaKaydet(this, hangi)
-                dialog.dismiss()
-                Tema.uygula(hangi)
+        val etiketler = listOf(R.string.tema_sistem, R.string.tema_acik, R.string.tema_siyah)
+        val secili = Prefs.tema(this)
+        val sayfa = AltSayfa(this).baslik(getString(R.string.tema))
+        etiketler.forEachIndexed { indeks, etiket ->
+            sayfa.madde(
+                R.drawable.ic_ayar_gorunum_koyu,
+                getString(etiket),
+                secili = indeks == secili
+            ) {
+                Prefs.temaKaydet(this, indeks)
+                Tema.uygula(indeks)
                 recreate()
             }
-            .show()
+        }
+        sayfa.goster()
     }
 
     /** Renk seçenekleri yuvarlak örneklerle gösterilir. */
@@ -205,20 +206,21 @@ class AyarlarActivity : AppCompatActivity() {
     }
 
     private fun siralamaSec() {
-        val etiketler = arrayOf(
-            getString(R.string.siralama_yeni),
-            getString(R.string.siralama_eski),
-            getString(R.string.siralama_ad_az),
-            getString(R.string.siralama_ad_za)
+        val etiketler = listOf(
+            R.string.siralama_yeni,
+            R.string.siralama_eski,
+            R.string.siralama_ad_az,
+            R.string.siralama_ad_za
         )
-        AlertDialog.Builder(this)
-            .setTitle(R.string.siralama)
-            .setSingleChoiceItems(etiketler, Prefs.siralama(this)) { dialog, hangi ->
-                Prefs.siralamaKaydet(this, hangi)
-                dialog.dismiss()
+        val secili = Prefs.siralama(this)
+        val sayfa = AltSayfa(this).baslik(getString(R.string.siralama))
+        etiketler.forEachIndexed { indeks, etiket ->
+            sayfa.madde(R.drawable.ic_sirala, getString(etiket), secili = indeks == secili) {
+                Prefs.siralamaKaydet(this, indeks)
                 ozetGuncelle(satirSiralama, siralamaAdi())
             }
-            .show()
+        }
+        sayfa.goster()
     }
 
     // --- Klasör ---

@@ -11,9 +11,11 @@ android {
         applicationId = "com.ekosistem.notlar"
         minSdk = 21
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.5.0"
+        versionCode = 8
+        versionName = "0.5.1"
         vectorDrawables.useSupportLibrary = true
+        // AppCompat 80'den fazla dil taşıyor; sadece bizim dillerimiz kalsın.
+        resourceConfigurations += listOf("tr", "en")
     }
 
     buildFeatures {

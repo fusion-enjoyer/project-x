@@ -35,6 +35,18 @@ object Prefs {
         sp(c).edit().putInt("vurgu", indeks).apply()
     }
 
+    /** Çöpteki notun geldiği klasör (null ise ana klasör). */
+    fun copKaynagi(c: Context, uri: String): String? = sp(c).getString("cop:$uri", null)
+
+    fun copKaynagiKaydet(c: Context, uri: String, klasor: String?) {
+        if (klasor == null) return
+        sp(c).edit().putString("cop:$uri", klasor).apply()
+    }
+
+    fun copKaynagiSil(c: Context, uri: String) {
+        sp(c).edit().remove("cop:$uri").apply()
+    }
+
     fun kaynakModu(c: Context): Boolean = sp(c).getBoolean("kaynak_modu", false)
 
     fun kaynakModuKaydet(c: Context, acik: Boolean) {

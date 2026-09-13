@@ -46,7 +46,7 @@ class EditorActivity : AppCompatActivity() {
     // Geri al / yinele
     private val gecmis = ArrayDeque<Durum>()
     private val gelecek = ArrayDeque<Durum>()
-    private var bekleyen: Durum? = null
+    private var sonDurum = Durum("", 0)
     private var sonKayit = 0L
     private var geriAliniyor = false
     private var btnGeriAl: ImageButton? = null
@@ -99,6 +99,7 @@ class EditorActivity : AppCompatActivity() {
                     geriAliniyor = true
                     metinAlani.setText(metin)
                     geriAliniyor = false
+                    sonDurum = Durum(metin, 0)
                     metinAlani.post { bicimlendir() }
                 }
             }.start()
@@ -121,13 +122,7 @@ class EditorActivity : AppCompatActivity() {
     // --- Metin değişikliği ---
 
     private inner class MetinIzleyici : TextWatcher {
-        override fun beforeTextChanged(s: CharSequence?, bas: Int, onceki: Int, sonraki: Int) {
-            if (bicimleniyor || geriAliniyor || s == null) return
-            val simdi = System.currentTimeMillis()
-            if (simdi - sonKayit > BIRLESTIRME_MS || gecmis.isEmpty()) {
-                bekleyen = Durum(s.toString(), metinAlani.selectionStart)
-            }
-        }
+        override fun beforeTextChanged(s: CharSequence?, bas: Int, onceki: Int, sonraki: Int) {}
 
         override fun onTextChanged(s: CharSequence?, bas: Int, onceki: Int, sayi: Int) {
             if (bicimleniyor || geriAliniyor) return
@@ -137,14 +132,7 @@ class EditorActivity : AppCompatActivity() {
 
         override fun afterTextChanged(s: Editable?) {
             if (s == null || bicimleniyor || geriAliniyor) return
-            bekleyen?.let {
-                gecmis.addLast(it)
-                if (gecmis.size > YIGIN_SINIRI) gecmis.removeFirst()
-                gelecek.clear()
-                sonKayit = System.currentTimeMillis()
-                bekleyen = null
-                dugmeleriGuncelle()
-            }
+
             bicimleniyor = true
             if (satirEklendi) {
                 satirEklendi = false
@@ -153,6 +141,22 @@ class EditorActivity : AppCompatActivity() {
             aktifSatirBasi = satirBasiBul(metinAlani.selectionStart)
             bicimci.uygula(s, imlecKonumu(), metinGenisligi())
             bicimleniyor = false
+
+            /*
+             * Geri al yığını: her yazma öbeğinden (700 ms) önceki durum saklanır.
+             * Anlık görüntü değişiklikten SONRA alınır, önce değil; böylece iptal
+             * edilen bir değişiklik yığında asla eski bir durumu bırakmaz.
+             */
+            val simdi = System.currentTimeMillis()
+            if (simdi - sonKayit > BIRLESTIRME_MS) {
+                gecmis.addLast(sonDurum)
+                if (gecmis.size > YIGIN_SINIRI) gecmis.removeFirst()
+                gelecek.clear()
+                sonKayit = simdi
+                dugmeleriGuncelle()
+            }
+            sonDurum = Durum(s.toString(), metinAlani.selectionStart)
+
             if (bulCubugu.visibility == View.VISIBLE) eslesmeleriBul(false)
         }
     }
@@ -221,19 +225,15 @@ class EditorActivity : AppCompatActivity() {
     private fun geriAl() {
         if (gecmis.isEmpty()) return
         val s = metinAlani.text ?: return
-        val simdiki = Durum(s.toString(), metinAlani.selectionStart)
-        val hedef = gecmis.removeLast()
-        gelecek.addLast(simdiki)
-        durumUygula(hedef)
+        gelecek.addLast(Durum(s.toString(), metinAlani.selectionStart))
+        durumUygula(gecmis.removeLast())
     }
 
     private fun yinele() {
         if (gelecek.isEmpty()) return
         val s = metinAlani.text ?: return
-        val simdiki = Durum(s.toString(), metinAlani.selectionStart)
-        val hedef = gelecek.removeLast()
-        gecmis.addLast(simdiki)
-        durumUygula(hedef)
+        gecmis.addLast(Durum(s.toString(), metinAlani.selectionStart))
+        durumUygula(gelecek.removeLast())
     }
 
     private fun durumUygula(durum: Durum) {
@@ -241,6 +241,8 @@ class EditorActivity : AppCompatActivity() {
         metinAlani.setText(durum.metin)
         metinAlani.setSelection(durum.imlec.coerceIn(0, durum.metin.length))
         geriAliniyor = false
+        sonDurum = durum
+        sonKayit = 0L // sonraki yazım kesinlikle yeni bir adım açsın
         bicimlendir()
         dugmeleriGuncelle()
     }
@@ -372,10 +374,21 @@ class EditorActivity : AppCompatActivity() {
         if (silinecek > 0) s.delete(satirBasi, satirBasi + silinecek)
     }
 
+    /**
+     * Seçim varsa onu sarar; yoksa imlecin üstündeki kelimeyi sarar. Kelime de
+     * yoksa işaretleri koyup imleci aralarına bırakır.
+     */
     private fun sarmala(isaret: String) {
         val s = metinAlani.text ?: return
-        val bas = metinAlani.selectionStart.coerceAtLeast(0)
-        val son = metinAlani.selectionEnd.coerceAtLeast(0)
+        var bas = metinAlani.selectionStart.coerceAtLeast(0)
+        var son = metinAlani.selectionEnd.coerceAtLeast(0)
+        if (bas == son) {
+            val kelime = imlectekiKelime(s, bas)
+            if (kelime != null) {
+                bas = kelime.first
+                son = kelime.second
+            }
+        }
         if (bas == son) {
             s.insert(bas, isaret + isaret)
             metinAlani.setSelection(bas + isaret.length)
@@ -386,6 +399,15 @@ class EditorActivity : AppCompatActivity() {
             s.insert(ilk, isaret)
             metinAlani.setSelection(ilk + isaret.length, ikinci + isaret.length)
         }
+    }
+
+    private fun imlectekiKelime(s: Editable, imlec: Int): Pair<Int, Int>? {
+        if (s.isEmpty()) return null
+        var bas = imlec.coerceIn(0, s.length)
+        var son = bas
+        while (bas > 0 && !s[bas - 1].isWhitespace() && s[bas - 1] != '*') bas--
+        while (son < s.length && !s[son].isWhitespace() && s[son] != '*') son++
+        return if (son > bas) bas to son else null
     }
 
     // --- Görüntüleme modları ---

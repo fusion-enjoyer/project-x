@@ -323,12 +323,22 @@ class NotDeposu(private val context: Context) {
         return if (f.delete()) yeni else yeni
     }
 
+    /** Silinen notun hangi klasörden geldiği kaydedilir ki geri alınca oraya dönsün. */
     fun copeTasi(uri: Uri): Uri? {
+        val kaynakKlasor = notunKlasoru(uri)
         val cop = copKlasoru(true) ?: return null
-        return hedefeTasi(uri, cop)
+        val yeni = hedefeTasi(uri, cop) ?: return null
+        Prefs.copKaynagiKaydet(context, yeni.toString(), kaynakKlasor)
+        return yeni
     }
 
-    fun geriYukle(uri: Uri): Uri? = hedefeTasi(uri, kok())
+    fun geriYukle(uri: Uri): Uri? {
+        val kaynakKlasor = Prefs.copKaynagi(context, uri.toString())
+        val hedef = kaynakKlasor?.let { klasorBul(it) } ?: kok()
+        val yeni = hedefeTasi(uri, hedef)
+        Prefs.copKaynagiSil(context, uri.toString())
+        return yeni
+    }
 
     fun klasoreTasi(uri: Uri, klasorAdi: String?): Uri? {
         val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return null
@@ -337,6 +347,7 @@ class NotDeposu(private val context: Context) {
 
     fun kaliciSil(uri: Uri): Boolean {
         sabitTemizle(uri)
+        Prefs.copKaynagiSil(context, uri.toString())
         return docGetir(uri)?.delete() ?: false
     }
 

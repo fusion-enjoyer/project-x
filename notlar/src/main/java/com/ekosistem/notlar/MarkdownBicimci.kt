@@ -98,7 +98,9 @@ class MarkdownBicimci(private val context: Context) {
 
         if (baslikSatiri) {
             if (son > bas) s.setSpan(StyleSpan(Typeface.BOLD), bas, son, EE)
-            onayKutusu(s, bas, son, satir)
+            if (onayKutusu(s, bas, son, satir)) return
+            // Başlık satırında da kalın/italik/kod gibi işaretler çalışsın.
+            satirIci(s, bas, son, aktif)
             return
         }
 
