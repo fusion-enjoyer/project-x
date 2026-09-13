@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -57,18 +56,20 @@ class TrashActivity : AppCompatActivity() {
     }
 
     private fun secenekler(not: Not) {
-        val etiketler = arrayOf(getString(R.string.geri_yukle), getString(R.string.kalici_sil))
-        AlertDialog.Builder(this)
-            .setTitle(not.baslik)
-            .setItems(etiketler) { _, hangi ->
+        AltSayfa(this)
+            .baslik(not.baslik)
+            .madde(R.drawable.ic_geri_al, getString(R.string.geri_yukle)) {
                 Thread {
-                    when (hangi) {
-                        0 -> depo.geriYukle(not.uri)
-                        1 -> depo.kaliciSil(not.uri)
-                    }
+                    depo.geriYukle(not.uri)
                     runOnUiThread { yenile() }
                 }.start()
             }
-            .show()
+            .madde(R.drawable.ic_sil, getString(R.string.kalici_sil), tehlikeli = true) {
+                Thread {
+                    depo.kaliciSil(not.uri)
+                    runOnUiThread { yenile() }
+                }.start()
+            }
+            .goster()
     }
 }

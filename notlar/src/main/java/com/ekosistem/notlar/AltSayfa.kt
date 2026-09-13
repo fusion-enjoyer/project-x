@@ -35,6 +35,8 @@ class AltSayfa(private val activity: Activity) {
     private var girdiBaslangic: String = ""
     private var girdiEylem: ((String) -> Unit)? = null
     private var girdiDugmesi: String? = null
+    private var ozelIcerik: View? = null
+    private var kapanisEylemi: (() -> Unit)? = null
 
     /** Sayfanın üstüne metin alanı ve onay düğmesi ekler (klasör adı gibi). */
     fun girdi(
@@ -55,6 +57,18 @@ class AltSayfa(private val activity: Activity) {
         return this
     }
 
+    /** Hazır satırlar yerine kendi görünümünü koymak için (renk seçici gibi). */
+    fun icerik(gorunum: View): AltSayfa {
+        ozelIcerik = gorunum
+        return this
+    }
+
+    /** Sayfa kapandığında çağrılır. */
+    fun kapaninca(eylem: () -> Unit): AltSayfa {
+        kapanisEylemi = eylem
+        return this
+    }
+
     fun madde(
         ikon: Int,
         baslik: String,
@@ -64,6 +78,14 @@ class AltSayfa(private val activity: Activity) {
     ): AltSayfa {
         maddeler.add(Madde(ikon, baslik, secili, tehlikeli, tikla))
         return this
+    }
+
+    private var acikDialog: Dialog? = null
+
+    /** Açık sayfayı programdan kapatır (renk seçiminde olduğu gibi). */
+    fun kapat() {
+        acikDialog?.dismiss()
+        acikDialog = null
     }
 
     fun goster() {
@@ -143,6 +165,17 @@ class AltSayfa(private val activity: Activity) {
             kok.addView(dugme, dugmeLp)
         }
 
+        ozelIcerik?.let { gorunum ->
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            lp.leftMargin = (24 * y).toInt()
+            lp.rightMargin = (24 * y).toInt()
+            lp.bottomMargin = (8 * y).toInt()
+            kok.addView(gorunum, lp)
+        }
+
         for (madde in maddeler) {
             val satir = LinearLayout(activity)
             satir.orientation = LinearLayout.HORIZONTAL
@@ -215,6 +248,11 @@ class AltSayfa(private val activity: Activity) {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             setGravity(Gravity.BOTTOM)
+        }
+        acikDialog = dialog
+        dialog.setOnDismissListener {
+            acikDialog = null
+            kapanisEylemi?.invoke()
         }
         dialog.show()
         girdiAlani?.let { alan ->

@@ -15,7 +15,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
 
@@ -26,6 +25,7 @@ class AyarlarActivity : AppCompatActivity() {
     private lateinit var satirRenk: View
     private lateinit var satirKlasor: View
     private lateinit var satirSiralama: View
+    private var renkSayfasi: AltSayfa? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
@@ -163,9 +163,9 @@ class AyarlarActivity : AppCompatActivity() {
         val yogunluk = resources.displayMetrics.density
         val kutu = LinearLayout(this)
         kutu.orientation = LinearLayout.VERTICAL
-        kutu.setPadding((20 * yogunluk).toInt(), (16 * yogunluk).toInt(), (20 * yogunluk).toInt(), 0)
+        kutu.setPadding(0, (8 * yogunluk).toInt(), 0, 0)
 
-        val dialog = AlertDialog.Builder(this).setTitle(R.string.vurgu_rengi).setView(kutu).create()
+        val sayfa = AltSayfa(this).baslik(getString(R.string.vurgu_rengi)).icerik(kutu)
         val seciliIndeks = Prefs.vurguIndeksi(this)
         val gece = Renkler.geceMi(this)
 
@@ -197,12 +197,13 @@ class AyarlarActivity : AppCompatActivity() {
             lp.rightMargin = (10 * yogunluk).toInt()
             ornek.setOnClickListener {
                 Prefs.vurguKaydet(this, indeks)
-                dialog.dismiss()
+                renkSayfasi?.kapat()
                 recreate()
             }
             satir?.addView(ornek, lp)
         }
-        dialog.show()
+        renkSayfasi = sayfa
+        sayfa.goster()
     }
 
     private fun siralamaSec() {
