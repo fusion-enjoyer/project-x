@@ -31,6 +31,19 @@ class MarkdownBicimci(private val context: Context) {
         vurguUzeri = Renkler.vurguUzeri(context)
     }
 
+    /**
+     * Gövde boyutu (sp) ayarlardan gelir; başlıklar bundan türetilir. Metin
+     * alanının TABAN boyutu da gövdedir — imleç taban boyuta göre çizildiği
+     * için taban büyük olursa gövdede kocaman bir imleç görünür (yaşandı).
+     */
+    var govdeSp = Prefs.yaziBoyu(context)
+
+    fun boyutlariYenile() {
+        govdeSp = Prefs.yaziBoyu(context)
+    }
+
+    private fun baslikSp(): Int = govdeSp + 8
+
     /** Kaynak modunda hiçbir biçim uygulanmaz; ham Markdown görünür. */
     var kaynakModu = Prefs.kaynakModu(context)
 
@@ -49,7 +62,6 @@ class MarkdownBicimci(private val context: Context) {
         if (s.isEmpty()) return
 
         if (kaynakModu) {
-            s.setSpan(AbsoluteSizeSpan(GOVDE_SP, true), 0, s.length, EE)
             s.setSpan(TypefaceSpan("monospace"), 0, s.length, EE)
             return
         }
@@ -93,9 +105,7 @@ class MarkdownBicimci(private val context: Context) {
         val baslikSonu = if (ilkSonu < 0) s.length else ilkSonu
         if (baslikSonu > 0) {
             s.setSpan(StyleSpan(Typeface.BOLD), 0, baslikSonu, EE)
-        }
-        if (ilkSonu >= 0 && ilkSonu + 1 < s.length) {
-            s.setSpan(AbsoluteSizeSpan(GOVDE_SP, true), ilkSonu + 1, s.length, EE)
+            s.setSpan(AbsoluteSizeSpan(baslikSp(), true), 0, baslikSonu, EE)
         }
     }
 
@@ -110,20 +120,28 @@ class MarkdownBicimci(private val context: Context) {
         val satir = s.subSequence(bas, son).toString()
 
         if (baslikSatiri) {
-            if (son > bas) s.setSpan(StyleSpan(Typeface.BOLD), bas, son, EE)
+            if (son > bas) {
+                s.setSpan(StyleSpan(Typeface.BOLD), bas, son, EE)
+                s.setSpan(AbsoluteSizeSpan(baslikSp(), true), bas, son, EE)
+            }
             if (onayKutusu(s, bas, son, satir)) return
             // Başlık satırında da kalın/italik/kod gibi işaretler çalışsın.
             satirIci(s, bas, son, aktif)
             return
         }
 
-        // Boş satırlar da gövde boyutunda olmalı; yoksa satır aralığı bozulur.
+        /*
+         * Gövde satırına taban boyutuyla aynı olsa bile boyut span'ı konur:
+         * span, satır ölçümünü yeniden tetikliyor. Bu olmadan yalnızca
+         * GorselSpan içeren satırın yüksekliği hesaplanmıyor ve görselden
+         * sonraki satırlar görselin üstüne biniyordu (yaşandı).
+         */
         val boyutSonu = if (son > bas) son else minOf(son + 1, s.length)
+        s.setSpan(AbsoluteSizeSpan(govdeSp, true), bas, boyutSonu, EE)
 
         val ayrac = AYRAC.matches(satir)
         if (ayrac && genislik > 0) {
             if (aktif) {
-                s.setSpan(AbsoluteSizeSpan(GOVDE_SP, true), bas, boyutSonu, EE)
                 s.setSpan(ForegroundColorSpan(soluk), bas, son, EE)
             } else {
                 s.setSpan(AyracSpan(genislik, soluk), bas, son, EE)
@@ -135,19 +153,17 @@ class MarkdownBicimci(private val context: Context) {
         if (baslik != null) {
             val seviye = baslik.groupValues[1].length
             val boyut = when (seviye) {
-                1 -> 22
-                2 -> 19
-                3 -> 17
-                else -> GOVDE_SP
+                1 -> govdeSp + 6
+                2 -> govdeSp + 3
+                3 -> govdeSp + 1
+                else -> govdeSp
             }
-            s.setSpan(AbsoluteSizeSpan(boyut, true), bas, boyutSonu, EE)
+            s.setSpan(AbsoluteSizeSpan(boyut, true), bas, son, EE)
             s.setSpan(StyleSpan(Typeface.BOLD), bas, son, EE)
             isaret(s, bas, bas + baslik.value.length, aktif)
             satirIci(s, bas + baslik.value.length, son, aktif)
             return
         }
-
-        s.setSpan(AbsoluteSizeSpan(GOVDE_SP, true), bas, boyutSonu, EE)
 
         val alinti = ALINTI.find(satir)
         if (alinti != null) {
@@ -340,7 +356,6 @@ class MarkdownBicimci(private val context: Context) {
     }
 
     companion object {
-        const val GOVDE_SP = 16
         const val ONAY_UZUNLUGU = 5
         private const val BUYUK_NOT_SINIRI = 40000
         private const val EE = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE

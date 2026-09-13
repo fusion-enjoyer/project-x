@@ -98,8 +98,6 @@ class MainActivity : AppCompatActivity() {
         seritEylem.setTextColor(vurgu)
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
-        findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { menuGoster() }
-        findViewById<ImageButton>(R.id.btnGunluk).setOnClickListener { bugununNotu() }
         sablonlariHazirla()
 
         intent?.getStringExtra("etiket")?.let { etiket ->
@@ -133,20 +131,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Yüzen gezinme çubuğu: arama, günlük not, yeni not, şablonlar, menü. */
     private fun yeniNotDugmesiKur() {
-        val btn = findViewById<TextView>(R.id.btnYeni)
-        btn.backgroundTintList = ColorStateList.valueOf(vurgu)
-        btn.setTextColor(vurguUzeri)
-        val ikon = ContextCompat.getDrawable(this, R.drawable.ic_arti)?.mutate()
-        if (ikon != null) {
-            DrawableCompat.setTint(ikon, vurguUzeri)
-            btn.setCompoundDrawablesRelativeWithIntrinsicBounds(ikon, null, null, null)
-        }
-        btn.setOnClickListener {
+        val yeni = findViewById<ImageButton>(R.id.navYeni)
+        yeni.backgroundTintList = ColorStateList.valueOf(vurgu)
+        yeni.imageTintList = ColorStateList.valueOf(vurguUzeri)
+        yeni.setOnClickListener {
             val i = Intent(this, EditorActivity::class.java)
             seciliKlasor?.let { k -> i.putExtra("klasor", k) }
             startActivity(i)
         }
+        findViewById<ImageButton>(R.id.navAra).setOnClickListener { aramaOdakla() }
+        findViewById<ImageButton>(R.id.navGunluk).setOnClickListener { bugununNotu() }
+        findViewById<ImageButton>(R.id.navSablon).setOnClickListener { sablonSec() }
+        findViewById<ImageButton>(R.id.navMenu).setOnClickListener { menuGoster() }
+    }
+
+    private fun aramaOdakla() {
+        val arama = findViewById<EditText>(R.id.arama)
+        arama.requestFocus()
+        val yonetici = getSystemService(INPUT_METHOD_SERVICE)
+            as? android.view.inputmethod.InputMethodManager
+        yonetici?.showSoftInput(arama, 0)
     }
 
     // --- Liste ---
@@ -206,8 +212,17 @@ class MainActivity : AppCompatActivity() {
     private fun klasorCubuguGuncelle(adlar: List<String>) {
         klasorSatiri.removeAllViews()
         chipEkle(getString(R.string.tumu), seciliKlasor == null, null)
+        // Şablon klasörü sıradan çip olarak listelenmez; gezinme çubuğundan
+        // "şablonları düzenle" seçilirse kapatılabilir çip olarak belirir.
         for (ad in adlar) {
+            if (ad == Sablonlar.KLASOR) continue
             chipEkle(ad, seciliKlasor == ad, ad)
+        }
+        if (seciliKlasor == Sablonlar.KLASOR) {
+            chipEkle(getString(R.string.sablonlar), true, null) {
+                seciliKlasor = null
+                yenile()
+            }
         }
         seciliEtiket?.let { etiket ->
             chipEkle("#$etiket", true, null) {
@@ -563,8 +578,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun menuGoster() {
         AltSayfa(this)
-            .madde(R.drawable.ic_gunluk, getString(R.string.bugunun_notu)) { bugununNotu() }
-            .madde(R.drawable.ic_sablon, getString(R.string.sablondan_not)) { sablonSec() }
             .madde(R.drawable.ic_bicim_onay, getString(R.string.gorevler)) {
                 startActivity(Intent(this, GorevlerActivity::class.java))
             }
@@ -587,10 +600,10 @@ class MainActivity : AppCompatActivity() {
      * şablonları silen kullanıcıya her açılışta geri getirmeyelim.
      */
     private fun sablonlariHazirla() {
-        if (Prefs.sablonlarKuruldu(this)) return
+        if (Prefs.sablonSurumu(this) >= Sablonlar.ORNEK_SURUMU) return
         Thread {
             Sablonlar.ornekleriOlustur(this, depo)
-            Prefs.sablonlarKurulduKaydet(this)
+            Prefs.sablonSurumuKaydet(this, Sablonlar.ORNEK_SURUMU)
             runOnUiThread { yenile() }
         }.start()
     }
@@ -616,7 +629,7 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val sablonlar = Sablonlar.listele(depo)
             runOnUiThread {
-                val sayfa = AltSayfa(this).baslik(getString(R.string.sablonlar))
+                val sayfa = AltSayfa(this).baslik(getString(R.string.sablondan_not))
                 if (sablonlar.isEmpty()) {
                     sayfa.madde(R.drawable.ic_sablon, getString(R.string.ornek_sablonlar)) {
                         ornekSablonlariOlustur()
@@ -628,6 +641,11 @@ class MainActivity : AppCompatActivity() {
                             R.drawable.ic_sablon,
                             Sablonlar.uygula(this, sablon.baslik, "")
                         ) { sablondanNot(sablon) }
+                    }
+                    sayfa.madde(R.drawable.ic_duzenle, getString(R.string.sablonlari_duzenle)) {
+                        seciliKlasor = Sablonlar.KLASOR
+                        seciliEtiket = null
+                        yenile()
                     }
                 }
                 sayfa.goster()

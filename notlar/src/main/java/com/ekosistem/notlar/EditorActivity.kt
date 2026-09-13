@@ -90,6 +90,7 @@ class EditorActivity : AppCompatActivity() {
         bicimci.depo = depo
         // Görsel arka planda çözülünce satır yüksekliği yeniden hesaplanmalı.
         bicimci.gorselHazir = { if (!isFinishing) bicimlendir() }
+        tipografiUygula()
 
         ipucuKur()
         bicimCubuguKur()
@@ -158,6 +159,22 @@ class EditorActivity : AppCompatActivity() {
             .alpha(if (acik) 1f else 0f)
             .setDuration(160)
             .start()
+    }
+
+    /**
+     * Taban yazı boyutu GÖVDE boyutudur; başlık span ile büyür. Tersi yapılırsa
+     * (eski hâli) imleç taban boyutuna göre çizildiği için gövdede harflerden
+     * kocaman bir imleç görünüyordu.
+     */
+    private fun tipografiUygula() {
+        bicimci.boyutlariYenile()
+        metinAlani.textSize = bicimci.govdeSp.toFloat()
+        metinAlani.typeface = when (Prefs.yaziTipi(this)) {
+            1 -> Typeface.SERIF
+            2 -> Typeface.MONOSPACE
+            else -> Typeface.DEFAULT
+        }
+        ipucuKur()
     }
 
     private fun notuYukle(adres: Uri) {
@@ -289,9 +306,9 @@ class EditorActivity : AppCompatActivity() {
         val ipucu = SpannableString("$baslik\n$govde")
         ipucu.setSpan(StyleSpan(Typeface.BOLD), 0, baslik.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         ipucu.setSpan(
-            AbsoluteSizeSpan(MarkdownBicimci.GOVDE_SP, true),
-            baslik.length + 1,
-            ipucu.length,
+            AbsoluteSizeSpan(bicimci.govdeSp + 8, true),
+            0,
+            baslik.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
         metinAlani.hint = ipucu
@@ -365,6 +382,7 @@ class EditorActivity : AppCompatActivity() {
     @android.annotation.SuppressLint("ClickableViewAccessibility")
     private fun onayKutusuDokunmaKur() {
         metinAlani.setOnTouchListener { _, olay ->
+            if (gorselDokunusunuIsle(olay)) return@setOnTouchListener true
             if (olay.action != MotionEvent.ACTION_UP) return@setOnTouchListener false
             val duzen = metinAlani.layout ?: return@setOnTouchListener false
             val s = metinAlani.text ?: return@setOnTouchListener false
@@ -375,7 +393,6 @@ class EditorActivity : AppCompatActivity() {
             val satirSonu = duzen.getLineEnd(satir)
             if (satirBasi >= satirSonu) return@setOnTouchListener false
             val dokunulan = duzen.getOffsetForHorizontal(satir, x)
-            if (gorseleDokunuldu(dokunulan)) return@setOnTouchListener true
             if (baglantiyaDokunuldu(dokunulan)) return@setOnTouchListener true
 
             val metin = s.subSequence(satirBasi, satirSonu).toString()
@@ -637,13 +654,188 @@ class EditorActivity : AppCompatActivity() {
 
     // --- Görsele dokunma ---
 
-    /** Yerleştirilmiş görsele dokunulduysa taşıma/silme menüsünü açar. */
-    private fun gorseleDokunuldu(konum: Int): Boolean {
-        val s = metinAlani.text ?: return false
-        val spanlar = s.getSpans(konum, konum, GorselSpan::class.java)
-        val span = spanlar.firstOrNull() ?: return false
-        val bas = s.getSpanStart(span)
-        if (bas < 0) return false
+    /*
+     * Görsel etkileşimi (metin seçimindeki gibi):
+     *  - tek dokunuş  → görselin üstünde küçük "Düzenle" balonu
+     *  - basılı tut   → titreşim; parmak kalkarsa menü açılır
+     *  - basılı tutup sürükle → görsel satırı parmakla taşınır, imleç hedefi gösterir
+     */
+    private var gorselBasi = -1
+    private var gorselBasilmaZamani = 0L
+    private var gorselIlkY = 0f
+    private var gorselSonY = 0f
+    private var gorselSurukluyor = false
+    private var gorselKaydiriyor = false
+    private var gorselUzunBasti = false
+    private val gorselUzunBasma = Runnable {
+        gorselUzunBasti = true
+        metinAlani.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+    }
+    private var duzenleBalonu: android.widget.PopupWindow? = null
+
+    private fun gorselKonumda(olay: MotionEvent): Int {
+        val duzen = metinAlani.layout ?: return -1
+        val s = metinAlani.text ?: return -1
+        val x = olay.x - metinAlani.totalPaddingLeft + metinAlani.scrollX
+        val y = olay.y - metinAlani.totalPaddingTop + metinAlani.scrollY
+        val satir = duzen.getLineForVertical(y.toInt())
+        val konum = duzen.getOffsetForHorizontal(satir, x)
+        val span = s.getSpans(konum, konum, GorselSpan::class.java).firstOrNull() ?: return -1
+        return s.getSpanStart(span)
+    }
+
+    private fun gorselDokunusunuIsle(olay: MotionEvent): Boolean {
+        when (olay.action) {
+            MotionEvent.ACTION_DOWN -> {
+                val bas = gorselKonumda(olay)
+                if (bas < 0) return false
+                gorselBasi = bas
+                gorselIlkY = olay.y
+                gorselSonY = olay.y
+                gorselSurukluyor = false
+                gorselKaydiriyor = false
+                gorselUzunBasti = false
+                gorselBasilmaZamani = System.currentTimeMillis()
+                metinAlani.postDelayed(gorselUzunBasma, UZUN_BASMA_MS)
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (gorselBasi < 0) return false
+                val kayma = Math.abs(olay.y - gorselIlkY)
+                if (gorselUzunBasti && kayma > SURUKLEME_ESIGI) gorselSurukluyor = true
+                if (gorselSurukluyor) {
+                    surukleImleciGoster(olay)
+                } else if (!gorselUzunBasti) {
+                    /*
+                     * Uzun basmadan parmak kaydıysa bu bir sayfa kaydırmasıdır.
+                     * Dokunuşu DOWN'da biz yuttuğumuz için EditText kaydıramaz;
+                     * kaydırmayı kendimiz yapıyoruz, yoksa geniş bir görselin
+                     * üstünden not kaydırılamazdı.
+                     */
+                    if (!gorselKaydiriyor && kayma > SURUKLEME_ESIGI) {
+                        gorselKaydiriyor = true
+                        metinAlani.removeCallbacks(gorselUzunBasma)
+                    }
+                    if (gorselKaydiriyor) {
+                        val fark = (gorselSonY - olay.y).toInt()
+                        val enFazla = (metinAlani.layout?.height ?: 0) -
+                            (metinAlani.height - metinAlani.totalPaddingTop -
+                                metinAlani.totalPaddingBottom)
+                        val hedefScroll = (metinAlani.scrollY + fark)
+                            .coerceIn(0, maxOf(0, enFazla))
+                        metinAlani.scrollTo(0, hedefScroll)
+                    }
+                }
+                gorselSonY = olay.y
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                if (gorselBasi < 0) return false
+                metinAlani.removeCallbacks(gorselUzunBasma)
+                val bas = gorselBasi
+                gorselBasi = -1
+                when {
+                    gorselKaydiriyor -> Unit // sayfa kaydırıldı; eylem yok
+                    gorselSurukluyor -> gorseliHedefeTasi(bas, olay)
+                    gorselUzunBasti -> gorselMenusu(bas)
+                    else -> duzenleBalonuGoster(bas)
+                }
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                if (gorselBasi < 0) return false
+                metinAlani.removeCallbacks(gorselUzunBasma)
+                gorselBasi = -1
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Sürükleme sırasında hedef satırı imleçle işaretler. */
+    private fun surukleImleciGoster(olay: MotionEvent) {
+        val hedef = hedefKonum(olay) ?: return
+        metinAlani.setSelection(hedef.coerceIn(0, metinAlani.text?.length ?: 0))
+    }
+
+    private fun hedefKonum(olay: MotionEvent): Int? {
+        val duzen = metinAlani.layout ?: return null
+        val y = olay.y - metinAlani.totalPaddingTop + metinAlani.scrollY
+        val satir = duzen.getLineForVertical(y.toInt())
+        return duzen.getLineStart(satir)
+    }
+
+    /** Sürükleme bitti: görselin satırını parmağın bıraktığı satıra taşır. */
+    private fun gorseliHedefeTasi(gorselKonumu: Int, olay: MotionEvent) {
+        val s = metinAlani.text ?: return
+        val metin = s.toString()
+        val kaynakBas = satirBasi(metin, gorselKonumu)
+        val kaynakSon = satirSonu(metin, kaynakBas)
+        val satir = metin.substring(kaynakBas, kaynakSon)
+
+        var hedef = hedefKonum(olay) ?: return
+        hedef = satirBasi(metin, hedef.coerceIn(0, metin.length))
+        if (hedef in kaynakBas..kaynakSon) return
+
+        if (hedef < kaynakBas) {
+            // Önce kaynağı sil (sondaki \n ile), sonra hedefe ekle.
+            val silSonu = if (kaynakSon < metin.length) kaynakSon + 1 else kaynakSon
+            s.delete(kaynakBas, silSonu)
+            s.insert(hedef, satir + "\n")
+            metinAlani.setSelection(hedef.coerceIn(0, s.length))
+        } else {
+            s.insert(hedef, satir + "\n")
+            val silSonu = if (kaynakSon < metin.length) kaynakSon + 1 else kaynakSon
+            s.delete(kaynakBas, silSonu)
+            metinAlani.setSelection((hedef - (silSonu - kaynakBas)).coerceIn(0, s.length))
+        }
+    }
+
+    /** Tek dokunuşta çıkan küçük balon: metin seçim araç çubuğu görünümünde. */
+    private fun duzenleBalonuGoster(bas: Int) {
+        duzenleBalonu?.dismiss()
+        val duzen = metinAlani.layout ?: return
+        val s = metinAlani.text ?: return
+
+        val dugme = TextView(this)
+        dugme.text = getString(R.string.duzenle)
+        dugme.textSize = 14f
+        dugme.setTypeface(null, Typeface.BOLD)
+        dugme.setTextColor(ContextCompat.getColor(this, R.color.metin))
+        dugme.setBackgroundResource(R.drawable.bg_ucan_hap)
+        val yog = resources.displayMetrics.density
+        dugme.setPadding((16 * yog).toInt(), (10 * yog).toInt(), (16 * yog).toInt(), (10 * yog).toInt())
+
+        val balon = android.widget.PopupWindow(
+            dugme,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        balon.isOutsideTouchable = true
+        balon.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+        )
+        dugme.setOnClickListener {
+            balon.dismiss()
+            gorselMenusu(bas)
+        }
+
+        // Balonu görsel satırının üstüne yerleştir.
+        val satirNo = duzen.getLineForOffset(bas)
+        val satirUstu = duzen.getLineTop(satirNo)
+        val ekranY = satirUstu + metinAlani.totalPaddingTop - metinAlani.scrollY
+        val yer = IntArray(2)
+        metinAlani.getLocationInWindow(yer)
+        balon.showAtLocation(
+            metinAlani,
+            android.view.Gravity.NO_GRAVITY,
+            yer[0] + (20 * yog).toInt(),
+            yer[1] + ekranY - (52 * yog).toInt()
+        )
+        duzenleBalonu = balon
+    }
+
+    private fun gorselMenusu(bas: Int) {
         AltSayfa(this)
             .baslik(getString(R.string.gorsel))
             .madde(R.drawable.ic_geri_al, getString(R.string.yukari_tasi)) {
@@ -656,7 +848,6 @@ class EditorActivity : AppCompatActivity() {
                 satiriSil(bas)
             }
             .goster()
-        return true
     }
 
     /** [konum]'un bulunduğu satırı bir üstteki/alttaki satırla yer değiştirir. */
@@ -853,10 +1044,14 @@ class EditorActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        var degisti = false
         if (bicimci.kaynakModu != Prefs.kaynakModu(this)) {
             bicimci.kaynakModu = Prefs.kaynakModu(this)
-            bicimlendir()
+            degisti = true
         }
+        if (bicimci.govdeSp != Prefs.yaziBoyu(this)) degisti = true
+        tipografiUygula()
+        if (degisti) bicimlendir()
     }
 
     override fun onPause() {
@@ -887,7 +1082,11 @@ class EditorActivity : AppCompatActivity() {
 
     private fun menuGoster() {
         val mevcutUri = uri
-        val sayfa = AltSayfa(this).baslik(getString(R.string.not_islemleri))
+        val metin = metinAlani.text?.toString().orEmpty()
+        val kelime = metin.split(Regex("\\s+")).count { it.isNotBlank() }
+        val sayfa = AltSayfa(this).baslik(
+            getString(R.string.kelime_karakter, kelime, metin.length)
+        )
 
         if (mevcutUri != null) {
             val sabit = Prefs.sabitler(this).contains(mevcutUri.toString())
@@ -931,6 +1130,14 @@ class EditorActivity : AppCompatActivity() {
                 geriBaglantilariGoster()
             }
             sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiAc() }
+        }
+        if (mevcutUri != null) {
+            sayfa.madde(R.drawable.ic_tasi, getString(R.string.klasore_tasi)) {
+                klasoreTasiSec(mevcutUri)
+            }
+            sayfa.madde(R.drawable.ic_arti_koyu, getString(R.string.notu_cogalt)) {
+                notuCogalt()
+            }
         }
         sayfa.madde(R.drawable.ic_sablon, getString(R.string.sablon_olarak_kaydet)) {
             sablonOlarakKaydet()
@@ -1059,6 +1266,62 @@ class EditorActivity : AppCompatActivity() {
         }.start()
     }
 
+    /** Notu editörden ayrılmadan başka klasöre taşır; adres değişir. */
+    private fun klasoreTasiSec(mevcut: Uri) {
+        Thread {
+            val klasorler = depo.klasorAdlari().filter { it != Sablonlar.KLASOR }
+            val simdiki = depo.notunKlasoru(mevcut)
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.klasore_tasi))
+                sayfa.madde(
+                    R.drawable.ic_tasi,
+                    getString(R.string.ana_klasor),
+                    secili = simdiki == null
+                ) { klasoreTasi(mevcut, null) }
+                for (klasor in klasorler) {
+                    sayfa.madde(R.drawable.ic_tasi, klasor, secili = simdiki == klasor) {
+                        klasoreTasi(mevcut, klasor)
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    private fun klasoreTasi(mevcut: Uri, klasor: String?) {
+        kaydet()
+        Thread {
+            val yeni = depo.klasoreTasi(mevcut, klasor)
+            runOnUiThread {
+                if (yeni != null) {
+                    uri = yeni
+                    Toast.makeText(this, R.string.tasindi, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun notuCogalt() {
+        val metin = metinAlani.text?.toString().orEmpty()
+        if (metin.isBlank()) return
+        val mevcut = uri
+        Thread {
+            val klasor = mevcut?.let { depo.notunKlasoru(it) }
+            val yeni = depo.notOlustur(metin, klasor)
+            runOnUiThread {
+                if (yeni != null) {
+                    startActivity(
+                        Intent(this, EditorActivity::class.java).putExtra("uri", yeni.toString())
+                    )
+                } else {
+                    Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
     /** Açık notu olduğu gibi şablon klasörüne kopyalar. */
     private fun sablonOlarakKaydet() {
         val metin = metinAlani.text.toString()
@@ -1105,6 +1368,10 @@ class EditorActivity : AppCompatActivity() {
 
         /** Çubuğu gizleyip göstermek için gereken en küçük kaydırma (piksel). */
         const val ESIK = 12
+
+        /** Görselde uzun basma süresi ve sürükleme eşiği. */
+        const val UZUN_BASMA_MS = 420L
+        const val SURUKLEME_ESIGI = 24f
         const val BIRLESTIRME_MS = 700L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")

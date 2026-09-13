@@ -21,6 +21,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="16dp">
 
+            <!-- Sağ üstteki eylemler yüzen gezinme çubuğuna taşındı. -->
             <LinearLayout
                 android:id="@+id/baslikCubugu"
                 android:layout_width="match_parent"
@@ -37,23 +38,6 @@
                     android:textColor="@color/metin"
                     android:textSize="30sp"
                     android:textStyle="bold" />
-
-                <ImageButton
-                    android:id="@+id/btnGunluk"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/bugunun_notu"
-                    android:src="@drawable/ic_gunluk" />
-
-                <ImageButton
-                    android:id="@+id/btnMenu"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/menu"
-                    android:src="@drawable/ic_menu" />
             </LinearLayout>
 
             <LinearLayout
@@ -216,22 +200,75 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/btnYeni"
-            android:layout_width="wrap_content"
-            android:layout_height="56dp"
-            android:layout_gravity="bottom|center_horizontal"
-            android:layout_marginBottom="20dp"
-            android:background="@drawable/bg_pill_buton"
-            android:drawableStart="@drawable/ic_arti"
-            android:drawablePadding="8dp"
-            android:gravity="center"
-            android:paddingLeft="24dp"
-            android:paddingRight="28dp"
-            android:text="@string/yeni_not"
-            android:textColor="@color/pill_metin"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+        <!--
+          Yüzen gezinme çubuğu (tasarım dili: "yüzen pill alt bar, 3-5 sekmeli").
+          Ortadaki yeni not düğmesi vurgu renginde dairedir, diğerleri düz ikon.
+        -->
+        <LinearLayout
+            android:id="@+id/gezinmeCubugu"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="12dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_arac_cubugu"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp">
+
+            <ImageButton
+                android:id="@+id/navAra"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ara"
+                android:src="@drawable/ic_ara" />
+
+            <ImageButton
+                android:id="@+id/navGunluk"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/bugunun_notu"
+                android:src="@drawable/ic_gunluk" />
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <ImageButton
+                    android:id="@+id/navYeni"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_nav_orta"
+                    android:contentDescription="@string/yeni_not"
+                    android:src="@drawable/ic_arti" />
+            </FrameLayout>
+
+            <ImageButton
+                android:id="@+id/navSablon"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/sablonlar"
+                android:src="@drawable/ic_sablon" />
+
+            <ImageButton
+                android:id="@+id/navMenu"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/menu"
+                android:src="@drawable/ic_menu" />
+        </LinearLayout>
     </FrameLayout>
 
 </LinearLayout>

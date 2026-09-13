@@ -64,6 +64,18 @@
                 <include
                     android:id="@+id/satirRenk"
                     layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirYaziTipi"
+                    layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirYaziBoyu"
+                    layout="@layout/item_ayar" />
             </LinearLayout>
 
             <TextView

@@ -53,11 +53,31 @@ object Prefs {
         sp(c).edit().putBoolean("kaynak_modu", acik).apply()
     }
 
-    /** Örnek şablonlar bir kez oluşturuldu mu? (silinirse geri getirilmez) */
-    fun sablonlarKuruldu(c: Context): Boolean = sp(c).getBoolean("sablonlar_kuruldu", false)
+    // --- Editör tipografisi ---
 
-    fun sablonlarKurulduKaydet(c: Context) {
-        sp(c).edit().putBoolean("sablonlar_kuruldu", true).apply()
+    /** 0 = sistem, 1 = serif, 2 = eş aralıklı (mono). */
+    fun yaziTipi(c: Context): Int = sp(c).getInt("yazi_tipi", 0)
+
+    fun yaziTipiKaydet(c: Context, tip: Int) {
+        sp(c).edit().putInt("yazi_tipi", tip).apply()
+    }
+
+    /** Gövde yazısının sp boyutu; başlıklar bundan türetilir. */
+    fun yaziBoyu(c: Context): Int = sp(c).getInt("yazi_boyu", 16)
+
+    fun yaziBoyuKaydet(c: Context, sp_: Int) {
+        sp(c).edit().putInt("yazi_boyu", sp_).apply()
+    }
+
+    /**
+     * Kurulmuş örnek şablon setinin sürümü. Yeni sürümle yeni örnekler
+     * eklenirse bir kez daha kurulur; kullanıcının sildiği şablonlar bunun
+     * dışında geri getirilmez.
+     */
+    fun sablonSurumu(c: Context): Int = sp(c).getInt("sablon_surumu", 0)
+
+    fun sablonSurumuKaydet(c: Context, surum: Int) {
+        sp(c).edit().putInt("sablon_surumu", surum).apply()
     }
 
     fun siralama(c: Context): Int = sp(c).getInt("siralama", 0)

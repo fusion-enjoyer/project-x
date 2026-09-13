@@ -26,6 +26,8 @@ class AyarlarActivity : AppCompatActivity() {
     private lateinit var satirKlasor: View
     private lateinit var satirSiralama: View
     private lateinit var satirKilit: View
+    private lateinit var satirYaziTipi: View
+    private lateinit var satirYaziBoyu: View
     private var renkSayfasi: AltSayfa? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +46,10 @@ class AyarlarActivity : AppCompatActivity() {
 
         satirKur(satirTema, R.drawable.ic_ayar_gorunum, vurgu, getString(R.string.tema), temaAdi())
         satirKur(satirRenk, R.drawable.ic_ayar_gorunum, vurgu, getString(R.string.vurgu_rengi), renkAdi())
+        satirYaziTipi = findViewById(R.id.satirYaziTipi)
+        satirYaziBoyu = findViewById(R.id.satirYaziBoyu)
+        satirKur(satirYaziTipi, R.drawable.ic_ayar_gorunum, vurgu, getString(R.string.yazi_tipi), yaziTipiAdi())
+        satirKur(satirYaziBoyu, R.drawable.ic_ayar_gorunum, vurgu, getString(R.string.yazi_boyu), yaziBoyuAdi())
         satirKur(
             satirKlasor,
             R.drawable.ic_ayar_klasor,
@@ -100,6 +106,8 @@ class AyarlarActivity : AppCompatActivity() {
         surum.isClickable = false
 
         satirTema.setOnClickListener { temaSec() }
+        satirYaziTipi.setOnClickListener { yaziTipiSec() }
+        satirYaziBoyu.setOnClickListener { yaziBoyuSec() }
         satirRenk.setOnClickListener { renkSec() }
         satirKlasor.setOnClickListener { klasorSec() }
         satirSiralama.setOnClickListener { siralamaSec() }
@@ -143,6 +151,52 @@ class AyarlarActivity : AppCompatActivity() {
     private fun renkAdi(): String {
         val indeks = Prefs.vurguIndeksi(this).coerceIn(0, Renkler.SECENEKLER.size - 1)
         return getString(Renkler.SECENEKLER[indeks].adKaynagi)
+    }
+
+    private fun yaziTipiAdi(): String = when (Prefs.yaziTipi(this)) {
+        1 -> getString(R.string.yazi_serif)
+        2 -> getString(R.string.yazi_mono)
+        else -> getString(R.string.yazi_sistem)
+    }
+
+    private fun yaziBoyuAdi(): String = getString(
+        when (Prefs.yaziBoyu(this)) {
+            14 -> R.string.boy_kucuk
+            18 -> R.string.boy_buyuk
+            20 -> R.string.boy_cok_buyuk
+            else -> R.string.boy_normal
+        }
+    )
+
+    private fun yaziTipiSec() {
+        val adlar = listOf(R.string.yazi_sistem, R.string.yazi_serif, R.string.yazi_mono)
+        val secili = Prefs.yaziTipi(this)
+        val sayfa = AltSayfa(this).baslik(getString(R.string.yazi_tipi))
+        adlar.forEachIndexed { indeks, ad ->
+            sayfa.madde(R.drawable.ic_ayar_gorunum_koyu, getString(ad), secili = indeks == secili) {
+                Prefs.yaziTipiKaydet(this, indeks)
+                ozetGuncelle(satirYaziTipi, yaziTipiAdi())
+            }
+        }
+        sayfa.goster()
+    }
+
+    private fun yaziBoyuSec() {
+        val boylar = listOf(
+            14 to R.string.boy_kucuk,
+            16 to R.string.boy_normal,
+            18 to R.string.boy_buyuk,
+            20 to R.string.boy_cok_buyuk
+        )
+        val secili = Prefs.yaziBoyu(this)
+        val sayfa = AltSayfa(this).baslik(getString(R.string.yazi_boyu))
+        for ((sp, ad) in boylar) {
+            sayfa.madde(R.drawable.ic_ayar_gorunum_koyu, getString(ad), secili = sp == secili) {
+                Prefs.yaziBoyuKaydet(this, sp)
+                ozetGuncelle(satirYaziBoyu, yaziBoyuAdi())
+            }
+        }
+        sayfa.goster()
     }
 
     private fun siralamaAdi(): String = when (Prefs.siralama(this)) {

@@ -214,4 +214,21 @@
     <string name="yukari_tasi">Move up</string>
     <string name="asagi_tasi">Move down</string>
     <string name="gorseli_kaldir">Remove from note</string>
+
+    <!-- v0.11.0 -->
+    <string name="duzenle">Edit</string>
+    <string name="kelime_karakter">%1$d words \u00b7 %2$d characters</string>
+    <string name="notu_cogalt">Duplicate note</string>
+    <string name="sablonlari_duzenle">Edit templates</string>
+    <string name="yazi_tipi">Font</string>
+    <string name="yazi_sistem">System</string>
+    <string name="yazi_serif">Serif</string>
+    <string name="yazi_mono">Monospace</string>
+    <string name="yazi_boyu">Text size</string>
+    <string name="boy_kucuk">Small</string>
+    <string name="boy_normal">Normal</string>
+    <string name="boy_buyuk">Large</string>
+    <string name="boy_cok_buyuk">Extra large</string>
+    <string name="sablon_haftalik">Weekly plan\n## Goals\n- [ ]\u0020\n## Monday\n-\u0020\n## Tuesday\n-\u0020\n## Wednesday\n-\u0020\n## Thursday\n-\u0020\n## Friday\n-\u0020\n## Weekend\n-\u0020\n</string>
+    <string name="sablon_kitap">Book notes\n**Author:**\u0020\n**Started:** {{date}}\n## Summary\n-\u0020\n## Quotes\n>\u0020\n## Thoughts\n-\u0020\n</string>
 </resources>

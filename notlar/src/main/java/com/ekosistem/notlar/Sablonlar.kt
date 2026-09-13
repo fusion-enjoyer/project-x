@@ -19,6 +19,9 @@ object Sablonlar {
 
     const val KLASOR = "sablonlar"
 
+    /** Örnek şablon seti değiştikçe artırılır; eksikler bir kez tamamlanır. */
+    const val ORNEK_SURUMU = 2
+
     /** Günlük notun gövdesini veren şablonun dosya adı. */
     private const val GUNLUK = "gunluk"
 
@@ -107,7 +110,9 @@ object Sablonlar {
         val ornekler = listOf(
             GUNLUK to context.getString(R.string.sablon_gunluk),
             "toplanti" to context.getString(R.string.sablon_toplanti),
-            "alisveris" to context.getString(R.string.sablon_alisveris)
+            "alisveris" to context.getString(R.string.sablon_alisveris),
+            "haftalik" to context.getString(R.string.sablon_haftalik),
+            "kitap" to context.getString(R.string.sablon_kitap)
         )
         var sayi = 0
         val mevcutlar = listele(depo).map {

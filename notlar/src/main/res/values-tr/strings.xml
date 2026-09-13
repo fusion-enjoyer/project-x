@@ -214,4 +214,21 @@
     <string name="yukari_tasi">Yukarı taşı</string>
     <string name="asagi_tasi">Aşağı taşı</string>
     <string name="gorseli_kaldir">Nottan kaldır</string>
+
+    <!-- v0.11.0 -->
+    <string name="duzenle">Düzenle</string>
+    <string name="kelime_karakter">%1$d kelime \u00b7 %2$d karakter</string>
+    <string name="notu_cogalt">Notu çoğalt</string>
+    <string name="sablonlari_duzenle">Şablonları düzenle</string>
+    <string name="yazi_tipi">Yazı tipi</string>
+    <string name="yazi_sistem">Sistem</string>
+    <string name="yazi_serif">Serif</string>
+    <string name="yazi_mono">Eş aralıklı</string>
+    <string name="yazi_boyu">Yazı boyutu</string>
+    <string name="boy_kucuk">Küçük</string>
+    <string name="boy_normal">Normal</string>
+    <string name="boy_buyuk">Büyük</string>
+    <string name="boy_cok_buyuk">Çok büyük</string>
+    <string name="sablon_haftalik">Haftalık plan\n## Hedefler\n- [ ]\u0020\n## Pazartesi\n-\u0020\n## Salı\n-\u0020\n## Çarşamba\n-\u0020\n## Perşembe\n-\u0020\n## Cuma\n-\u0020\n## Hafta sonu\n-\u0020\n</string>
+    <string name="sablon_kitap">Kitap notu\n**Yazar:**\u0020\n**Başlangıç:** {{tarih}}\n## Özet\n-\u0020\n## Alıntılar\n>\u0020\n## Düşünceler\n-\u0020\n</string>
 </resources>
