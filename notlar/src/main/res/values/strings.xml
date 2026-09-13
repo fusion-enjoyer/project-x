@@ -33,4 +33,9 @@
     <string name="geri">Geri</string>
     <string name="menu">Menü</string>
     <string name="izin_yok_rozet">İnternet izni yok</string>
+    <string name="bicim_baslik">Başlık</string>
+    <string name="bicim_kalin">Kalın</string>
+    <string name="bicim_italik">İtalik</string>
+    <string name="bicim_liste">Madde listesi</string>
+    <string name="bicim_onay">Onay kutusu</string>
 </resources>
