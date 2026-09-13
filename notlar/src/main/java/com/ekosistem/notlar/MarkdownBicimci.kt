@@ -10,6 +10,7 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
+import android.text.style.UnderlineSpan
 import androidx.core.content.ContextCompat
 
 /**
@@ -73,6 +74,7 @@ class MarkdownBicimci(private val context: Context) {
         for (span in s.getSpans(0, s.length, AlintiSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, AyracSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, MaddeSpan::class.java)) s.removeSpan(span)
+        for (span in s.getSpans(0, s.length, UnderlineSpan::class.java)) s.removeSpan(span)
     }
 
     private fun sadeBicimle(s: Editable) {
@@ -228,6 +230,25 @@ class MarkdownBicimci(private val context: Context) {
             isaret(s, bas + m.range.first, bas + ic.range.first, aktif)
             isaret(s, bas + ic.range.last + 1, bas + m.range.last + 1, aktif)
         }
+
+        // #etiket: tamamı vurgu renginde, işaret gizlenmez (aranabilir kalsın)
+        for (m in ETIKET.findAll(metin)) {
+            s.setSpan(
+                ForegroundColorSpan(vurgu),
+                bas + m.range.first,
+                bas + m.range.last + 1,
+                EE
+            )
+        }
+
+        // [[bağlantı]]: içerik vurgu renginde ve altı çizili, köşeli parantezler gizli
+        for (m in BAGLANTI.findAll(metin)) {
+            val ic = m.groups[1] ?: continue
+            s.setSpan(ForegroundColorSpan(vurgu), bas + ic.range.first, bas + ic.range.last + 1, EE)
+            s.setSpan(UnderlineSpan(), bas + ic.range.first, bas + ic.range.last + 1, EE)
+            isaret(s, bas + m.range.first, bas + ic.range.first, aktif)
+            isaret(s, bas + ic.range.last + 1, bas + m.range.last + 1, aktif)
+        }
     }
 
     /** İşaret karakterleri: imleç o satırdaysa soluk görünür, değilse gizlenir. */
@@ -255,5 +276,7 @@ class MarkdownBicimci(private val context: Context) {
         private val KALIN = Regex("\\*\\*([^*\\n]+)\\*\\*")
         private val ITALIK = Regex("(?<![*\\w])\\*([^*\\n]+)\\*(?![*\\w])")
         private val CIZILI = Regex("~~([^~\\n]+)~~")
+        val ETIKET = Regex("(?<![\\w/])#([\\p{L}\\p{N}_-]{1,40})")
+        val BAGLANTI = Regex("\\[\\[([^\\[\\]\\n]{1,80})]]")
     }
 }

@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
 
     private var sorgu: String? = null
     private var seciliKlasor: String? = null
+    private var seciliEtiket: String? = null
     private val secililer = mutableSetOf<String>()
     private var secimModu = false
 
@@ -56,6 +57,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
+        if (Prefs.ekranGizle(this)) {
+            window.setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+            )
+        }
+        if (Kilit.gerekli(this)) {
+            startActivity(
+                Intent(this, KilitActivity::class.java).putExtra("kip", KilitActivity.KIP_AC)
+            )
+        }
         setContentView(R.layout.activity_main)
         depo = NotDeposu(this)
         vurgu = Renkler.vurgu(this)
@@ -91,6 +103,10 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { menuGoster() }
+
+        intent?.getStringExtra("etiket")?.let { etiket ->
+            seciliEtiket = etiket
+        }
 
         findViewById<EditText>(R.id.arama).addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -142,7 +158,9 @@ class MainActivity : AppCompatActivity() {
         val aktifKlasor = seciliKlasor
         Thread {
             val notlar = try {
-                depo.notlariListele(aktifSorgu, aktifKlasor)
+                val etiket = seciliEtiket
+                if (etiket != null) depo.etiketliNotlar(etiket)
+                else depo.notlariListele(aktifSorgu, aktifKlasor)
             } catch (_: Exception) {
                 emptyList()
             }
@@ -184,6 +202,12 @@ class MainActivity : AppCompatActivity() {
         chipEkle(getString(R.string.tumu), seciliKlasor == null, null)
         for (ad in adlar) {
             chipEkle(ad, seciliKlasor == ad, ad)
+        }
+        seciliEtiket?.let { etiket ->
+            chipEkle("#$etiket", true, null) {
+                seciliEtiket = null
+                yenile()
+            }
         }
         chipEkle("+", false, null) { yeniKlasorDialog(null) }
     }
@@ -531,11 +555,37 @@ class MainActivity : AppCompatActivity() {
             .madde(R.drawable.ic_sil, getString(R.string.cop_kutusu)) {
                 startActivity(Intent(this, TrashActivity::class.java))
             }
+            .madde(R.drawable.ic_etiket, getString(R.string.etiketler)) { etiketleriGoster() }
             .madde(R.drawable.ic_sirala, getString(R.string.siralama)) { siralamaSec() }
             .madde(R.drawable.ic_ayarlar, getString(R.string.ayarlar)) {
                 startActivity(Intent(this, AyarlarActivity::class.java))
             }
             .goster()
+    }
+
+    private fun etiketleriGoster() {
+        Thread {
+            val etiketler = depo.etiketleriListele()
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.etiketler))
+                if (etiketler.isEmpty()) {
+                    sayfa.madde(R.drawable.ic_etiket, getString(R.string.etiket_yok)) {}
+                } else {
+                    for (etiket in etiketler) {
+                        sayfa.madde(
+                            R.drawable.ic_etiket,
+                            "#$etiket",
+                            secili = seciliEtiket == etiket
+                        ) {
+                            seciliEtiket = if (seciliEtiket == etiket) null else etiket
+                            seciliKlasor = null
+                            yenile()
+                        }
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
     }
 
     private fun siralamaSec() {

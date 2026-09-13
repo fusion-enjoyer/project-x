@@ -36,6 +36,7 @@ class EditorActivity : AppCompatActivity() {
     private var uri: Uri? = null
     private var hedefKlasor: String? = null
     private var acilisMetni = ""
+    private var oncekiIcerik = ""
     private var silindi = false
 
     private var bicimleniyor = false
@@ -65,6 +66,12 @@ class EditorActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
+        if (Prefs.ekranGizle(this)) {
+            window.setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+            )
+        }
         setContentView(R.layout.activity_editor)
         depo = NotDeposu(this)
         bicimci = MarkdownBicimci(this)
@@ -91,11 +98,19 @@ class EditorActivity : AppCompatActivity() {
         uri = intent.getStringExtra("uri")?.let(Uri::parse)
         hedefKlasor = intent.getStringExtra("klasor")
         val acilacak = uri
+        if (acilacak != null && Kilit.notKilitli(this, acilacak.toString()) && !Kilit.oturumAcik) {
+            @Suppress("DEPRECATION")
+            startActivityForResult(
+                Intent(this, KilitActivity::class.java).putExtra("kip", KilitActivity.KIP_AC),
+                ISTEK_KILIT
+            )
+        }
         if (acilacak != null) {
             Thread {
                 val metin = depo.oku(acilacak)
                 runOnUiThread {
                     acilisMetni = metin
+                    oncekiIcerik = metin
                     geriAliniyor = true
                     metinAlani.setText(metin)
                     geriAliniyor = false
@@ -272,6 +287,9 @@ class EditorActivity : AppCompatActivity() {
             val satirBasi = duzen.getLineStart(satir)
             val satirSonu = duzen.getLineEnd(satir)
             if (satirBasi >= satirSonu) return@setOnTouchListener false
+            val dokunulan = duzen.getOffsetForHorizontal(satir, x)
+            if (baglantiyaDokunuldu(dokunulan)) return@setOnTouchListener true
+
             val metin = s.subSequence(satirBasi, satirSonu).toString()
             val eslesme = MarkdownBicimci.ONAY.find(metin) ?: return@setOnTouchListener false
             val girinti = eslesme.groupValues[1].length
@@ -284,6 +302,46 @@ class EditorActivity : AppCompatActivity() {
             s.replace(isaretIndeksi, isaretIndeksi + 1, if (isaretli) " " else "x")
             true
         }
+    }
+
+    /** [[bağlantı]] veya #etikete dokunulduysa işler; değilse false döner. */
+    private fun baglantiyaDokunuldu(konum: Int): Boolean {
+        val s = metinAlani.text ?: return false
+        val metin = s.toString()
+        for (m in MarkdownBicimci.BAGLANTI.findAll(metin)) {
+            if (konum in m.range) {
+                baglantiyiAc(m.groupValues[1].trim())
+                return true
+            }
+        }
+        for (m in MarkdownBicimci.ETIKET.findAll(metin)) {
+            if (konum in m.range) {
+                startActivity(
+                    Intent(this, MainActivity::class.java)
+                        .putExtra("etiket", m.groupValues[1])
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                )
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Bağlantı hedefi varsa açar, yoksa o başlıkla yeni not oluşturur. */
+    private fun baglantiyiAc(baslik: String) {
+        if (baslik.isEmpty()) return
+        kaydet()
+        Thread {
+            val hedef = depo.baslikIleBul(baslik)
+            val adres = hedef?.uri ?: depo.notOlustur("$baslik\n", hedefKlasor)
+            runOnUiThread {
+                if (adres != null) {
+                    startActivity(
+                        Intent(this, EditorActivity::class.java).putExtra("uri", adres.toString())
+                    )
+                }
+            }
+        }.start()
     }
 
     // --- Biçim çubuğu ---
@@ -573,10 +631,13 @@ class EditorActivity : AppCompatActivity() {
         if (metin == acilisMetni) return
         val hedef = uri
         acilisMetni = metin
+        val onceki = oncekiIcerik
+        oncekiIcerik = metin
         Thread {
             if (hedef == null) {
                 if (metin.isNotBlank()) uri = depo.notOlustur(metin, hedefKlasor)
             } else {
+                if (onceki.isNotBlank()) depo.gecmiseYaz(hedef, onceki)
                 depo.yaz(hedef, metin)
             }
             NotWidget.hepsiniGuncelle(applicationContext)
@@ -604,6 +665,32 @@ class EditorActivity : AppCompatActivity() {
             secili = Prefs.kaynakModu(this)
         ) { kaynakModunuDegistir() }
 
+        if (mevcutUri != null) {
+            val zaman = Prefs.hatirlatici(this, mevcutUri.toString())
+            sayfa.madde(
+                R.drawable.ic_hatirlatici,
+                if (zaman > 0) getString(R.string.hatirlatici_kaldir) else getString(R.string.hatirlatici_kur),
+                secili = zaman > 0
+            ) {
+                if (zaman > 0) {
+                    Hatirlatici.kaldir(this, mevcutUri.toString())
+                    Toast.makeText(this, R.string.hatirlatici_kaldirildi, Toast.LENGTH_SHORT).show()
+                } else {
+                    hatirlaticiSec(mevcutUri.toString())
+                }
+            }
+
+            sayfa.madde(
+                R.drawable.ic_kilit,
+                getString(if (Kilit.notKilitli(this, mevcutUri.toString())) R.string.kilidi_kaldir else R.string.nota_kilit),
+                secili = Kilit.notKilitli(this, mevcutUri.toString())
+            ) { notKilidiDegistir(mevcutUri.toString()) }
+
+            sayfa.madde(R.drawable.ic_baglanti, getString(R.string.geri_baglantilar)) {
+                geriBaglantilariGoster()
+            }
+            sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiGoster() }
+        }
         sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
 
@@ -611,6 +698,127 @@ class EditorActivity : AppCompatActivity() {
             sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { sil() }
         }
         sayfa.goster()
+    }
+
+    // --- Hatırlatıcı, kilit, bağlantı, geçmiş ---
+
+    private fun hatirlaticiSec(adres: String) {
+        val takvim = java.util.Calendar.getInstance()
+        android.app.DatePickerDialog(
+            this,
+            { _, yil, ay, gun ->
+                android.app.TimePickerDialog(
+                    this,
+                    { _, saat, dakika ->
+                        takvim.set(yil, ay, gun, saat, dakika, 0)
+                        if (takvim.timeInMillis <= System.currentTimeMillis()) {
+                            Toast.makeText(this, R.string.gecmis_zaman, Toast.LENGTH_SHORT).show()
+                            return@TimePickerDialog
+                        }
+                        bildirimIzniIste()
+                        Hatirlatici.kur(this, adres, takvim.timeInMillis)
+                        Toast.makeText(this, R.string.hatirlatici_kuruldu, Toast.LENGTH_SHORT).show()
+                    },
+                    takvim.get(java.util.Calendar.HOUR_OF_DAY),
+                    takvim.get(java.util.Calendar.MINUTE),
+                    true
+                ).show()
+            },
+            takvim.get(java.util.Calendar.YEAR),
+            takvim.get(java.util.Calendar.MONTH),
+            takvim.get(java.util.Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun bildirimIzniIste() {
+        if (android.os.Build.VERSION.SDK_INT < 33) return
+        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7)
+        }
+    }
+
+    private fun notKilidiDegistir(adres: String) {
+        if (!Kilit.kurulu(this)) {
+            Toast.makeText(this, R.string.once_pin_kur, Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, AyarlarActivity::class.java))
+            return
+        }
+        val kilitlendi = Kilit.notKilidiDegistir(this, adres)
+        Toast.makeText(
+            this,
+            if (kilitlendi) R.string.not_kilitlendi else R.string.not_kilidi_acildi,
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun geriBaglantilariGoster() {
+        val mevcut = uri ?: return
+        Thread {
+            val hepsi = depo.notlariListele(null, null)
+            val not = hepsi.firstOrNull { it.uri == mevcut }
+            val baglar = if (not != null) depo.geriBaglantilar(not) else emptyList()
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.geri_baglantilar))
+                if (baglar.isEmpty()) {
+                    sayfa.madde(R.drawable.ic_baglanti, getString(R.string.baglanti_yok)) {}
+                } else {
+                    for (b in baglar) {
+                        sayfa.madde(R.drawable.ic_baglanti, b.baslik) {
+                            startActivity(
+                                Intent(this, EditorActivity::class.java)
+                                    .putExtra("uri", b.uri.toString())
+                            )
+                        }
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    private fun gecmisiGoster() {
+        val mevcut = uri ?: return
+        Thread {
+            val surumler = depo.gecmisiListele(mevcut)
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.gecmis))
+                if (surumler.isEmpty()) {
+                    sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis_yok)) {}
+                } else {
+                    for (surum in surumler) {
+                        val etiket = android.text.format.DateUtils.getRelativeDateTimeString(
+                            this,
+                            surum.zaman,
+                            android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                            android.text.format.DateUtils.WEEK_IN_MILLIS,
+                            0
+                        ).toString()
+                        sayfa.madde(R.drawable.ic_gecmis, etiket) { surumuGeriYukle(surum) }
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    private fun surumuGeriYukle(surum: NotDeposu.Surum) {
+        Thread {
+            val eski = depo.oku(surum.uri)
+            runOnUiThread {
+                if (eski.isBlank()) return@runOnUiThread
+                val s = metinAlani.text ?: return@runOnUiThread
+                gecmis.addLast(Durum(s.toString(), metinAlani.selectionStart))
+                geriAliniyor = true
+                metinAlani.setText(eski)
+                geriAliniyor = false
+                sonDurum = Durum(eski, 0)
+                bicimlendir()
+                dugmeleriGuncelle()
+                Toast.makeText(this, R.string.gecmise_donuldu, Toast.LENGTH_SHORT).show()
+            }
+        }.start()
     }
 
     private fun paylas() {
@@ -636,6 +844,7 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private companion object {
+        const val ISTEK_KILIT = 9
         const val BIRLESTIRME_MS = 700L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")

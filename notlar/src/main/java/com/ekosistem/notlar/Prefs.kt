@@ -69,4 +69,46 @@ object Prefs {
     fun widgetNotuSil(c: Context, widgetId: Int) {
         sp(c).edit().remove("widget_$widgetId").apply()
     }
+
+    // --- Kilit ---
+
+    fun pinOzeti(c: Context): String? = sp(c).getString("pin_ozet", null)
+
+    fun pinTuzu(c: Context): String? = sp(c).getString("pin_tuz", null)
+
+    fun pinKaydet(c: Context, ozet: String?, tuz: String?) {
+        val d = sp(c).edit()
+        if (ozet == null) d.remove("pin_ozet").remove("pin_tuz") else d.putString("pin_ozet", ozet).putString("pin_tuz", tuz)
+        d.apply()
+    }
+
+    fun kilitliNotlar(c: Context): Set<String> =
+        sp(c).getStringSet("kilitli_notlar", emptySet()) ?: emptySet()
+
+    fun kilitliNotDegistir(c: Context, uri: String): Boolean {
+        val s = kilitliNotlar(c).toMutableSet()
+        val eklendi = if (!s.add(uri)) { s.remove(uri); false } else true
+        sp(c).edit().putStringSet("kilitli_notlar", s).apply()
+        return eklendi
+    }
+
+    fun ekranGizle(c: Context): Boolean = sp(c).getBoolean("ekran_gizle", false)
+
+    fun ekranGizleKaydet(c: Context, acik: Boolean) {
+        sp(c).edit().putBoolean("ekran_gizle", acik).apply()
+    }
+
+    // --- Hatırlatıcılar ---
+
+    fun hatirlatici(c: Context, uri: String): Long = sp(c).getLong("hat:$uri", 0L)
+
+    fun hatirlaticiKaydet(c: Context, uri: String, zaman: Long) {
+        if (zaman <= 0) sp(c).edit().remove("hat:$uri").apply()
+        else sp(c).edit().putLong("hat:$uri", zaman).apply()
+    }
+
+    fun tumHatirlaticilar(c: Context): Map<String, Long> =
+        sp(c).all.filterKeys { it.startsWith("hat:") }
+            .mapNotNull { (k, v) -> (v as? Long)?.let { k.removePrefix("hat:") to it } }
+            .toMap()
 }

@@ -71,6 +71,21 @@ class AyarlarActivity : AppCompatActivity() {
             getString(R.string.ice_aktar),
             null
         )
+        satirKur(
+            findViewById(R.id.satirKilit),
+            R.drawable.ic_ayar_kilit,
+            KIRMIZI,
+            getString(R.string.uygulama_kilidi),
+            if (Kilit.kurulu(this)) getString(R.string.kilit_acik) else getString(R.string.kilit_kapali)
+        )
+        satirKur(
+            findViewById(R.id.satirEkranGizle),
+            R.drawable.ic_ayar_kilit,
+            KIRMIZI,
+            getString(R.string.ekran_gizle),
+            if (Prefs.ekranGizle(this)) getString(R.string.acik) else getString(R.string.kapali)
+        )
+
         val surum = findViewById<View>(R.id.satirSurum)
         satirKur(
             surum,
@@ -86,6 +101,11 @@ class AyarlarActivity : AppCompatActivity() {
         satirRenk.setOnClickListener { renkSec() }
         satirKlasor.setOnClickListener { klasorSec() }
         satirSiralama.setOnClickListener { siralamaSec() }
+        findViewById<View>(R.id.satirKilit).setOnClickListener { kilitAyari() }
+        findViewById<View>(R.id.satirEkranGizle).setOnClickListener {
+            Prefs.ekranGizleKaydet(this, !Prefs.ekranGizle(this))
+            recreate()
+        }
         findViewById<View>(R.id.satirDisaAktar).setOnClickListener { disaAktarmayiBaslat() }
         findViewById<View>(R.id.satirIceAktar).setOnClickListener { iceAktarmayiBaslat() }
     }
@@ -138,6 +158,15 @@ class AyarlarActivity : AppCompatActivity() {
         } catch (_: Exception) {
             getString(R.string.klasor_uygulama)
         }
+    }
+
+    private fun kilitAyari() {
+        val kip = if (Kilit.kurulu(this)) KilitActivity.KIP_KALDIR else KilitActivity.KIP_KUR
+        @Suppress("DEPRECATION")
+        startActivityForResult(
+            Intent(this, KilitActivity::class.java).putExtra("kip", kip),
+            ISTEK_KILIT
+        )
     }
 
     private fun temaSec() {
@@ -259,6 +288,10 @@ class AyarlarActivity : AppCompatActivity() {
     override fun onActivityResult(istek: Int, sonuc: Int, veri: Intent?) {
         super.onActivityResult(istek, sonuc, veri)
         if (sonuc != RESULT_OK) return
+        if (istek == ISTEK_KILIT) {
+            recreate()
+            return
+        }
         val uri = veri?.data ?: return
         when (istek) {
             ISTEK_KLASOR -> {
@@ -295,6 +328,8 @@ class AyarlarActivity : AppCompatActivity() {
         const val ISTEK_KLASOR = 42
         const val ISTEK_DISA = 43
         const val ISTEK_ICE = 44
+        const val ISTEK_KILIT = 45
+        val KIRMIZI = 0xFFA32D2D.toInt()
         val NOTR = 0xFF5F5E5A.toInt()
         val YESIL = 0xFF0F6E56.toInt()
     }

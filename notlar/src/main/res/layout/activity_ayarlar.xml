@@ -89,6 +89,27 @@
 
             <TextView
                 style="@style/BolumBasligi"
+                android:text="@string/guvenlik" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_kart"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/satirKilit"
+                    layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirEkranGizle"
+                    layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/BolumBasligi"
                 android:text="@string/yedekleme" />
 
             <LinearLayout

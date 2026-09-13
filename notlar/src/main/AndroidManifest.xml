@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Bilinçli olarak hiçbir izin istenmiyor; INTERNET izni yok. -->
+    <!-- İnternet izni bilinçli olarak yok. Bildirim yalnızca hatırlatıcılar için. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:name=".NotlarApp"
@@ -36,6 +39,19 @@
         <activity
             android:name=".GorevlerActivity"
             android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".KilitActivity"
+            android:excludeFromRecents="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".HatirlaticiAlicisi"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".WidgetAyarActivity"

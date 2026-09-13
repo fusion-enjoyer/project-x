@@ -365,7 +365,94 @@ class NotDeposu(private val context: Context) {
         if (Prefs.sabitler(context).contains(id)) Prefs.sabitDegistir(context, id)
     }
 
+
+    // --- Etiketler ve bağlantılar ---
+
+    /** Tüm notlardaki #etiketleri toplar. */
+    fun etiketleriListele(): List<String> {
+        val bulunan = sortedSetOf<String>(Collator.getInstance(tr))
+        for (not in notlariListele(null, null)) {
+            for (e in MarkdownBicimci.ETIKET.findAll(oku(not.uri, 8192))) {
+                bulunan.add(e.groupValues[1])
+            }
+        }
+        return bulunan.toList()
+    }
+
+    fun etiketliNotlar(etiket: String): List<Not> {
+        val kucuk = etiket.lowercase(tr)
+        return notlariListele(null, null).filter { not ->
+            MarkdownBicimci.ETIKET.findAll(oku(not.uri, 8192))
+                .any { it.groupValues[1].lowercase(tr) == kucuk }
+        }
+    }
+
+    /** Başlığı verilen notu bulur; yoksa null. */
+    fun baslikIleBul(baslik: String): Not? {
+        val kucuk = baslik.trim().lowercase(tr)
+        return notlariListele(null, null).firstOrNull {
+            it.baslik.lowercase(tr) == kucuk ||
+                it.ad.removeSuffix(".md").removeSuffix(".txt").lowercase(tr) == kucuk
+        }
+    }
+
+    /** Bu nota [[bağlantı]] ile işaret eden notlar. */
+    fun geriBaglantilar(not: Not): List<Not> {
+        val hedefler = setOf(
+            not.baslik.lowercase(tr),
+            not.ad.removeSuffix(".md").removeSuffix(".txt").lowercase(tr)
+        )
+        return notlariListele(null, null).filter { aday ->
+            aday.uri != not.uri && MarkdownBicimci.BAGLANTI.findAll(oku(aday.uri, 8192))
+                .any { hedefler.contains(it.groupValues[1].trim().lowercase(tr)) }
+        }
+    }
+
+    // --- Sürüm geçmişi ---
+
+    private fun gecmisKlasoru(olustur: Boolean): DocumentFile? {
+        val k = kok()
+        val mevcut = k.findFile(".gecmis")
+        if (mevcut != null && mevcut.isDirectory) return mevcut
+        return if (olustur) k.createDirectory(".gecmis") else null
+    }
+
+    /** Kaydetmeden önceki hali gizli klasöre yedekler (en fazla 20 sürüm). */
+    fun gecmiseYaz(uri: Uri, icerik: String) {
+        if (icerik.isBlank()) return
+        val kok = gecmisKlasoru(true) ?: return
+        val notAdi = (docGetir(uri)?.name ?: return)
+            .removeSuffix(".md").removeSuffix(".txt")
+        val dizin = kok.findFile(notAdi)?.takeIf { it.isDirectory }
+            ?: kok.createDirectory(notAdi) ?: return
+        val damga = System.currentTimeMillis().toString()
+        val dosya = dizin.createFile("text/markdown", damga) ?: return
+        yaz(dosya.uri, icerik)
+
+        val surumler = dizin.listFiles().filter { it.isFile }.sortedBy { it.name }
+        if (surumler.size > GECMIS_SINIRI) {
+            surumler.take(surumler.size - GECMIS_SINIRI).forEach { it.delete() }
+        }
+    }
+
+    data class Surum(val uri: Uri, val zaman: Long)
+
+    fun gecmisiListele(uri: Uri): List<Surum> {
+        val kok = gecmisKlasoru(false) ?: return emptyList()
+        val notAdi = (docGetir(uri)?.name ?: return emptyList())
+            .removeSuffix(".md").removeSuffix(".txt")
+        val dizin = kok.findFile(notAdi)?.takeIf { it.isDirectory } ?: return emptyList()
+        return dizin.listFiles()
+            .filter { it.isFile }
+            .mapNotNull { dosya ->
+                val damga = (dosya.name ?: "").removeSuffix(".md").toLongOrNull() ?: return@mapNotNull null
+                Surum(dosya.uri, damga)
+            }
+            .sortedByDescending { it.zaman }
+    }
+
     private companion object {
+        const val GECMIS_SINIRI = 20
         val ISARETLER = Regex("\\*{1,3}|~~|__|`|\\[\\[|]]")
     }
 }
