@@ -72,6 +72,7 @@ class GorevlerActivity : AppCompatActivity() {
     private fun gorevDegistir(gorev: Gorev) {
         Thread {
             depo.gorevDegistir(gorev)
+            NotWidget.hepsiniGuncelle(applicationContext)
             runOnUiThread { yenile() }
         }.start()
     }

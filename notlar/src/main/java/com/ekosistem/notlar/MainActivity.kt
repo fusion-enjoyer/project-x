@@ -468,6 +468,7 @@ class MainActivity : AppCompatActivity() {
         secimBitir()
         Thread {
             val yeniAdresler = notlar.mapNotNull { depo.copeTasi(it.uri) }
+            NotWidget.hepsiniGuncelle(applicationContext)
             runOnUiThread {
                 yenile()
                 if (yeniAdresler.isEmpty()) return@runOnUiThread

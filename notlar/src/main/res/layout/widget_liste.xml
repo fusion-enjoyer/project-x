@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/app_name"
+            android:textColor="@color/metin"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/widgetEkle"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@string/yeni_not"
+            android:src="@drawable/ic_arti" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/widgetListe"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@color/ayrac"
+        android:dividerHeight="0.5dp" />
+
+    <TextView
+        android:id="@+id/widgetBos"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/widget_bos"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="13sp" />
+
+</LinearLayout>

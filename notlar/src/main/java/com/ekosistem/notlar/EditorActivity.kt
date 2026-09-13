@@ -438,6 +438,7 @@ class EditorActivity : AppCompatActivity() {
             } else {
                 depo.yaz(hedef, metin)
             }
+            NotWidget.hepsiniGuncelle(applicationContext)
         }.start()
     }
 
@@ -477,6 +478,7 @@ class EditorActivity : AppCompatActivity() {
         silindi = true
         Thread {
             val oldu = depo.copeTasi(hedef) != null
+            NotWidget.hepsiniGuncelle(applicationContext)
             runOnUiThread {
                 if (oldu) Toast.makeText(this, R.string.cope_tasindi, Toast.LENGTH_SHORT).show()
                 finish()
