@@ -28,4 +28,27 @@ object Prefs {
     fun temaKaydet(c: Context, t: Int) {
         sp(c).edit().putInt("tema", t).apply()
     }
+
+    fun vurguIndeksi(c: Context): Int = sp(c).getInt("vurgu", 0)
+
+    fun vurguKaydet(c: Context, indeks: Int) {
+        sp(c).edit().putInt("vurgu", indeks).apply()
+    }
+
+    fun siralama(c: Context): Int = sp(c).getInt("siralama", 0)
+
+    fun siralamaKaydet(c: Context, s: Int) {
+        sp(c).edit().putInt("siralama", s).apply()
+    }
+
+    fun widgetNotu(c: Context, widgetId: Int): String? =
+        sp(c).getString("widget_$widgetId", null)
+
+    fun widgetNotuKaydet(c: Context, widgetId: Int, uri: String) {
+        sp(c).edit().putString("widget_$widgetId", uri).apply()
+    }
+
+    fun widgetNotuSil(c: Context, widgetId: Int) {
+        sp(c).edit().remove("widget_$widgetId").apply()
+    }
 }

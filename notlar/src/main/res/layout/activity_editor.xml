@@ -27,6 +27,22 @@
             android:layout_weight="1" />
 
         <ImageButton
+            android:id="@+id/btnGeriAl"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/geri_al"
+            android:src="@drawable/ic_geri_al" />
+
+        <ImageButton
+            android:id="@+id/btnYinele"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/yinele"
+            android:src="@drawable/ic_yinele" />
+
+        <ImageButton
             android:id="@+id/btnEditorMenu"
             android:layout_width="44dp"
             android:layout_height="44dp"
@@ -35,7 +51,123 @@
             android:src="@drawable/ic_menu" />
     </LinearLayout>
 
-    <EditText
+    <LinearLayout
+        android:id="@+id/bulCubugu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="16dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/bulAlani"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_arama_pill"
+                android:hint="@string/bul"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:textColor="@color/metin"
+                android:textColorHint="@color/metin_ikincil"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/bulSayac"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="44dp"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="12sp" />
+
+            <ImageButton
+                android:id="@+id/bulOnceki"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/onceki"
+                android:rotation="90"
+                android:src="@drawable/ic_geri" />
+
+            <ImageButton
+                android:id="@+id/bulSonraki"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/sonraki"
+                android:rotation="-90"
+                android:src="@drawable/ic_geri" />
+
+            <ImageButton
+                android:id="@+id/bulKapat"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/kapat"
+                android:src="@drawable/ic_kapat" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/degistirAlani"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_arama_pill"
+                android:hint="@string/degistir"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:textColor="@color/metin"
+                android:textColorHint="@color/metin_ikincil"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btnDegistir"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="@string/degistir"
+                android:textColor="@color/vurgu"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnTumunuDegistir"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="@string/tumu_degistir"
+                android:textColor="@color/vurgu"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.ekosistem.notlar.NotEditText
         android:id="@+id/metinAlani"
         android:layout_width="match_parent"
         android:layout_height="0dp"

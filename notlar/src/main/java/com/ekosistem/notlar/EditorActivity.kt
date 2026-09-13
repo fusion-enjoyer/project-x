@@ -9,22 +9,23 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextWatcher
 import android.text.style.AbsoluteSizeSpan
-import android.text.style.ForegroundColorSpan
-import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import java.util.Locale
 
 class EditorActivity : AppCompatActivity() {
 
     private lateinit var depo: NotDeposu
-    private lateinit var metinAlani: EditText
+    private lateinit var metinAlani: NotEditText
+    private lateinit var bicimci: MarkdownBicimci
+
     private var uri: Uri? = null
     private var hedefKlasor: String? = null
     private var acilisMetni = ""
@@ -32,43 +33,50 @@ class EditorActivity : AppCompatActivity() {
 
     private var bicimleniyor = false
     private var satirEklendi = false
-    private var vurguRengi = 0
-    private var solukRenk = 0
-    private var isaretliRenk = 0
+    private var aktifSatirBasi = -1
+
+    // Geri al / yinele
+    private val gecmis = ArrayDeque<Durum>()
+    private val gelecek = ArrayDeque<Durum>()
+    private var bekleyen: Durum? = null
+    private var sonKayit = 0L
+    private var geriAliniyor = false
+    private lateinit var btnGeriAl: ImageButton
+    private lateinit var btnYinele: ImageButton
+
+    // Bul ve değiştir
+    private lateinit var bulCubugu: View
+    private lateinit var bulAlani: EditText
+    private lateinit var degistirAlani: EditText
+    private lateinit var bulSayac: TextView
+    private var eslesmeler: List<Int> = emptyList()
+    private var eslesmeSirasi = -1
+
+    private data class Durum(val metin: String, val imlec: Int)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
         depo = NotDeposu(this)
+        bicimci = MarkdownBicimci(this)
         metinAlani = findViewById(R.id.metinAlani)
-
-        vurguRengi = ContextCompat.getColor(this, R.color.vurgu)
-        solukRenk = ContextCompat.getColor(this, R.color.metin_ikincil)
-        isaretliRenk = ContextCompat.getColor(this, R.color.pill_metin)
+        btnGeriAl = findViewById(R.id.btnGeriAl)
+        btnYinele = findViewById(R.id.btnYinele)
 
         ipucuKur()
         bicimCubuguKur()
         onayKutusuDokunmaKur()
+        bulCubuguKur()
+        vurguRengiUygula()
 
-        metinAlani.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, baslangic: Int, onceki: Int, sayi: Int) {
-                satirEklendi = s != null && onceki == 0 && sayi == 1 &&
-                    baslangic < s.length && s[baslangic] == '\n'
+        metinAlani.addTextChangedListener(MetinIzleyici())
+        metinAlani.secimDegisti = { bas, _ ->
+            val yeniSatir = satirBasiBul(bas)
+            if (yeniSatir != aktifSatirBasi && !bicimleniyor) {
+                aktifSatirBasi = yeniSatir
+                bicimlendir()
             }
-
-            override fun afterTextChanged(s: Editable?) {
-                if (s == null || bicimleniyor) return
-                bicimleniyor = true
-                if (satirEklendi) {
-                    satirEklendi = false
-                    listeyiSurdur(s)
-                }
-                bicimlendir(s)
-                bicimleniyor = false
-            }
-        })
+        }
 
         uri = intent.getStringExtra("uri")?.let(Uri::parse)
         hedefKlasor = intent.getStringExtra("klasor")
@@ -78,7 +86,10 @@ class EditorActivity : AppCompatActivity() {
                 val metin = depo.oku(acilacak)
                 runOnUiThread {
                     acilisMetni = metin
+                    geriAliniyor = true
                     metinAlani.setText(metin)
+                    geriAliniyor = false
+                    metinAlani.post { bicimlendir() }
                 }
             }.start()
         } else {
@@ -87,14 +98,76 @@ class EditorActivity : AppCompatActivity() {
 
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { v -> menuGoster(v) }
+        btnGeriAl.setOnClickListener { geriAl() }
+        btnYinele.setOnClickListener { yinele() }
+        dugmeleriGuncelle()
     }
 
-    // --- Biçimlendirme ---
+    private fun vurguRengiUygula() {
+        val vurgu = Renkler.vurgu(this)
+        findViewById<TextView>(R.id.btnDegistir).setTextColor(vurgu)
+        findViewById<TextView>(R.id.btnTumunuDegistir).setTextColor(vurgu)
+    }
+
+    // --- Metin değişikliği ---
+
+    private inner class MetinIzleyici : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, bas: Int, onceki: Int, sonraki: Int) {
+            if (bicimleniyor || geriAliniyor || s == null) return
+            val simdi = System.currentTimeMillis()
+            if (simdi - sonKayit > BIRLESTIRME_MS || gecmis.isEmpty()) {
+                bekleyen = Durum(s.toString(), metinAlani.selectionStart)
+            }
+        }
+
+        override fun onTextChanged(s: CharSequence?, bas: Int, onceki: Int, sayi: Int) {
+            if (bicimleniyor || geriAliniyor) return
+            satirEklendi = s != null && onceki == 0 && sayi == 1 &&
+                bas < s.length && s[bas] == '\n'
+        }
+
+        override fun afterTextChanged(s: Editable?) {
+            if (s == null || bicimleniyor || geriAliniyor) return
+            bekleyen?.let {
+                gecmis.addLast(it)
+                if (gecmis.size > YIGIN_SINIRI) gecmis.removeFirst()
+                gelecek.clear()
+                sonKayit = System.currentTimeMillis()
+                bekleyen = null
+                dugmeleriGuncelle()
+            }
+            bicimleniyor = true
+            if (satirEklendi) {
+                satirEklendi = false
+                listeyiSurdur(s)
+            }
+            aktifSatirBasi = satirBasiBul(metinAlani.selectionStart)
+            bicimci.uygula(s, metinAlani.selectionStart, metinGenisligi())
+            bicimleniyor = false
+            if (bulCubugu.visibility == View.VISIBLE) eslesmeleriBul(false)
+        }
+    }
+
+    private fun bicimlendir() {
+        val s = metinAlani.text ?: return
+        bicimleniyor = true
+        bicimci.uygula(s, metinAlani.selectionStart, metinGenisligi())
+        bicimleniyor = false
+    }
+
+    private fun metinGenisligi(): Int =
+        metinAlani.width - metinAlani.totalPaddingLeft - metinAlani.totalPaddingRight
+
+    private fun satirBasiBul(imlec: Int): Int {
+        val s = metinAlani.text ?: return 0
+        if (imlec <= 0) return 0
+        val sinir = minOf(imlec, s.length)
+        return s.toString().lastIndexOf('\n', sinir - 1).let { if (it < 0) 0 else it + 1 }
+    }
 
     /**
      * Alanın kendi boyutu başlık boyutudur (24sp); gövde satırları span ile
-     * küçültülür. Böylece imleç her satırda o satırın boyutuyla çizilir ve
-     * boş notta ipucuyla aynı hizada durur.
+     * küçültülür. Böylece imleç her satırda o satırın boyutuyla çizilir.
      */
     private fun ipucuKur() {
         val baslik = getString(R.string.baslik_ipucu)
@@ -102,71 +175,12 @@ class EditorActivity : AppCompatActivity() {
         val ipucu = SpannableString("$baslik\n$govde")
         ipucu.setSpan(StyleSpan(Typeface.BOLD), 0, baslik.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         ipucu.setSpan(
-            AbsoluteSizeSpan(GOVDE_SP, true),
+            AbsoluteSizeSpan(MarkdownBicimci.GOVDE_SP, true),
             baslik.length + 1,
             ipucu.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
         metinAlani.hint = ipucu
-    }
-
-    private fun bicimlendir(s: Editable) {
-        for (span in s.getSpans(0, s.length, AbsoluteSizeSpan::class.java)) s.removeSpan(span)
-        for (span in s.getSpans(0, s.length, StyleSpan::class.java)) s.removeSpan(span)
-        for (span in s.getSpans(0, s.length, OnayKutusuSpan::class.java)) s.removeSpan(span)
-        for (span in s.getSpans(0, s.length, StrikethroughSpan::class.java)) s.removeSpan(span)
-        for (span in s.getSpans(0, s.length, ForegroundColorSpan::class.java)) s.removeSpan(span)
-        if (s.isEmpty()) return
-
-        val ilkSonu = s.indexOf('\n')
-        val baslikSonu = if (ilkSonu < 0) s.length else ilkSonu
-        if (baslikSonu > 0) {
-            s.setSpan(StyleSpan(Typeface.BOLD), 0, baslikSonu, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
-        if (ilkSonu >= 0 && ilkSonu + 1 < s.length) {
-            s.setSpan(
-                AbsoluteSizeSpan(GOVDE_SP, true),
-                ilkSonu + 1,
-                s.length,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-        }
-        onayKutulariniBicimle(s)
-    }
-
-    private fun onayKutulariniBicimle(s: Editable) {
-        var i = 0
-        while (i <= s.length) {
-            var sonu = s.indexOf('\n', i)
-            if (sonu < 0) sonu = s.length
-            if (sonu > i) {
-                val satir = s.subSequence(i, sonu).toString()
-                val eslesme = ONAY_DESENI.find(satir)
-                if (eslesme != null) {
-                    val girinti = eslesme.groupValues[1].length
-                    val isaretli = !eslesme.groupValues[2].equals(" ", true)
-                    val kutuBas = i + girinti
-                    val kutuSon = kutuBas + ISARET_UZUNLUGU
-                    s.setSpan(
-                        OnayKutusuSpan(isaretli, vurguRengi, if (isaretli) isaretliRenk else solukRenk),
-                        kutuBas,
-                        kutuSon,
-                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                    if (isaretli && kutuSon < sonu) {
-                        s.setSpan(StrikethroughSpan(), kutuSon, sonu, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                        s.setSpan(
-                            ForegroundColorSpan(solukRenk),
-                            kutuSon,
-                            sonu,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                        )
-                    }
-                }
-            }
-            if (sonu >= s.length) break
-            i = sonu + 1
-        }
     }
 
     /** Enter'a basınca liste/onay kutusu satırını kendiliğinden sürdürür. */
@@ -175,22 +189,53 @@ class EditorActivity : AppCompatActivity() {
         if (imlec <= 0 || imlec > s.length) return
         val satirSonu = imlec - 1
         if (satirSonu <= 0 || s[satirSonu] != '\n') return
-        val satirBasi = s.lastIndexOf("\n", satirSonu - 1) + 1
-        if (satirBasi == 0) return // ilk satır başlıktır, liste sürdürülmez
+        val satirBasi = s.toString().lastIndexOf('\n', satirSonu - 1) + 1
+        if (satirBasi == 0) return // ilk satır başlıktır
         val onceki = s.subSequence(satirBasi, satirSonu).toString()
-        val eslesme = MADDE_DESENI.find(onceki) ?: return
+        val eslesme = MADDE.find(onceki) ?: return
         val onek = eslesme.value
         if (onceki.length == onek.length) {
-            // Boş madde: listeyi bitir
             s.delete(satirBasi, satirSonu)
             return
         }
-        val yeniOnek = if (onek.contains('[')) {
-            eslesme.groupValues[1] + "- [ ] "
-        } else {
-            onek
-        }
+        val yeniOnek = if (onek.contains('[')) eslesme.groupValues[1] + "- [ ] " else onek
         s.insert(imlec, yeniOnek)
+    }
+
+    // --- Geri al / yinele ---
+
+    private fun geriAl() {
+        if (gecmis.isEmpty()) return
+        val s = metinAlani.text ?: return
+        val simdiki = Durum(s.toString(), metinAlani.selectionStart)
+        val hedef = gecmis.removeLast()
+        gelecek.addLast(simdiki)
+        durumUygula(hedef)
+    }
+
+    private fun yinele() {
+        if (gelecek.isEmpty()) return
+        val s = metinAlani.text ?: return
+        val simdiki = Durum(s.toString(), metinAlani.selectionStart)
+        val hedef = gelecek.removeLast()
+        gecmis.addLast(simdiki)
+        durumUygula(hedef)
+    }
+
+    private fun durumUygula(durum: Durum) {
+        geriAliniyor = true
+        metinAlani.setText(durum.metin)
+        metinAlani.setSelection(durum.imlec.coerceIn(0, durum.metin.length))
+        geriAliniyor = false
+        bicimlendir()
+        dugmeleriGuncelle()
+    }
+
+    private fun dugmeleriGuncelle() {
+        btnGeriAl.isEnabled = gecmis.isNotEmpty()
+        btnGeriAl.alpha = if (gecmis.isEmpty()) 0.3f else 1f
+        btnYinele.isEnabled = gelecek.isNotEmpty()
+        btnYinele.alpha = if (gelecek.isEmpty()) 0.3f else 1f
     }
 
     // --- Onay kutusuna dokunma ---
@@ -206,10 +251,12 @@ class EditorActivity : AppCompatActivity() {
             val satir = duzen.getLineForVertical(y.toInt())
             val satirBasi = duzen.getLineStart(satir)
             val satirSonu = duzen.getLineEnd(satir)
+            if (satirBasi >= satirSonu) return@setOnTouchListener false
             val metin = s.subSequence(satirBasi, satirSonu).toString()
-            val eslesme = ONAY_DESENI.find(metin) ?: return@setOnTouchListener false
+            val eslesme = MarkdownBicimci.ONAY.find(metin) ?: return@setOnTouchListener false
             val girinti = eslesme.groupValues[1].length
-            val kutuSonu = satirBasi + girinti + ISARET_UZUNLUGU
+            val kutuSonu = satirBasi + girinti + MarkdownBicimci.ONAY_UZUNLUGU
+            if (kutuSonu > s.length) return@setOnTouchListener false
             if (x > duzen.getPrimaryHorizontal(kutuSonu)) return@setOnTouchListener false
 
             val isaretIndeksi = satirBasi + girinti + 3
@@ -229,7 +276,6 @@ class EditorActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.bicimItalik).setOnClickListener { sarmala("*") }
     }
 
-    /** İmlecin bulunduğu satırın önekini açar/kapatır. */
     private fun onekDegistir(onek: String) {
         val s = metinAlani.text ?: return
         val imlec = metinAlani.selectionStart.coerceAtLeast(0)
@@ -239,7 +285,7 @@ class EditorActivity : AppCompatActivity() {
         }
         var satirSonu = duzMetin.indexOf('\n', satirBasi)
         if (satirSonu < 0) satirSonu = s.length
-        val satir = s.subSequence(satirBasi, satirSonu).toString()
+        val satir = duzMetin.substring(satirBasi, satirSonu)
 
         val mevcut = ONEKLER.firstOrNull { satir.startsWith(it) }
         if (mevcut != null) {
@@ -250,7 +296,6 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    /** Seçimi işaretle sarar; seçim yoksa işaretleri ekleyip arasına geçer. */
     private fun sarmala(isaret: String) {
         val s = metinAlani.text ?: return
         val bas = metinAlani.selectionStart.coerceAtLeast(0)
@@ -265,6 +310,113 @@ class EditorActivity : AppCompatActivity() {
             s.insert(ilk, isaret)
             metinAlani.setSelection(ilk + isaret.length, ikinci + isaret.length)
         }
+    }
+
+    // --- Bul ve değiştir ---
+
+    private fun bulCubuguKur() {
+        bulCubugu = findViewById(R.id.bulCubugu)
+        bulAlani = findViewById(R.id.bulAlani)
+        degistirAlani = findViewById(R.id.degistirAlani)
+        bulSayac = findViewById(R.id.bulSayac)
+
+        bulAlani.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) = eslesmeleriBul(true)
+        })
+
+        findViewById<ImageButton>(R.id.bulSonraki).setOnClickListener { eslesmeyeGit(1) }
+        findViewById<ImageButton>(R.id.bulOnceki).setOnClickListener { eslesmeyeGit(-1) }
+        findViewById<ImageButton>(R.id.bulKapat).setOnClickListener { bulCubuguKapat() }
+        findViewById<TextView>(R.id.btnDegistir).setOnClickListener { degistir() }
+        findViewById<TextView>(R.id.btnTumunuDegistir).setOnClickListener { tumunuDegistir() }
+    }
+
+    private fun bulCubuguAc() {
+        bulCubugu.visibility = View.VISIBLE
+        bulAlani.requestFocus()
+    }
+
+    private fun bulCubuguKapat() {
+        bulCubugu.visibility = View.GONE
+        eslesmeler = emptyList()
+        eslesmeSirasi = -1
+        metinAlani.requestFocus()
+    }
+
+    private fun eslesmeleriBul(ilkineGit: Boolean) {
+        val aranan = bulAlani.text.toString()
+        val metin = metinAlani.text?.toString() ?: ""
+        if (aranan.isEmpty()) {
+            eslesmeler = emptyList()
+            eslesmeSirasi = -1
+            bulSayac.text = ""
+            return
+        }
+        val kucukMetin = metin.lowercase(TR)
+        val kucukAranan = aranan.lowercase(TR)
+        val bulunan = mutableListOf<Int>()
+        var i = kucukMetin.indexOf(kucukAranan)
+        while (i >= 0) {
+            bulunan.add(i)
+            i = kucukMetin.indexOf(kucukAranan, i + kucukAranan.length)
+        }
+        eslesmeler = bulunan
+        if (bulunan.isEmpty()) {
+            eslesmeSirasi = -1
+            bulSayac.text = getString(R.string.bulunamadi)
+            return
+        }
+        if (ilkineGit || eslesmeSirasi !in bulunan.indices) eslesmeSirasi = 0
+        sayaciGuncelle()
+        eslesmeyiSec()
+    }
+
+    private fun sayaciGuncelle() {
+        bulSayac.text = if (eslesmeler.isEmpty()) {
+            getString(R.string.bulunamadi)
+        } else {
+            "${eslesmeSirasi + 1}/${eslesmeler.size}"
+        }
+    }
+
+    private fun eslesmeyeGit(yon: Int) {
+        if (eslesmeler.isEmpty()) return
+        eslesmeSirasi = (eslesmeSirasi + yon + eslesmeler.size) % eslesmeler.size
+        sayaciGuncelle()
+        eslesmeyiSec()
+    }
+
+    private fun eslesmeyiSec() {
+        val bas = eslesmeler.getOrNull(eslesmeSirasi) ?: return
+        val uzunluk = bulAlani.text.length
+        val s = metinAlani.text ?: return
+        metinAlani.setSelection(bas.coerceIn(0, s.length), (bas + uzunluk).coerceIn(0, s.length))
+    }
+
+    private fun degistir() {
+        val bas = eslesmeler.getOrNull(eslesmeSirasi) ?: return
+        val aranan = bulAlani.text.toString()
+        if (aranan.isEmpty()) return
+        val s = metinAlani.text ?: return
+        val son = (bas + aranan.length).coerceAtMost(s.length)
+        s.replace(bas, son, degistirAlani.text.toString())
+        eslesmeleriBul(false)
+    }
+
+    private fun tumunuDegistir() {
+        val aranan = bulAlani.text.toString()
+        if (aranan.isEmpty() || eslesmeler.isEmpty()) return
+        val yeni = degistirAlani.text.toString()
+        val sayi = eslesmeler.size
+        val s = metinAlani.text ?: return
+        for (bas in eslesmeler.asReversed()) {
+            val son = (bas + aranan.length).coerceAtMost(s.length)
+            s.replace(bas, son, yeni)
+        }
+        Toast.makeText(this, getString(R.string.degistirildi, sayi), Toast.LENGTH_SHORT).show()
+        eslesmeleriBul(true)
     }
 
     // --- Kayıt ve menü ---
@@ -296,13 +448,15 @@ class EditorActivity : AppCompatActivity() {
             val sabit = Prefs.sabitler(this).contains(mevcutUri.toString())
             menu.menu.add(0, 1, 0, if (sabit) R.string.sabit_kaldir else R.string.sabitle)
         }
-        menu.menu.add(0, 2, 1, R.string.paylas)
-        if (mevcutUri != null) menu.menu.add(0, 3, 2, R.string.sil)
+        menu.menu.add(0, 4, 1, R.string.bul_degistir)
+        menu.menu.add(0, 2, 2, R.string.paylas)
+        if (mevcutUri != null) menu.menu.add(0, 3, 3, R.string.sil)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> mevcutUri?.let { Prefs.sabitDegistir(this, it.toString()) }
                 2 -> paylas()
                 3 -> sil()
+                4 -> bulCubuguAc()
             }
             true
         }
@@ -331,10 +485,10 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private companion object {
-        const val GOVDE_SP = 16
-        const val ISARET_UZUNLUGU = 5 // "- [ ]"
-        val ONAY_DESENI = Regex("^([ \\t]*)- \\[([ xX])\\]")
-        val MADDE_DESENI = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- )")
-        val ONEKLER = listOf("- [ ] ", "- [x] ", "- [X] ", "- ", "## ", "# ", "### ")
+        const val BIRLESTIRME_MS = 700L
+        const val YIGIN_SINIRI = 60
+        val TR: Locale = Locale.forLanguageTag("tr-TR")
+        val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- )")
+        val ONEKLER = listOf("- [ ] ", "- [x] ", "- [X] ", "- ", "### ", "## ", "# ", "> ")
     }
 }
