@@ -476,7 +476,7 @@ class EditorActivity : AppCompatActivity() {
         val hedef = uri ?: return
         silindi = true
         Thread {
-            val oldu = depo.copeTasi(hedef)
+            val oldu = depo.copeTasi(hedef) != null
             runOnUiThread {
                 if (oldu) Toast.makeText(this, R.string.cope_tasindi, Toast.LENGTH_SHORT).show()
                 finish()

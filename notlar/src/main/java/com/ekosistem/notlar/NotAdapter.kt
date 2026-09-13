@@ -1,12 +1,19 @@
 package com.ekosistem.notlar
 
+import android.content.res.ColorStateList
+import android.graphics.Typeface
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.format.DateUtils
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 
 class NotAdapter(
     private val onTikla: (Not) -> Unit,
@@ -14,6 +21,13 @@ class NotAdapter(
 ) : RecyclerView.Adapter<NotAdapter.Tutucu>() {
 
     private var notlar: List<Not> = emptyList()
+    private val tr: Locale = Locale.forLanguageTag("tr-TR")
+
+    var secililer: Set<String> = emptySet()
+    var sorgu: String? = null
+    var vurgu: Int = 0
+    var kartRengi: Int = 0
+    var secimRengi: Int = 0
 
     fun guncelle(yeni: List<Not>) {
         notlar = yeni
@@ -21,6 +35,8 @@ class NotAdapter(
     }
 
     fun notAl(pozisyon: Int): Not? = notlar.getOrNull(pozisyon)
+
+    fun tumNotlar(): List<Not> = notlar
 
     class Tutucu(v: View) : RecyclerView.ViewHolder(v) {
         val baslik: TextView = v.findViewById(R.id.notBaslik)
@@ -38,17 +54,49 @@ class NotAdapter(
 
     override fun onBindViewHolder(t: Tutucu, pozisyon: Int) {
         val not = notlar[pozisyon]
-        t.baslik.text = not.baslik
-        t.ozet.text = not.ozet
-        t.ozet.visibility = if (not.ozet.isBlank()) View.GONE else View.VISIBLE
+        t.baslik.text = vurgula(not.baslik)
+
+        val ikincil = not.eslesme ?: not.ozet
+        t.ozet.text = vurgula(ikincil)
+        t.ozet.visibility = if (ikincil.isBlank()) View.GONE else View.VISIBLE
+
         val zaman = if (not.degistirilme > 0) {
             DateUtils.getRelativeTimeSpanString(not.degistirilme).toString()
         } else ""
         t.tarih.text = if (not.klasor != null) {
             if (zaman.isBlank()) not.klasor else "$zaman · ${not.klasor}"
         } else zaman
+
         t.sabit.visibility = if (not.sabit) View.VISIBLE else View.GONE
+        t.sabit.imageTintList = ColorStateList.valueOf(vurgu)
+
+        val secili = secililer.contains(not.uri.toString())
+        t.itemView.backgroundTintList =
+            ColorStateList.valueOf(if (secili) secimRengi else kartRengi)
+
         t.itemView.setOnClickListener { onTikla(not) }
         t.itemView.setOnLongClickListener { onUzunBas(not); true }
+    }
+
+    /** Arama yapılıyorsa eşleşen kısmı vurgu renginde ve kalın gösterir. */
+    private fun vurgula(metin: String): CharSequence {
+        val aranan = sorgu?.trim()?.lowercase(tr)
+        if (aranan.isNullOrEmpty() || metin.isEmpty()) return metin
+        val kucuk = metin.lowercase(tr)
+        var i = kucuk.indexOf(aranan)
+        if (i < 0) return metin
+        val s = SpannableString(metin)
+        while (i >= 0) {
+            val son = minOf(i + aranan.length, metin.length)
+            s.setSpan(ForegroundColorSpan(vurgu), i, son, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            s.setSpan(
+                StyleSpan(Typeface.BOLD),
+                i,
+                son,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            i = kucuk.indexOf(aranan, son)
+        }
+        return s
     }
 }

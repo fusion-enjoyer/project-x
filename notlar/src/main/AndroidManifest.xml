@@ -30,6 +30,14 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".AyarlarActivity"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".GorevlerActivity"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".ShareActivity"
             android:exported="true"
             android:excludeFromRecents="true"

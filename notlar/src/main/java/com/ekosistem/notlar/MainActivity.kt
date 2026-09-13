@@ -1,6 +1,7 @@
 package com.ekosistem.notlar
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
@@ -22,6 +23,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -32,31 +34,59 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: NotAdapter
     private lateinit var bosDurum: TextView
     private lateinit var klasorSatiri: LinearLayout
+    private lateinit var liste: RecyclerView
+
+    private lateinit var baslikCubugu: View
+    private lateinit var secimCubugu: View
+    private lateinit var secimSayi: TextView
+
+    private lateinit var serit: View
+    private lateinit var seritMetin: TextView
+    private lateinit var seritEylem: TextView
+    private var seritKapatici: Runnable? = null
+
     private var sorgu: String? = null
     private var seciliKlasor: String? = null
+    private val secililer = mutableSetOf<String>()
+    private var secimModu = false
+
+    private var vurgu = 0
+    private var vurguUzeri = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         depo = NotDeposu(this)
+        vurgu = Renkler.vurgu(this)
+        vurguUzeri = Renkler.vurguUzeri(this)
 
         bosDurum = findViewById(R.id.bosDurum)
         klasorSatiri = findViewById(R.id.klasorSatiri)
-        adapter = NotAdapter(
-            onTikla = { not -> editorAc(not.uri) },
-            onUzunBas = { not -> notSecenekleri(not) }
-        )
+        baslikCubugu = findViewById(R.id.baslikCubugu)
+        secimCubugu = findViewById(R.id.secimCubugu)
+        secimSayi = findViewById(R.id.secimSayi)
+        serit = findViewById(R.id.bildirimSeridi)
+        seritMetin = findViewById(R.id.bildirimMetin)
+        seritEylem = findViewById(R.id.bildirimEylem)
 
-        val liste = findViewById<RecyclerView>(R.id.liste)
+        adapter = NotAdapter(
+            onTikla = { not ->
+                if (secimModu) secimDegistir(not) else editorAc(not.uri)
+            },
+            onUzunBas = { not -> secimBaslat(not) }
+        )
+        adapter.vurgu = vurgu
+        adapter.kartRengi = ContextCompat.getColor(this, R.color.kart)
+        adapter.secimRengi = (vurgu and 0x00FFFFFF) or 0x33000000
+
+        liste = findViewById(R.id.liste)
         liste.layoutManager = LinearLayoutManager(this)
         liste.adapter = adapter
         swipeKur(liste)
 
-        findViewById<TextView>(R.id.btnYeni).setOnClickListener {
-            val i = Intent(this, EditorActivity::class.java)
-            seciliKlasor?.let { k -> i.putExtra("klasor", k) }
-            startActivity(i)
-        }
+        yeniNotDugmesiKur()
+        secimCubuguKur()
+        seritEylem.setTextColor(vurgu)
 
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { v -> menuGoster(v) }
 
@@ -65,6 +95,7 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 sorgu = s?.toString()
+                adapter.sorgu = sorgu
                 yenile()
             }
         })
@@ -72,8 +103,39 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (vurgu != Renkler.vurgu(this)) {
+            recreate()
+            return
+        }
         yenile()
     }
+
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (secimModu) {
+            secimBitir()
+            return
+        }
+        super.onBackPressed()
+    }
+
+    private fun yeniNotDugmesiKur() {
+        val btn = findViewById<TextView>(R.id.btnYeni)
+        btn.backgroundTintList = ColorStateList.valueOf(vurgu)
+        btn.setTextColor(vurguUzeri)
+        val ikon = ContextCompat.getDrawable(this, R.drawable.ic_arti)?.mutate()
+        if (ikon != null) {
+            DrawableCompat.setTint(ikon, vurguUzeri)
+            btn.setCompoundDrawablesRelativeWithIntrinsicBounds(ikon, null, null, null)
+        }
+        btn.setOnClickListener {
+            val i = Intent(this, EditorActivity::class.java)
+            seciliKlasor?.let { k -> i.putExtra("klasor", k) }
+            startActivity(i)
+        }
+    }
+
+    // --- Liste ---
 
     private fun yenile() {
         val aktifSorgu = sorgu
@@ -91,6 +153,10 @@ class MainActivity : AppCompatActivity() {
             }
             runOnUiThread {
                 if (aktifSorgu != sorgu || aktifKlasor != seciliKlasor) return@runOnUiThread
+                val mevcutAdresler = notlar.map { it.uri.toString() }.toSet()
+                secililer.retainAll(mevcutAdresler)
+                if (secimModu && secililer.isEmpty()) secimBitir()
+                adapter.secililer = secililer.toSet()
                 adapter.guncelle(notlar)
                 klasorCubuguGuncelle(klasorler)
                 if (notlar.isEmpty()) {
@@ -105,32 +171,40 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
+    private fun editorAc(uri: Uri) {
+        startActivity(
+            Intent(this, EditorActivity::class.java).putExtra("uri", uri.toString())
+        )
+    }
+
     // --- Klasör çubuğu ---
 
     private fun klasorCubuguGuncelle(adlar: List<String>) {
         klasorSatiri.removeAllViews()
-        chipEkle(getString(R.string.tumu), seciliKlasor == null) {
-            seciliKlasor = null
-            yenile()
-        }
+        chipEkle(getString(R.string.tumu), seciliKlasor == null, null)
         for (ad in adlar) {
-            chipEkle(ad, seciliKlasor == ad) {
-                seciliKlasor = if (seciliKlasor == ad) null else ad
-                yenile()
-            }
+            chipEkle(ad, seciliKlasor == ad, ad)
         }
-        chipEkle("+", false) { yeniKlasorDialog(null) }
+        chipEkle("+", false, null) { yeniKlasorDialog(null) }
     }
 
-    private fun chipEkle(etiket: String, secili: Boolean, tikla: () -> Unit) {
+    private fun chipEkle(
+        etiket: String,
+        secili: Boolean,
+        klasorAdi: String?,
+        ozelTikla: (() -> Unit)? = null
+    ) {
         val tv = TextView(this)
         tv.text = etiket
         tv.textSize = 13f
         tv.setTypeface(null, if (secili) Typeface.BOLD else Typeface.NORMAL)
         tv.setTextColor(
-            ContextCompat.getColor(this, if (secili) R.color.vurgu else R.color.metin_ikincil)
+            if (secili) vurgu else ContextCompat.getColor(this, R.color.metin_ikincil)
         )
-        tv.setBackgroundResource(if (secili) R.drawable.bg_chip_secili else R.drawable.bg_chip)
+        tv.setBackgroundResource(R.drawable.bg_chip)
+        if (secili) {
+            tv.backgroundTintList = ColorStateList.valueOf((vurgu and 0x00FFFFFF) or 0x26000000)
+        }
         val y = resources.displayMetrics.density
         tv.setPadding((14 * y).toInt(), (7 * y).toInt(), (14 * y).toInt(), (7 * y).toInt())
         val lp = LinearLayout.LayoutParams(
@@ -139,13 +213,110 @@ class MainActivity : AppCompatActivity() {
         )
         lp.rightMargin = (8 * y).toInt()
         tv.layoutParams = lp
-        tv.setOnClickListener { tikla() }
+        tv.setOnClickListener {
+            if (ozelTikla != null) {
+                ozelTikla()
+            } else {
+                seciliKlasor = if (seciliKlasor == klasorAdi) null else klasorAdi
+                yenile()
+            }
+        }
+        if (klasorAdi != null) {
+            tv.setOnLongClickListener {
+                klasorSecenekleri(klasorAdi)
+                true
+            }
+        }
         klasorSatiri.addView(tv)
     }
 
-    private fun yeniKlasorDialog(tasinacak: Not?) {
+    private fun klasorSecenekleri(ad: String) {
+        val secenekler = arrayOf(
+            getString(R.string.yeniden_adlandir),
+            getString(R.string.klasoru_sil)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(ad)
+            .setItems(secenekler) { _, hangi ->
+                when (hangi) {
+                    0 -> klasorYenidenAdlandir(ad)
+                    1 -> klasorSilOnayi(ad)
+                }
+            }
+            .show()
+    }
+
+    private fun klasorYenidenAdlandir(eski: String) {
+        val giris = metinGirisi(eski)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.yeniden_adlandir)
+            .setView(giris.first)
+            .setPositiveButton(R.string.olustur) { _, _ ->
+                val yeni = giris.second.text.toString().trim()
+                if (yeni.isEmpty()) return@setPositiveButton
+                Thread {
+                    val oldu = depo.klasorYenidenAdlandir(eski, yeni)
+                    runOnUiThread {
+                        if (oldu && seciliKlasor == eski) seciliKlasor = yeni
+                        yenile()
+                    }
+                }.start()
+            }
+            .setNegativeButton(R.string.iptal, null)
+            .show()
+    }
+
+    private fun klasorSilOnayi(ad: String) {
+        AlertDialog.Builder(this)
+            .setTitle(ad)
+            .setMessage(R.string.klasoru_sil_ozet)
+            .setPositiveButton(R.string.sil) { _, _ ->
+                Thread {
+                    val oldu = depo.klasorSil(ad)
+                    runOnUiThread {
+                        if (seciliKlasor == ad) seciliKlasor = null
+                        if (oldu) {
+                            Toast.makeText(this, R.string.klasor_silindi, Toast.LENGTH_SHORT).show()
+                        }
+                        yenile()
+                    }
+                }.start()
+            }
+            .setNegativeButton(R.string.iptal, null)
+            .show()
+    }
+
+    private fun yeniKlasorDialog(tasinacak: List<Not>?) {
+        val giris = metinGirisi("")
+        AlertDialog.Builder(this)
+            .setTitle(R.string.yeni_klasor)
+            .setView(giris.first)
+            .setPositiveButton(R.string.olustur) { _, _ ->
+                val ad = giris.second.text.toString().trim()
+                if (ad.isEmpty()) {
+                    yenile()
+                    return@setPositiveButton
+                }
+                Thread {
+                    depo.klasorOlustur(ad)
+                    tasinacak?.forEach { depo.klasoreTasi(it.uri, ad) }
+                    runOnUiThread {
+                        secimBitir()
+                        yenile()
+                    }
+                }.start()
+            }
+            .setNegativeButton(R.string.iptal) { _, _ -> yenile() }
+            .setOnCancelListener { yenile() }
+            .show()
+    }
+
+    private fun metinGirisi(baslangic: String): Pair<View, EditText> {
         val giris = EditText(this)
+        giris.setText(baslangic)
+        giris.setSelection(baslangic.length)
         giris.hint = getString(R.string.klasor_adi)
+        giris.setSingleLine()
         val kutu = FrameLayout(this)
         val y = resources.displayMetrics.density
         kutu.setPadding((20 * y).toInt(), (8 * y).toInt(), (20 * y).toInt(), 0)
@@ -156,24 +327,73 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
         )
-        AlertDialog.Builder(this)
-            .setTitle(R.string.yeni_klasor)
-            .setView(kutu)
-            .setPositiveButton(R.string.olustur) { _, _ ->
-                val ad = giris.text.toString().trim()
-                if (ad.isEmpty()) {
-                    yenile()
-                    return@setPositiveButton
-                }
-                Thread {
-                    depo.klasorOlustur(ad)
-                    if (tasinacak != null) depo.klasoreTasi(tasinacak.uri, ad)
-                    runOnUiThread { yenile() }
-                }.start()
+        return kutu to giris
+    }
+
+    // --- Seçim modu ---
+
+    private fun secimCubuguKur() {
+        findViewById<ImageButton>(R.id.secimKapat).setOnClickListener { secimBitir() }
+        findViewById<ImageButton>(R.id.secimSabitle).setOnClickListener { secilileriSabitle() }
+        findViewById<ImageButton>(R.id.secimTasi).setOnClickListener { tasiDialog(secilenNotlar()) }
+        findViewById<ImageButton>(R.id.secimPaylas).setOnClickListener { secilileriPaylas() }
+        findViewById<ImageButton>(R.id.secimSil).setOnClickListener { silmeyiYap(secilenNotlar()) }
+    }
+
+    private fun secimBaslat(not: Not) {
+        secimModu = true
+        secililer.add(not.uri.toString())
+        secimGorunumuGuncelle()
+    }
+
+    private fun secimDegistir(not: Not) {
+        val id = not.uri.toString()
+        if (!secililer.add(id)) secililer.remove(id)
+        if (secililer.isEmpty()) secimBitir() else secimGorunumuGuncelle()
+    }
+
+    private fun secimBitir() {
+        secimModu = false
+        secililer.clear()
+        secimGorunumuGuncelle()
+    }
+
+    private fun secimGorunumuGuncelle() {
+        secimCubugu.visibility = if (secimModu) View.VISIBLE else View.GONE
+        baslikCubugu.visibility = if (secimModu) View.INVISIBLE else View.VISIBLE
+        secimSayi.text = getString(R.string.secildi, secililer.size)
+        adapter.secililer = secililer.toSet()
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun secilenNotlar(): List<Not> =
+        adapter.tumNotlar().filter { secililer.contains(it.uri.toString()) }
+
+    private fun secilileriSabitle() {
+        val notlar = secilenNotlar()
+        if (notlar.isEmpty()) return
+        val hepsiSabit = notlar.all { it.sabit }
+        for (not in notlar) {
+            val sabit = Prefs.sabitler(this).contains(not.uri.toString())
+            if (sabit == hepsiSabit) Prefs.sabitDegistir(this, not.uri.toString())
+        }
+        secimBitir()
+        yenile()
+    }
+
+    private fun secilileriPaylas() {
+        val notlar = secilenNotlar()
+        if (notlar.isEmpty()) return
+        Thread {
+            val metin = notlar.joinToString("\n\n---\n\n") { depo.oku(it.uri) }
+            runOnUiThread {
+                secimBitir()
+                val intent = Intent(Intent.ACTION_SEND)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_TEXT, metin)
+                startActivity(Intent.createChooser(intent, getString(R.string.paylas)))
             }
-            .setNegativeButton(R.string.iptal) { _, _ -> yenile() }
-            .setOnCancelListener { yenile() }
-            .show()
+        }.start()
     }
 
     // --- Kaydırma hareketleri ---
@@ -182,11 +402,10 @@ class MainActivity : AppCompatActivity() {
         val y = resources.displayMetrics.density
         val kose = 20f * y
         val silBoya = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE24B4A.toInt() }
-        val tasiBoya = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = ContextCompat.getColor(this@MainActivity, R.color.vurgu)
-        }
+        val tasiBoya = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = vurgu }
         val silIkon = ContextCompat.getDrawable(this, R.drawable.ic_cop)
-        val tasiIkon = ContextCompat.getDrawable(this, R.drawable.ic_klasor)
+        val tasiIkon = ContextCompat.getDrawable(this, R.drawable.ic_klasor)?.mutate()
+        if (tasiIkon != null) DrawableCompat.setTint(tasiIkon, vurguUzeri)
 
         val geri = object : ItemTouchHelper.SimpleCallback(
             0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
@@ -197,9 +416,14 @@ class MainActivity : AppCompatActivity() {
                 hedef: RecyclerView.ViewHolder
             ): Boolean = false
 
+            override fun getSwipeDirs(
+                rv: RecyclerView,
+                vh: RecyclerView.ViewHolder
+            ): Int = if (secimModu) 0 else super.getSwipeDirs(rv, vh)
+
             override fun onSwiped(vh: RecyclerView.ViewHolder, yon: Int) {
                 val not = adapter.notAl(vh.bindingAdapterPosition) ?: return
-                if (yon == ItemTouchHelper.LEFT) swipeSil(not) else tasiDialog(not)
+                if (yon == ItemTouchHelper.LEFT) silmeyiYap(listOf(not)) else tasiDialog(listOf(not))
             }
 
             override fun onChildDraw(
@@ -237,17 +461,28 @@ class MainActivity : AppCompatActivity() {
         ikon.draw(c)
     }
 
-    private fun swipeSil(not: Not) {
+    // --- Silme ve taşıma (geri alınabilir) ---
+
+    private fun silmeyiYap(notlar: List<Not>) {
+        if (notlar.isEmpty()) return
+        secimBitir()
         Thread {
-            val oldu = depo.copeTasi(not.uri)
+            val yeniAdresler = notlar.mapNotNull { depo.copeTasi(it.uri) }
             runOnUiThread {
-                if (oldu) Toast.makeText(this, R.string.cope_tasindi, Toast.LENGTH_SHORT).show()
                 yenile()
+                if (yeniAdresler.isEmpty()) return@runOnUiThread
+                seritGoster(getString(R.string.cope_tasindi)) {
+                    Thread {
+                        yeniAdresler.forEach { depo.geriYukle(it) }
+                        runOnUiThread { yenile() }
+                    }.start()
+                }
             }
         }.start()
     }
 
-    private fun tasiDialog(not: Not) {
+    private fun tasiDialog(notlar: List<Not>) {
+        if (notlar.isEmpty()) return
         Thread {
             val klasorler = depo.klasorAdlari()
             runOnUiThread {
@@ -258,9 +493,9 @@ class MainActivity : AppCompatActivity() {
                     .setTitle(R.string.klasore_tasi)
                     .setItems(etiketler.toTypedArray()) { _, hangi ->
                         when (hangi) {
-                            0 -> tasi(not, null)
-                            etiketler.size - 1 -> yeniKlasorDialog(not)
-                            else -> tasi(not, klasorler[hangi - 1])
+                            0 -> tasi(notlar, null)
+                            etiketler.size - 1 -> yeniKlasorDialog(notlar)
+                            else -> tasi(notlar, klasorler[hangi - 1])
                         }
                     }
                     .setOnCancelListener { yenile() }
@@ -269,108 +504,87 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun tasi(not: Not, klasor: String?) {
+    private fun tasi(notlar: List<Not>, klasor: String?) {
+        secimBitir()
         Thread {
-            val oldu = depo.klasoreTasi(not.uri, klasor)
+            val oncekiKlasorler = notlar.map { it.klasor }
+            val yeniAdresler = notlar.mapIndexed { i, not ->
+                depo.klasoreTasi(not.uri, klasor) to oncekiKlasorler[i]
+            }.filter { it.first != null }
             runOnUiThread {
-                if (oldu) Toast.makeText(this, R.string.tasindi, Toast.LENGTH_SHORT).show()
                 yenile()
+                if (yeniAdresler.isEmpty()) return@runOnUiThread
+                seritGoster(getString(R.string.tasindi)) {
+                    Thread {
+                        yeniAdresler.forEach { (yeniUri, eskiKlasor) ->
+                            yeniUri?.let { depo.klasoreTasi(it, eskiKlasor) }
+                        }
+                        runOnUiThread { yenile() }
+                    }.start()
+                }
             }
         }.start()
     }
 
-    // --- Diğer ---
+    // --- Bildirim şeridi ---
 
-    private fun editorAc(uri: Uri) {
-        startActivity(
-            Intent(this, EditorActivity::class.java).putExtra("uri", uri.toString())
-        )
+    private fun seritGoster(mesaj: String, geriAl: () -> Unit) {
+        seritKapatici?.let { serit.removeCallbacks(it) }
+        seritMetin.text = mesaj
+        serit.visibility = View.VISIBLE
+        seritEylem.setOnClickListener {
+            seritGizle()
+            geriAl()
+        }
+        val kapatici = Runnable { seritGizle() }
+        seritKapatici = kapatici
+        serit.postDelayed(kapatici, SERIT_SURESI)
     }
 
-    private fun notSecenekleri(not: Not) {
-        val sabitEtiket = getString(if (not.sabit) R.string.sabit_kaldir else R.string.sabitle)
-        val secenekler = arrayOf(
-            sabitEtiket,
-            getString(R.string.klasore_tasi),
-            getString(R.string.sil)
-        )
-        AlertDialog.Builder(this)
-            .setTitle(not.baslik)
-            .setItems(secenekler) { _, hangi ->
-                when (hangi) {
-                    0 -> {
-                        Prefs.sabitDegistir(this, not.uri.toString())
-                        yenile()
-                    }
-                    1 -> tasiDialog(not)
-                    2 -> swipeSil(not)
-                }
-            }
-            .show()
+    private fun seritGizle() {
+        seritKapatici?.let { serit.removeCallbacks(it) }
+        seritKapatici = null
+        serit.visibility = View.GONE
     }
+
+    // --- Menü ---
 
     private fun menuGoster(v: View) {
         val menu = PopupMenu(this, v)
-        menu.menu.add(0, 1, 0, R.string.klasor_sec)
+        menu.menu.add(0, 1, 0, R.string.gorevler)
         menu.menu.add(0, 2, 1, R.string.cop_kutusu)
-        menu.menu.add(0, 3, 2, R.string.tema)
+        menu.menu.add(0, 3, 2, R.string.siralama)
+        menu.menu.add(0, 4, 3, R.string.ayarlar)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                1 -> klasorSec()
+                1 -> startActivity(Intent(this, GorevlerActivity::class.java))
                 2 -> startActivity(Intent(this, TrashActivity::class.java))
-                3 -> temaSec()
+                3 -> siralamaSec()
+                4 -> startActivity(Intent(this, AyarlarActivity::class.java))
             }
             true
         }
         menu.show()
     }
 
-    private fun klasorSec() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        intent.addFlags(
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-        )
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, ISTEK_KLASOR)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(istek: Int, sonuc: Int, veri: Intent?) {
-        super.onActivityResult(istek, sonuc, veri)
-        if (istek == ISTEK_KLASOR && sonuc == RESULT_OK) {
-            val uri = veri?.data ?: return
-            try {
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-                Prefs.klasorUriKaydet(this, uri.toString())
-                seciliKlasor = null
-                yenile()
-            } catch (_: Exception) {
-            }
-        }
-    }
-
-    private fun temaSec() {
+    private fun siralamaSec() {
         val etiketler = arrayOf(
-            getString(R.string.tema_sistem),
-            getString(R.string.tema_acik),
-            getString(R.string.tema_siyah)
+            getString(R.string.siralama_yeni),
+            getString(R.string.siralama_eski),
+            getString(R.string.siralama_ad_az),
+            getString(R.string.siralama_ad_za)
         )
         AlertDialog.Builder(this)
-            .setTitle(R.string.tema)
-            .setSingleChoiceItems(etiketler, Prefs.tema(this)) { dialog, hangi ->
-                Prefs.temaKaydet(this, hangi)
-                Tema.uygula(hangi)
+            .setTitle(R.string.siralama)
+            .setSingleChoiceItems(etiketler, Prefs.siralama(this)) { dialog, hangi ->
+                Prefs.siralamaKaydet(this, hangi)
                 dialog.dismiss()
+                yenile()
             }
             .show()
     }
 
-    companion object {
-        private const val ISTEK_KLASOR = 42
+    private companion object {
+        const val SERIT_SURESI = 5000L
     }
 }

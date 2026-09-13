@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
+import java.text.Collator
 import java.util.Locale
 
 data class Not(
@@ -13,7 +14,17 @@ data class Not(
     val ozet: String,
     val degistirilme: Long,
     val sabit: Boolean,
-    val klasor: String? = null
+    val klasor: String? = null,
+    val eslesme: String? = null
+)
+
+/** Bir notun içindeki tek bir görev satırı. */
+data class Gorev(
+    val notUri: Uri,
+    val notBasligi: String,
+    val satirNo: Int,
+    val metin: String,
+    val isaretli: Boolean
 )
 
 /**
@@ -46,30 +57,76 @@ class NotDeposu(private val context: Context) {
         return if (olustur) k.createDirectory(".trash") else null
     }
 
+    // --- Klasörler ---
+
     fun klasorAdlari(): List<String> =
         kok().listFiles()
             .filter { it.isDirectory && !(it.name ?: ".").startsWith(".") }
             .mapNotNull { it.name }
-            .sortedWith(compareBy(java.text.Collator.getInstance(tr)) { it })
+            .sortedWith(compareBy(Collator.getInstance(tr)) { it })
 
     fun klasorBul(ad: String): DocumentFile? =
         kok().listFiles().firstOrNull { it.isDirectory && it.name == ad }
 
     fun klasorOlustur(ad: String): Boolean {
-        val temiz = ad.trim().replace(Regex("[\\\\/:*?\"<>|]"), "").take(40)
-        if (temiz.isEmpty() || temiz.startsWith(".")) return false
+        val temiz = adTemizle(ad)
+        if (temiz.isEmpty()) return false
         if (klasorBul(temiz) != null) return true
         return kok().createDirectory(temiz) != null
     }
+
+    fun klasorYenidenAdlandir(eski: String, yeni: String): Boolean {
+        val temiz = adTemizle(yeni)
+        if (temiz.isEmpty() || temiz == eski) return false
+        val klasor = klasorBul(eski) ?: return false
+        return try {
+            klasor.renameTo(temiz)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /** Klasörü siler; içindeki notlar ana klasöre taşınır. */
+    fun klasorSil(ad: String): Boolean {
+        val klasor = klasorBul(ad) ?: return false
+        val hedef = kok()
+        for (f in klasor.listFiles()) {
+            val dosyaAdi = f.name ?: continue
+            if (f.isFile && notDosyasi(dosyaAdi)) {
+                hedefeTasi(f.uri, hedef)
+            }
+        }
+        return try {
+            klasor.delete()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun adTemizle(ad: String): String =
+        ad.trim().replace(Regex("[\\\\/:*?\"<>|]"), "").take(40).let {
+            if (it.startsWith(".")) "" else it
+        }
+
+    // --- Listeleme ---
 
     fun notlariListele(sorgu: String?, klasorAdi: String? = null): List<Not> {
         val baslangic = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return emptyList()
         val sonuc = mutableListOf<Not>()
         val temizSorgu = sorgu?.trim()?.takeIf { it.isNotEmpty() }?.lowercase(tr)
         topla(baslangic, sonuc, Prefs.sabitler(context), temizSorgu, null)
-        return sonuc.sortedWith(
-            compareByDescending<Not> { it.sabit }.thenByDescending { it.degistirilme }
-        )
+        return sirala(sonuc)
+    }
+
+    private fun sirala(notlar: List<Not>): List<Not> {
+        val collator = Collator.getInstance(tr)
+        val karsilastirici = when (Prefs.siralama(context)) {
+            1 -> compareBy<Not> { it.degistirilme }
+            2 -> Comparator<Not> { a, b -> collator.compare(a.baslik, b.baslik) }
+            3 -> Comparator<Not> { a, b -> collator.compare(b.baslik, a.baslik) }
+            else -> compareByDescending { it.degistirilme }
+        }
+        return notlar.sortedWith(compareByDescending<Not> { it.sabit }.then(karsilastirici))
     }
 
     private fun topla(
@@ -86,9 +143,16 @@ class NotDeposu(private val context: Context) {
                 continue
             }
             if (!notDosyasi(ad)) continue
-            val icerik = oku(f.uri, 4096)
-            if (sorgu != null && !(ad + "\n" + icerik).lowercase(tr).contains(sorgu)) continue
-            sonuc.add(notYap(f, icerik, sabitler, etiket))
+            val icerik = oku(f.uri, 8192)
+            var eslesmeSatiri: String? = null
+            if (sorgu != null) {
+                if (!(ad + "\n" + icerik).lowercase(tr).contains(sorgu)) continue
+                eslesmeSatiri = icerik.lines()
+                    .firstOrNull { it.lowercase(tr).contains(sorgu) }
+                    ?.let { mdTemizle(it) }
+                    ?.takeIf { it.isNotBlank() }
+            }
+            sonuc.add(notYap(f, icerik, sabitler, etiket, eslesmeSatiri))
         }
     }
 
@@ -98,9 +162,40 @@ class NotDeposu(private val context: Context) {
         for (f in cop.listFiles()) {
             val ad = f.name ?: continue
             if (!f.isFile || !notDosyasi(ad)) continue
-            sonuc.add(notYap(f, oku(f.uri, 1024), emptySet(), null))
+            sonuc.add(notYap(f, oku(f.uri, 1024), emptySet(), null, null))
         }
         return sonuc.sortedByDescending { it.degistirilme }
+    }
+
+    /** Tüm notlardaki onay kutusu satırlarını toplar. */
+    fun gorevleriListele(tamamlananlar: Boolean): List<Gorev> {
+        val sonuc = mutableListOf<Gorev>()
+        for (not in notlariListele(null, null)) {
+            val satirlar = oku(not.uri).lines()
+            satirlar.forEachIndexed { indeks, satir ->
+                val eslesme = MarkdownBicimci.ONAY.find(satir) ?: return@forEachIndexed
+                val isaretli = !eslesme.groupValues[2].equals(" ", true)
+                if (isaretli && !tamamlananlar) return@forEachIndexed
+                val metin = satir.substring(eslesme.value.length).trim()
+                if (metin.isEmpty()) return@forEachIndexed
+                sonuc.add(Gorev(not.uri, not.baslik, indeks, metin, isaretli))
+            }
+        }
+        return sonuc
+    }
+
+    /** Bir görev satırının işaretini değiştirir. */
+    fun gorevDegistir(gorev: Gorev): Boolean {
+        val satirlar = oku(gorev.notUri).lines().toMutableList()
+        if (gorev.satirNo !in satirlar.indices) return false
+        val satir = satirlar[gorev.satirNo]
+        val eslesme = MarkdownBicimci.ONAY.find(satir) ?: return false
+        val girinti = eslesme.groupValues[1].length
+        val isaretli = !eslesme.groupValues[2].equals(" ", true)
+        val yeniIsaret = if (isaretli) " " else "x"
+        satirlar[gorev.satirNo] =
+            satir.substring(0, girinti + 3) + yeniIsaret + satir.substring(girinti + 4)
+        return yaz(gorev.notUri, satirlar.joinToString("\n"))
     }
 
     private fun notDosyasi(ad: String): Boolean =
@@ -110,7 +205,8 @@ class NotDeposu(private val context: Context) {
         f: DocumentFile,
         icerik: String,
         sabitler: Set<String>,
-        klasor: String?
+        klasor: String?,
+        eslesme: String?
     ): Not {
         val satirlar = icerik.lines()
         val ilkIndex = satirlar.indexOfFirst { it.isNotBlank() }
@@ -130,16 +226,19 @@ class NotDeposu(private val context: Context) {
             ozet = ozet,
             degistirilme = f.lastModified(),
             sabit = sabitler.contains(f.uri.toString()),
-            klasor = klasor
+            klasor = klasor,
+            eslesme = eslesme
         )
     }
 
     private fun mdTemizle(satir: String): String =
         satir.trim()
             .trimStart('#', '>', ' ')
-            .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- ")
-            .replace("**", "").replace("__", "")
+            .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
+            .replace("**", "").replace("__", "").replace("`", "")
             .trim()
+
+    // --- Okuma / yazma ---
 
     fun oku(uri: Uri, limit: Int = Int.MAX_VALUE): String {
         return try {
@@ -209,30 +308,43 @@ class NotDeposu(private val context: Context) {
             DocumentFile.fromSingleUri(context, uri)
         }
 
-    private fun hedefeTasi(uri: Uri, hedef: DocumentFile): Boolean {
-        val f = docGetir(uri) ?: return false
+    // --- Taşıma / silme (yeni konumun adresini döndürür ki geri alınabilsin) ---
+
+    private fun hedefeTasi(uri: Uri, hedef: DocumentFile): Uri? {
+        val f = docGetir(uri) ?: return null
         val icerik = oku(uri)
         val ad = (f.name ?: "not.md").removeSuffix(".md").removeSuffix(".txt")
-        if (dosyaOlustur(hedef, icerik, ad) == null) return false
+        val yeni = dosyaOlustur(hedef, icerik, ad) ?: return null
+        val sabitti = Prefs.sabitler(context).contains(uri.toString())
         sabitTemizle(uri)
-        return f.delete()
+        if (sabitti) Prefs.sabitDegistir(context, yeni.toString())
+        return if (f.delete()) yeni else yeni
     }
 
-    fun copeTasi(uri: Uri): Boolean {
-        val cop = copKlasoru(true) ?: return false
+    fun copeTasi(uri: Uri): Uri? {
+        val cop = copKlasoru(true) ?: return null
         return hedefeTasi(uri, cop)
     }
 
-    fun geriYukle(uri: Uri): Boolean = hedefeTasi(uri, kok())
+    fun geriYukle(uri: Uri): Uri? = hedefeTasi(uri, kok())
 
-    fun klasoreTasi(uri: Uri, klasorAdi: String?): Boolean {
-        val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return false
+    fun klasoreTasi(uri: Uri, klasorAdi: String?): Uri? {
+        val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return null
         return hedefeTasi(uri, hedef)
     }
 
     fun kaliciSil(uri: Uri): Boolean {
         sabitTemizle(uri)
         return docGetir(uri)?.delete() ?: false
+    }
+
+    /** Bir notun hangi klasörde olduğunu bulur (ana klasördeyse null). */
+    fun notunKlasoru(uri: Uri): String? {
+        for (klasor in klasorAdlari()) {
+            val dizin = klasorBul(klasor) ?: continue
+            if (dizin.listFiles().any { it.uri == uri }) return klasor
+        }
+        return null
     }
 
     private fun sabitTemizle(uri: Uri) {
