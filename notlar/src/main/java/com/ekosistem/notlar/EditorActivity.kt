@@ -60,26 +60,44 @@ class EditorActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { v -> menuGoster(v) }
     }
 
-    /** Boş editörde ipucunu gerçek görünümle eşleştirir: büyük başlık + normal metin. */
+    /**
+     * Alanın kendi boyutu başlık boyutudur (24sp); gövde satırları span ile
+     * küçültülür. Böylece imleç her satırda o satırın boyutuyla çizilir ve
+     * boş notta ipucuyla aynı hizada durur.
+     */
     private fun ipucuKur() {
         val baslik = getString(R.string.baslik_ipucu)
         val govde = getString(R.string.notunu_yaz)
         val ipucu = SpannableString("$baslik\n$govde")
-        ipucu.setSpan(AbsoluteSizeSpan(24, true), 0, baslik.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         ipucu.setSpan(StyleSpan(Typeface.BOLD), 0, baslik.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        ipucu.setSpan(
+            AbsoluteSizeSpan(GOVDE_SP, true),
+            baslik.length + 1,
+            ipucu.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
         metinAlani.hint = ipucu
     }
 
-    /** İlk satırı canlı olarak başlık gibi gösterir (24sp, kalın). */
+    /** İlk satır kalın başlık kalır, sonrası gövde boyutuna iner. */
     private fun basligiBicimle(s: Editable) {
         for (span in s.getSpans(0, s.length, AbsoluteSizeSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, StyleSpan::class.java)) s.removeSpan(span)
         if (s.isEmpty()) return
-        var son = s.indexOf('\n')
-        if (son < 0) son = s.length
-        if (son > 0) {
-            s.setSpan(AbsoluteSizeSpan(24, true), 0, son, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            s.setSpan(StyleSpan(Typeface.BOLD), 0, son, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val ilkSonu = s.indexOf('\n')
+        if (ilkSonu > 0) {
+            s.setSpan(StyleSpan(Typeface.BOLD), 0, ilkSonu, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        } else if (ilkSonu < 0) {
+            s.setSpan(StyleSpan(Typeface.BOLD), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            return
+        }
+        if (ilkSonu + 1 < s.length) {
+            s.setSpan(
+                AbsoluteSizeSpan(GOVDE_SP, true),
+                ilkSonu + 1,
+                s.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
         }
     }
 
@@ -130,6 +148,10 @@ class EditorActivity : AppCompatActivity() {
             .setType("text/plain")
             .putExtra(Intent.EXTRA_TEXT, metin)
         startActivity(Intent.createChooser(intent, getString(R.string.paylas)))
+    }
+
+    private companion object {
+        const val GOVDE_SP = 16
     }
 
     private fun sil() {

@@ -50,6 +50,6 @@
         android:paddingBottom="24dp"
         android:textColor="@color/metin"
         android:textColorHint="@color/metin_ikincil"
-        android:textSize="16sp" />
+        android:textSize="24sp" />
 
 </LinearLayout>
