@@ -38,6 +38,7 @@ class EditorActivity : AppCompatActivity() {
     private var acilisMetni = ""
     private var oncekiIcerik = ""
     private var silindi = false
+    private var kilitBekliyor = false
 
     private var bicimleniyor = false
     private var satirEklendi = false
@@ -98,34 +99,69 @@ class EditorActivity : AppCompatActivity() {
         uri = intent.getStringExtra("uri")?.let(Uri::parse)
         hedefKlasor = intent.getStringExtra("klasor")
         val acilacak = uri
-        if (acilacak != null && Kilit.notKilitli(this, acilacak.toString()) && !Kilit.oturumAcik) {
-            @Suppress("DEPRECATION")
-            startActivityForResult(
-                Intent(this, KilitActivity::class.java).putExtra("kip", KilitActivity.KIP_AC),
-                ISTEK_KILIT
-            )
-        }
-        if (acilacak != null) {
-            Thread {
-                val metin = depo.oku(acilacak)
-                runOnUiThread {
-                    acilisMetni = metin
-                    oncekiIcerik = metin
-                    geriAliniyor = true
-                    metinAlani.setText(metin)
-                    geriAliniyor = false
-                    sonDurum = Durum(metin, 0)
-                    metinAlani.post { bicimlendir() }
-                }
-            }.start()
-        } else {
-            metinAlani.requestFocus()
+        when {
+            acilacak == null -> metinAlani.requestFocus()
+            // Kilitli notun içeriği kilit açılana kadar hiç yüklenmez.
+            Kilit.notKilitli(this, acilacak.toString()) -> {
+                kilitBekliyor = true
+                metinAlani.visibility = View.INVISIBLE
+                bicimKaydirici.visibility = View.GONE
+                @Suppress("DEPRECATION")
+                startActivityForResult(
+                    Intent(this, KilitActivity::class.java)
+                        .putExtra("kip", KilitActivity.KIP_NOT),
+                    ISTEK_KILIT
+                )
+            }
+            else -> notuYukle(acilacak)
         }
 
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { menuGoster() }
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
         dugmeleriGuncelle()
+    }
+
+    private fun notuYukle(adres: Uri) {
+        Thread {
+            val metin = depo.oku(adres)
+            runOnUiThread {
+                acilisMetni = metin
+                oncekiIcerik = metin
+                metniYerlestir(metin)
+            }
+        }.start()
+    }
+
+    /** Metni geri al yığınını bozmadan alana koyar. */
+    private fun metniYerlestir(metin: String) {
+        geriAliniyor = true
+        metinAlani.setText(metin)
+        geriAliniyor = false
+        sonDurum = Durum(metin, 0)
+        metinAlani.post { bicimlendir() }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(istek: Int, sonuc: Int, veri: Intent?) {
+        super.onActivityResult(istek, sonuc, veri)
+        when (istek) {
+            ISTEK_KILIT -> {
+                if (sonuc != RESULT_OK) {
+                    finish()
+                    return
+                }
+                kilitBekliyor = false
+                metinAlani.visibility = View.VISIBLE
+                bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
+                uri?.let { notuYukle(it) }
+            }
+            ISTEK_GECMIS -> {
+                if (sonuc != RESULT_OK) return
+                val surum = veri?.getStringExtra("surum")?.let(Uri::parse) ?: return
+                surumuGeriYukle(surum)
+            }
+        }
     }
 
     private fun vurguRengiUygula() {
@@ -626,14 +662,14 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun kaydet() {
-        if (silindi) return
+        if (silindi || kilitBekliyor) return
         val metin = metinAlani.text.toString()
         if (metin == acilisMetni) return
         val hedef = uri
         acilisMetni = metin
         val onceki = oncekiIcerik
         oncekiIcerik = metin
-        Thread {
+        val kayit = Thread {
             if (hedef == null) {
                 if (metin.isNotBlank()) uri = depo.notOlustur(metin, hedefKlasor)
             } else {
@@ -641,7 +677,9 @@ class EditorActivity : AppCompatActivity() {
                 depo.yaz(hedef, metin)
             }
             NotWidget.hepsiniGuncelle(applicationContext)
-        }.start()
+        }
+        NotDeposu.bekleyenKayit = kayit
+        kayit.start()
     }
 
     private fun menuGoster() {
@@ -689,7 +727,7 @@ class EditorActivity : AppCompatActivity() {
             sayfa.madde(R.drawable.ic_baglanti, getString(R.string.geri_baglantilar)) {
                 geriBaglantilariGoster()
             }
-            sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiGoster() }
+            sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiAc() }
         }
         sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
@@ -745,12 +783,19 @@ class EditorActivity : AppCompatActivity() {
             startActivity(Intent(this, AyarlarActivity::class.java))
             return
         }
-        val kilitlendi = Kilit.notKilidiDegistir(this, adres)
-        Toast.makeText(
-            this,
-            if (kilitlendi) R.string.not_kilitlendi else R.string.not_kilidi_acildi,
-            Toast.LENGTH_SHORT
-        ).show()
+        if (Kilit.notKilitli(this, adres)) {
+            Kilit.notKilidiDegistir(this, adres)
+            Toast.makeText(this, R.string.not_kilidi_acildi, Toast.LENGTH_SHORT).show()
+            return
+        }
+        // Kilidin ne yaptığı önce anlatılır: not şifrelenmez, sadece gizlenir.
+        AltSayfa(this)
+            .baslik(getString(R.string.not_kilit_ozet))
+            .madde(R.drawable.ic_kilit, getString(R.string.nota_kilit)) {
+                Kilit.notKilidiDegistir(this, adres)
+                Toast.makeText(this, R.string.not_kilitlendi, Toast.LENGTH_SHORT).show()
+            }
+            .goster()
     }
 
     private fun geriBaglantilariGoster() {
@@ -778,43 +823,30 @@ class EditorActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun gecmisiGoster() {
+    /**
+     * Sürüm geçmişi ayrı bir ekranda açılır: önce fark gösterilir, geri dönmeyi
+     * kullanıcı onaylar. Ekrandaki güncel metin karşılaştırma için devredilir.
+     */
+    private fun gecmisiAc() {
         val mevcut = uri ?: return
-        Thread {
-            val surumler = depo.gecmisiListele(mevcut)
-            runOnUiThread {
-                val sayfa = AltSayfa(this).baslik(getString(R.string.gecmis))
-                if (surumler.isEmpty()) {
-                    sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis_yok)) {}
-                } else {
-                    for (surum in surumler) {
-                        val etiket = android.text.format.DateUtils.getRelativeDateTimeString(
-                            this,
-                            surum.zaman,
-                            android.text.format.DateUtils.MINUTE_IN_MILLIS,
-                            android.text.format.DateUtils.WEEK_IN_MILLIS,
-                            0
-                        ).toString()
-                        sayfa.madde(R.drawable.ic_gecmis, etiket) { surumuGeriYukle(surum) }
-                    }
-                }
-                sayfa.goster()
-            }
-        }.start()
+        GecmisActivity.gecerliMetin = metinAlani.text?.toString() ?: ""
+        @Suppress("DEPRECATION")
+        startActivityForResult(
+            Intent(this, GecmisActivity::class.java).putExtra("uri", mevcut.toString()),
+            ISTEK_GECMIS
+        )
     }
 
-    private fun surumuGeriYukle(surum: NotDeposu.Surum) {
+    /** Geri yükleme geri al yığınına düşer; yanlışlıkla dönülürse kurtarılabilir. */
+    private fun surumuGeriYukle(surumUri: Uri) {
         Thread {
-            val eski = depo.oku(surum.uri)
+            val eski = depo.oku(surumUri)
             runOnUiThread {
                 if (eski.isBlank()) return@runOnUiThread
                 val s = metinAlani.text ?: return@runOnUiThread
                 gecmis.addLast(Durum(s.toString(), metinAlani.selectionStart))
-                geriAliniyor = true
-                metinAlani.setText(eski)
-                geriAliniyor = false
-                sonDurum = Durum(eski, 0)
-                bicimlendir()
+                gelecek.clear()
+                metniYerlestir(eski)
                 dugmeleriGuncelle()
                 Toast.makeText(this, R.string.gecmise_donuldu, Toast.LENGTH_SHORT).show()
             }
@@ -827,6 +859,7 @@ class EditorActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_SEND)
             .setType("text/plain")
             .putExtra(Intent.EXTRA_TEXT, metin)
+        Kilit.sistemAraciBekleniyor = true
         startActivity(Intent.createChooser(intent, getString(R.string.paylas)))
     }
 
@@ -845,6 +878,7 @@ class EditorActivity : AppCompatActivity() {
 
     private companion object {
         const val ISTEK_KILIT = 9
+        const val ISTEK_GECMIS = 10
         const val BIRLESTIRME_MS = 700L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")

@@ -98,6 +98,61 @@ object Prefs {
         sp(c).edit().putBoolean("ekran_gizle", acik).apply()
     }
 
+    /** Parmak izi kilidi ayrı bir seçimdir; PIN kurmak onu kendiliğinden açmaz. */
+    fun parmakIzi(c: Context): Boolean = sp(c).getBoolean("parmak_izi", false)
+
+    fun parmakIziKaydet(c: Context, acik: Boolean) {
+        sp(c).edit().putBoolean("parmak_izi", acik).apply()
+    }
+
+    /** Otomatik kilitlenme seçeneğinin sırası (bkz. Kilit.GECIKMELER). */
+    fun kilitGecikmesi(c: Context): Int = sp(c).getInt("kilit_gecikme", 0)
+
+    fun kilitGecikmesiKaydet(c: Context, indeks: Int) {
+        sp(c).edit().putInt("kilit_gecikme", indeks).apply()
+    }
+
+    // --- Taşımada korunan değiştirme tarihi ---
+
+    /**
+     * Not kopyalanarak taşındıysa dosyanın tarihi bugüne kayar. Gerçek tarih
+     * burada saklanır; not bir daha yazıldığında kayıt silinir.
+     */
+    fun zamanDamgasi(c: Context, uri: String): Long = sp(c).getLong("zaman:$uri", 0L)
+
+    fun zamanDamgasiKaydet(c: Context, uri: String, zaman: Long) {
+        if (zaman <= 0) sp(c).edit().remove("zaman:$uri").apply()
+        else sp(c).edit().putLong("zaman:$uri", zaman).apply()
+    }
+
+    /** Notun adresi değiştiğinde ona bağlı tüm ayarları yeni adrese taşır. */
+    fun adresTasi(c: Context, eski: String, yeni: String) {
+        if (eski == yeni) return
+        val d = sp(c).edit()
+
+        val sabitler = sabitler(c).toMutableSet()
+        if (sabitler.remove(eski)) {
+            sabitler.add(yeni)
+            d.putStringSet("sabitler", sabitler)
+        }
+
+        val kilitliler = kilitliNotlar(c).toMutableSet()
+        if (kilitliler.remove(eski)) {
+            kilitliler.add(yeni)
+            d.putStringSet("kilitli_notlar", kilitliler)
+        }
+
+        val damga = zamanDamgasi(c, eski)
+        if (damga > 0) d.remove("zaman:$eski").putLong("zaman:$yeni", damga)
+
+        // Notu gösteren widget'lar da yeni adresi izlesin.
+        for ((anahtar, deger) in sp(c).all) {
+            if (anahtar.startsWith("widget_") && deger == eski) d.putString(anahtar, yeni)
+        }
+
+        d.apply()
+    }
+
     // --- Hatırlatıcılar ---
 
     fun hatirlatici(c: Context, uri: String): Long = sp(c).getLong("hat:$uri", 0L)

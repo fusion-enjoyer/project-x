@@ -2,6 +2,8 @@ package com.ekosistem.notlar
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.text.Collator
@@ -15,7 +17,8 @@ data class Not(
     val degistirilme: Long,
     val sabit: Boolean,
     val klasor: String? = null,
-    val eslesme: String? = null
+    val eslesme: String? = null,
+    val kilitli: Boolean = false
 )
 
 /** Bir notun içindeki tek bir görev satırı. */
@@ -93,7 +96,7 @@ class NotDeposu(private val context: Context) {
         for (f in klasor.listFiles()) {
             val dosyaAdi = f.name ?: continue
             if (f.isFile && notDosyasi(dosyaAdi)) {
-                hedefeTasi(f.uri, hedef)
+                hedefeTasi(f.uri, hedef, klasor)
             }
         }
         return try {
@@ -147,11 +150,16 @@ class NotDeposu(private val context: Context) {
             val icerik = oku(f.uri, 8192)
             var eslesmeSatiri: String? = null
             if (sorgu != null) {
-                if (!(ad + "\n" + icerik).lowercase(tr).contains(sorgu)) continue
-                eslesmeSatiri = icerik.lines()
-                    .firstOrNull { it.lowercase(tr).contains(sorgu) }
-                    ?.let { mdTemizle(it) }
-                    ?.takeIf { it.isNotBlank() }
+                // Kilitli notta yalnızca dosya adı aranır; içeriği aramaya sızmaz.
+                val kilitli = Kilit.notKilitli(context, f.uri.toString())
+                val aranacak = if (kilitli) ad else ad + "\n" + icerik
+                if (!aranacak.lowercase(tr).contains(sorgu)) continue
+                if (!kilitli) {
+                    eslesmeSatiri = icerik.lines()
+                        .firstOrNull { it.lowercase(tr).contains(sorgu) }
+                        ?.let { mdTemizle(it) }
+                        ?.takeIf { it.isNotBlank() }
+                }
             }
             sonuc.add(notYap(f, icerik, sabitler, etiket, eslesmeSatiri))
         }
@@ -172,6 +180,7 @@ class NotDeposu(private val context: Context) {
     fun gorevleriListele(tamamlananlar: Boolean): List<Gorev> {
         val sonuc = mutableListOf<Gorev>()
         for (not in notlariListele(null, null)) {
+            if (not.kilitli) continue
             val satirlar = oku(not.uri).lines()
             satirlar.forEachIndexed { indeks, satir ->
                 val eslesme = MarkdownBicimci.ONAY.find(satir) ?: return@forEachIndexed
@@ -220,15 +229,21 @@ class NotDeposu(private val context: Context) {
                 .joinToString(" ") { mdTemizle(it) }
                 .take(150)
         } else ""
+        val adres = f.uri.toString()
+        // Kopyalanarak taşınmış notun gerçek tarihi ayrıca saklanır.
+        val korunan = Prefs.zamanDamgasi(context, adres)
+        val kilitli = Kilit.notKilitli(context, adres)
         return Not(
             uri = f.uri,
             ad = dosyaAdi,
             baslik = baslik.take(80),
-            ozet = ozet,
-            degistirilme = f.lastModified(),
-            sabit = sabitler.contains(f.uri.toString()),
+            // Kilitli notun içeriği listeye, widget'a ve göreve hiç çıkmaz.
+            ozet = if (kilitli) "" else ozet,
+            degistirilme = if (korunan > 0) korunan else f.lastModified(),
+            sabit = sabitler.contains(adres),
             klasor = klasor,
-            eslesme = eslesme
+            eslesme = if (kilitli) null else eslesme,
+            kilitli = kilitli
         )
     }
 
@@ -268,6 +283,10 @@ class NotDeposu(private val context: Context) {
         return try {
             context.contentResolver.openOutputStream(uri, "wt")?.use {
                 it.write(metin.toByteArray(Charsets.UTF_8))
+                // Not yeniden yazıldı; artık dosyanın kendi tarihi geçerli.
+                if (Prefs.zamanDamgasi(context, uri.toString()) > 0) {
+                    Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
+                }
                 true
             } ?: false
         } catch (_: Exception) {
@@ -312,22 +331,83 @@ class NotDeposu(private val context: Context) {
 
     // --- Taşıma / silme (yeni konumun adresini döndürür ki geri alınabilsin) ---
 
-    private fun hedefeTasi(uri: Uri, hedef: DocumentFile): Uri? {
+    /**
+     * Notu başka bir klasöre taşır. Önce gerçek taşıma denenir — dosya aynı
+     * dosya kalır, değiştirilme tarihi korunur. Sağlayıcı taşımayı desteklemezse
+     * kopyalanıp silinir; o durumda tarih ayrıca saklanır, yoksa taşınan (ve
+     * geri alınan) her not "az önce oluşturulmuş" gibi görünürdü.
+     */
+    private fun hedefeTasi(uri: Uri, hedef: DocumentFile, kaynakUst: DocumentFile? = null): Uri? {
         val f = docGetir(uri) ?: return null
+        val zaman = Prefs.zamanDamgasi(context, uri.toString()).takeIf { it > 0 } ?: f.lastModified()
+        val yeni = gercektenTasi(f, hedef, kaynakUst)
+            ?: kopyalayarakTasi(f, uri, hedef, zaman)
+            ?: return null
+        ayarlariTasi(uri, yeni)
+        return yeni
+    }
+
+    private fun gercektenTasi(
+        f: DocumentFile,
+        hedef: DocumentFile,
+        kaynakUst: DocumentFile?
+    ): Uri? {
+        val ad = f.name ?: return null
+        if (hedef.findFile(ad) != null) return null // ad çakışması: kopyalama yolu adı tekilleştirir
+
+        // Uygulama deposu düz dosya sistemi: yeniden adlandırmak taşımaktır.
+        if (f.uri.scheme == "file" && hedef.uri.scheme == "file") {
+            val kaynakDosya = f.uri.path?.let { File(it) } ?: return null
+            val hedefDizin = hedef.uri.path?.let { File(it) } ?: return null
+            val hedefDosya = File(hedefDizin, ad)
+            return if (kaynakDosya.renameTo(hedefDosya)) Uri.fromFile(hedefDosya) else null
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return null
+        val ust = kaynakUst ?: return null
+        return try {
+            DocumentsContract.moveDocument(context.contentResolver, f.uri, ust.uri, hedef.uri)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun kopyalayarakTasi(
+        f: DocumentFile,
+        uri: Uri,
+        hedef: DocumentFile,
+        zaman: Long
+    ): Uri? {
         val icerik = oku(uri)
         val ad = (f.name ?: "not.md").removeSuffix(".md").removeSuffix(".txt")
         val yeni = dosyaOlustur(hedef, icerik, ad) ?: return null
-        val sabitti = Prefs.sabitler(context).contains(uri.toString())
-        sabitTemizle(uri)
-        if (sabitti) Prefs.sabitDegistir(context, yeni.toString())
-        return if (f.delete()) yeni else yeni
+        if (zaman > 0) Prefs.zamanDamgasiKaydet(context, yeni.toString(), zaman)
+        try {
+            f.delete()
+        } catch (_: Exception) {
+        }
+        return yeni
+    }
+
+    /** Adres değişti: sabitleme, not kilidi, widget ve hatırlatıcı yeni adrese geçer. */
+    private fun ayarlariTasi(eski: Uri, yeni: Uri) {
+        val e = eski.toString()
+        val y = yeni.toString()
+        if (e == y) return
+        Prefs.adresTasi(context, e, y)
+        val hatirlatma = Prefs.hatirlatici(context, e)
+        if (hatirlatma > 0) {
+            Hatirlatici.kaldir(context, e)
+            Hatirlatici.kur(context, y, hatirlatma)
+        }
     }
 
     /** Silinen notun hangi klasörden geldiği kaydedilir ki geri alınca oraya dönsün. */
     fun copeTasi(uri: Uri): Uri? {
-        val kaynakKlasor = notunKlasoru(uri)
+        val ust = ustDizin(uri)
+        val kaynakKlasor = ust?.name?.takeIf { ust.uri != kok().uri }
         val cop = copKlasoru(true) ?: return null
-        val yeni = hedefeTasi(uri, cop) ?: return null
+        val yeni = hedefeTasi(uri, cop, ust) ?: return null
         Prefs.copKaynagiKaydet(context, yeni.toString(), kaynakKlasor)
         return yeni
     }
@@ -335,19 +415,21 @@ class NotDeposu(private val context: Context) {
     fun geriYukle(uri: Uri): Uri? {
         val kaynakKlasor = Prefs.copKaynagi(context, uri.toString())
         val hedef = kaynakKlasor?.let { klasorBul(it) } ?: kok()
-        val yeni = hedefeTasi(uri, hedef)
+        val yeni = hedefeTasi(uri, hedef, copKlasoru(false))
         Prefs.copKaynagiSil(context, uri.toString())
+        yeni?.let { Prefs.copKaynagiSil(context, it.toString()) }
         return yeni
     }
 
     fun klasoreTasi(uri: Uri, klasorAdi: String?): Uri? {
         val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return null
-        return hedefeTasi(uri, hedef)
+        return hedefeTasi(uri, hedef, ustDizin(uri))
     }
 
     fun kaliciSil(uri: Uri): Boolean {
         sabitTemizle(uri)
         Prefs.copKaynagiSil(context, uri.toString())
+        Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
         return docGetir(uri)?.delete() ?: false
     }
 
@@ -357,6 +439,19 @@ class NotDeposu(private val context: Context) {
             val dizin = klasorBul(klasor) ?: continue
             if (dizin.listFiles().any { it.uri == uri }) return klasor
         }
+        return null
+    }
+
+    /** Notun bulunduğu dizin: ana klasör, bir alt klasör ya da çöp kutusu. */
+    private fun ustDizin(uri: Uri): DocumentFile? {
+        val k = kok()
+        if (k.listFiles().any { it.uri == uri }) return k
+        for (klasor in klasorAdlari()) {
+            val dizin = klasorBul(klasor) ?: continue
+            if (dizin.listFiles().any { it.uri == uri }) return dizin
+        }
+        val cop = copKlasoru(false)
+        if (cop != null && cop.listFiles().any { it.uri == uri }) return cop
         return null
     }
 
@@ -451,8 +546,15 @@ class NotDeposu(private val context: Context) {
             .sortedByDescending { it.zaman }
     }
 
-    private companion object {
-        const val GECMIS_SINIRI = 20
-        val ISARETLER = Regex("\\*{1,3}|~~|__|`|\\[\\[|]]")
+    companion object {
+        /**
+         * Editörün arka plandaki kaydı. Liste, tazelemeden önce bunu bekler;
+         * yoksa notu düzenleyip geri dönünce kartta bir süre eski özet kalırdı.
+         */
+        @Volatile
+        var bekleyenKayit: Thread? = null
+
+        private const val GECMIS_SINIRI = 20
+        private val ISARETLER = Regex("\\*{1,3}|~~|__|`|\\[\\[|]]")
     }
 }

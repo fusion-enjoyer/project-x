@@ -43,6 +43,7 @@ class NotAdapter(
         val ozet: TextView = v.findViewById(R.id.notOzet)
         val tarih: TextView = v.findViewById(R.id.notTarih)
         val sabit: ImageView = v.findViewById(R.id.sabitIkon)
+        val kilit: ImageView = v.findViewById(R.id.kilitIkon)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Tutucu {
@@ -56,9 +57,15 @@ class NotAdapter(
         val not = notlar[pozisyon]
         t.baslik.text = vurgula(not.baslik)
 
-        val ikincil = not.eslesme ?: not.ozet
-        t.ozet.text = vurgula(ikincil)
+        // Kilitli notta içerik yerine "Kilitli" yazar; önizleme sızdırmaz.
+        val ikincil = if (not.kilitli) {
+            t.ozet.context.getString(R.string.kilitli)
+        } else {
+            not.eslesme ?: not.ozet
+        }
+        t.ozet.text = if (not.kilitli) ikincil else vurgula(ikincil)
         t.ozet.visibility = if (ikincil.isBlank()) View.GONE else View.VISIBLE
+        t.kilit.visibility = if (not.kilitli) View.VISIBLE else View.GONE
 
         val zaman = if (not.degistirilme > 0) {
             DateUtils.getRelativeTimeSpanString(not.degistirilme).toString()

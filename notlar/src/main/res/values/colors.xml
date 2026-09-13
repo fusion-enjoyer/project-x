@@ -17,4 +17,7 @@
     <color name="vurgu_6">#0F6E56</color>
     <color name="vurgu_7">#3B6D11</color>
     <color name="vurgu_8">#5F5E5A</color>
+    <!-- Sürüm farkı -->
+    <color name="fark_eklendi">#0F6E56</color>
+    <color name="fark_silindi">#A32D2D</color>
 </resources>

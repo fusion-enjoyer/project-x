@@ -95,9 +95,12 @@ class TekNotWidget : AppWidgetProvider() {
             val satirlar = icerik.lines()
             val ilk = satirlar.indexOfFirst { it.isNotBlank() }
             val baslik = if (ilk >= 0) temizle(satirlar[ilk]) else context.getString(R.string.widget_bos)
-            val govde = if (ilk >= 0) {
-                satirlar.drop(ilk + 1).joinToString("\n") { temizle(it) }.trim()
-            } else ""
+            // Kilitli notun gövdesi ana ekranda gösterilmez.
+            val govde = when {
+                Kilit.notKilitli(context, adres) -> context.getString(R.string.kilitli)
+                ilk >= 0 -> satirlar.drop(ilk + 1).joinToString("\n") { temizle(it) }.trim()
+                else -> ""
+            }
             gorunum.setTextViewText(R.id.widgetBaslik, baslik)
             gorunum.setTextViewText(R.id.widgetIcerik, govde)
             val niyet = Intent(context, EditorActivity::class.java)

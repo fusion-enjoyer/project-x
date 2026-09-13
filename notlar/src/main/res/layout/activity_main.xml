@@ -1,127 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kenar payı (20dp) kökte değil, çocuklarda durur: fitsSystemWindows kökün
+  padding'ini sistem çentikleriyle baştan yazar ve yatayda 0'a düşürürdü.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:fitsSystemWindows="true"
-    android:paddingLeft="20dp"
-    android:paddingRight="20dp">
+    android:fitsSystemWindows="true">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp">
+        android:orientation="vertical"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp">
 
-        <LinearLayout
-            android:id="@+id/baslikCubugu"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingTop="16dp">
 
-            <TextView
-                android:id="@+id/baslik"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/baslikCubugu"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/app_name"
-                android:textColor="@color/metin"
-                android:textSize="30sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <ImageButton
-                android:id="@+id/btnMenu"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/menu"
-                android:src="@drawable/ic_menu" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/baslik"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/app_name"
+                    android:textColor="@color/metin"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
 
-        <LinearLayout
-            android:id="@+id/secimCubugu"
+                <ImageButton
+                    android:id="@+id/btnMenu"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/menu"
+                    android:src="@drawable/ic_menu" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/secimCubugu"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:baselineAligned="false"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageButton
+                    android:id="@+id/secimKapat"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/kapat"
+                    android:src="@drawable/ic_kapat" />
+
+                <TextView
+                    android:id="@+id/secimSayi"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:textColor="@color/metin"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/secimSabitle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/sabitle"
+                    android:src="@drawable/ic_sabit_24" />
+
+                <ImageButton
+                    android:id="@+id/secimTasi"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/klasore_tasi"
+                    android:src="@drawable/ic_tasi" />
+
+                <ImageButton
+                    android:id="@+id/secimPaylas"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/paylas"
+                    android:src="@drawable/ic_paylas" />
+
+                <ImageButton
+                    android:id="@+id/secimSil"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/sil"
+                    android:src="@drawable/ic_sil" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <EditText
+            android:id="@+id/arama"
+            android:importantForAutofill="no"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:baselineAligned="false"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_arama_pill"
+            android:drawableStart="@drawable/ic_ara"
+            android:drawablePadding="10dp"
+            android:hint="@string/ara"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:textColor="@color/metin"
+            android:textColorHint="@color/metin_ikincil"
+            android:textSize="15sp" />
+    </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/secimKapat"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/kapat"
-                android:src="@drawable/ic_kapat" />
-
-            <TextView
-                android:id="@+id/secimSayi"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:textColor="@color/metin"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <ImageButton
-                android:id="@+id/secimSabitle"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/sabitle"
-                android:src="@drawable/ic_sabit_24" />
-
-            <ImageButton
-                android:id="@+id/secimTasi"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/klasore_tasi"
-                android:src="@drawable/ic_tasi" />
-
-            <ImageButton
-                android:id="@+id/secimPaylas"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/paylas"
-                android:src="@drawable/ic_paylas" />
-
-            <ImageButton
-                android:id="@+id/secimSil"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/sil"
-                android:src="@drawable/ic_sil" />
-        </LinearLayout>
-    </FrameLayout>
-
-    <EditText
-        android:id="@+id/arama"
-        android:importantForAutofill="no"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bg_arama_pill"
-        android:drawableStart="@drawable/ic_ara"
-        android:drawablePadding="10dp"
-        android:hint="@string/ara"
-        android:imeOptions="actionSearch"
-        android:inputType="text"
-        android:maxLines="1"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:textColor="@color/metin"
-        android:textColorHint="@color/metin_ikincil"
-        android:textSize="15sp" />
-
+    <!-- Çipler kenardan başlar ama kaydırırken kenarın altına kayar. -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
         android:scrollbars="none">
 
         <LinearLayout
@@ -134,7 +148,9 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/liste"

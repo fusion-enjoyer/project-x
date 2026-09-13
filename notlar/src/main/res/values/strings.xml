@@ -155,4 +155,38 @@
     <string name="gecmis">Version history</string>
     <string name="gecmis_yok">No versions yet</string>
     <string name="gecmise_donuldu">Older version loaded</string>
+
+    <!-- Note lock -->
+    <string name="kilitli_not">Locked note</string>
+    <string name="kilitli_not_ozet">Enter your PIN to open this note</string>
+    <string name="not_kilit_ozet">A locked note hides its preview everywhere and asks for your PIN each time you open it. The .md file itself is not encrypted.</string>
+
+    <!-- App lock options -->
+    <string name="parmak_izi_soru">Also unlock with your fingerprint?</string>
+    <string name="parmak_izi_kullan">Use fingerprint too</string>
+    <string name="sadece_pin">PIN only</string>
+    <string name="otomatik_kilit">Auto-lock</string>
+    <string name="kilit_hemen">Immediately</string>
+    <string name="kilit_30sn">After 30 seconds</string>
+    <string name="kilit_1dk">After 1 minute</string>
+    <string name="kilit_5dk">After 5 minutes</string>
+
+    <!-- Version history -->
+    <string name="gecmis_karsilastir">Compare</string>
+    <string name="surume_don">Restore this version</string>
+    <string name="gecmis_fark_yok">Same as the current note</string>
+    <string name="gecmis_yok_ozet">No older versions yet.\nA version is kept every time the note is saved.</string>
+    <string name="gecmis_aciklama">Green lines come back, red lines go away.</string>
+    <plurals name="fark_eklenen">
+        <item quantity="one">+%d line</item>
+        <item quantity="other">+%d lines</item>
+    </plurals>
+    <plurals name="fark_silinen">
+        <item quantity="one">\u2212%d line</item>
+        <item quantity="other">\u2212%d lines</item>
+    </plurals>
+    <plurals name="fark_degismeyen">
+        <item quantity="one">%d unchanged line</item>
+        <item quantity="other">%d unchanged lines</item>
+    </plurals>
 </resources>

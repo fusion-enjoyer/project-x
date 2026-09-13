@@ -155,4 +155,38 @@
     <string name="gecmis">Sürüm geçmişi</string>
     <string name="gecmis_yok">Henüz sürüm yok</string>
     <string name="gecmise_donuldu">Eski sürüm yüklendi</string>
+
+    <!-- Not kilidi -->
+    <string name="kilitli_not">Kilitli not</string>
+    <string name="kilitli_not_ozet">Bu notu açmak için PIN gerekiyor</string>
+    <string name="not_kilit_ozet">Kilitli notun önizlemesi hiçbir yerde görünmez ve her açılışta PIN sorulur. .md dosyasının kendisi şifrelenmez.</string>
+
+    <!-- Uygulama kilidi seçenekleri -->
+    <string name="parmak_izi_soru">Parmak izi de kullanılsın mı?</string>
+    <string name="parmak_izi_kullan">Parmak izi de kullan</string>
+    <string name="sadece_pin">Sadece PIN</string>
+    <string name="otomatik_kilit">Otomatik kilitlenme</string>
+    <string name="kilit_hemen">Hemen</string>
+    <string name="kilit_30sn">30 saniye sonra</string>
+    <string name="kilit_1dk">1 dakika sonra</string>
+    <string name="kilit_5dk">5 dakika sonra</string>
+
+    <!-- Sürüm geçmişi -->
+    <string name="gecmis_karsilastir">Karşılaştır</string>
+    <string name="surume_don">Bu sürüme dön</string>
+    <string name="gecmis_fark_yok">Güncel notla aynı</string>
+    <string name="gecmis_yok_ozet">Henüz eski sürüm yok.\nNot her kaydedildiğinde bir sürüm saklanır.</string>
+    <string name="gecmis_aciklama">Yeşil satırlar geri gelir, kırmızılar silinir.</string>
+    <plurals name="fark_eklenen">
+        <item quantity="one">+%d satır</item>
+        <item quantity="other">+%d satır</item>
+    </plurals>
+    <plurals name="fark_silinen">
+        <item quantity="one">\u2212%d satır</item>
+        <item quantity="other">\u2212%d satır</item>
+    </plurals>
+    <plurals name="fark_degismeyen">
+        <item quantity="one">%d satır değişmedi</item>
+        <item quantity="other">%d satır değişmedi</item>
+    </plurals>
 </resources>

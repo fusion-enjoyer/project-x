@@ -1,6 +1,5 @@
 package com.ekosistem.notlar
 
-import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
@@ -16,8 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
 /**
- * PIN ekranı. Üç işi görür: kilidi açma, yeni PIN kurma, PIN'i kaldırma.
- * Hangi işi yapacağı "kip" ek bilgisiyle belirlenir.
+ * PIN ekranı. Dört işi görür: uygulamanın kilidini açma, kilitli bir notu açma,
+ * yeni PIN kurma, PIN'i kaldırma. Hangi işi yapacağı "kip" ek bilgisiyle belirlenir.
  */
 class KilitActivity : AppCompatActivity() {
 
@@ -29,9 +28,17 @@ class KilitActivity : AppCompatActivity() {
     private var kip = KIP_AC
     private var iptalSinyali: CancellationSignal? = null
 
+    private val acmaKipi: Boolean get() = kip == KIP_AC || kip == KIP_NOT
+
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
+        if (Prefs.ekranGizle(this)) {
+            window.setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+            )
+        }
         setContentView(R.layout.activity_kilit)
         kip = intent.getIntExtra("kip", KIP_AC)
 
@@ -43,15 +50,16 @@ class KilitActivity : AppCompatActivity() {
             when (kip) {
                 KIP_KUR -> R.string.pin_olustur
                 KIP_KALDIR -> R.string.pin_kaldir
+                KIP_NOT -> R.string.kilitli_not
                 else -> R.string.kilit_ac
             }
         )
-        aciklama.setText(R.string.pin_4_hane)
+        aciklama.setText(if (kip == KIP_NOT) R.string.kilitli_not_ozet else R.string.pin_4_hane)
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
         tuslariKur()
         noktalariGuncelle()
-        if (kip == KIP_AC) parmakIziniKur()
+        if (acmaKipi && Kilit.parmakIziAcik(this)) parmakIziniKur()
     }
 
     override fun onDestroy() {
@@ -59,10 +67,20 @@ class KilitActivity : AppCompatActivity() {
         iptalSinyali?.cancel()
     }
 
-    /** Kilidi açmadan geri dönülemez; uygulama kapanır. */
+    /**
+     * Uygulama kilidi açılmadan geri dönülemez, uygulama kapanır. Not kilidinde
+     * ise geri tuşu sadece notu kapatır.
+     */
     private val geriTusu = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            if (kip == KIP_AC) finishAffinity() else finish()
+            when (kip) {
+                KIP_AC -> finishAffinity()
+                KIP_NOT -> {
+                    setResult(RESULT_CANCELED)
+                    finish()
+                }
+                else -> finish()
+            }
         }
     }
 
@@ -148,8 +166,7 @@ class KilitActivity : AppCompatActivity() {
                     noktalariGuncelle()
                 } else if (ilk == pin) {
                     Kilit.pinKur(this, pin)
-                    setResult(RESULT_OK)
-                    finish()
+                    parmakIziniSor()
                 } else {
                     ilkPin = null
                     baslik.setText(R.string.pin_olustur)
@@ -167,9 +184,7 @@ class KilitActivity : AppCompatActivity() {
             }
             else -> {
                 if (Kilit.dogrula(this, pin)) {
-                    Kilit.oturumAcik = true
-                    setResult(RESULT_OK)
-                    finish()
+                    acildi()
                 } else {
                     hata(R.string.pin_yanlis)
                 }
@@ -177,12 +192,40 @@ class KilitActivity : AppCompatActivity() {
         }
     }
 
+    private fun acildi() {
+        if (kip == KIP_AC) Kilit.oturumAcik = true
+        setResult(RESULT_OK)
+        finish()
+    }
+
+    /** PIN kurulduktan sonra parmak izi ayrıca sorulur; kendiliğinden açılmaz. */
+    private fun parmakIziniSor() {
+        if (!Kilit.parmakIziDonanimi(this)) {
+            setResult(RESULT_OK)
+            finish()
+            return
+        }
+        AltSayfa(this)
+            .baslik(getString(R.string.parmak_izi_soru))
+            .madde(R.drawable.ic_kilit, getString(R.string.parmak_izi_kullan)) {
+                Prefs.parmakIziKaydet(this, true)
+            }
+            .madde(R.drawable.ic_kilit_kucuk, getString(R.string.sadece_pin)) {
+                Prefs.parmakIziKaydet(this, false)
+            }
+            .kapaninca {
+                setResult(RESULT_OK)
+                finish()
+            }
+            .goster()
+    }
+
     private fun hata(mesaj: Int) {
         aciklama.setText(mesaj)
         aciklama.setTextColor(0xFFE24B4A.toInt())
         noktalariGuncelle()
         aciklama.postDelayed({
-            aciklama.setText(R.string.pin_4_hane)
+            aciklama.setText(if (kip == KIP_NOT) R.string.kilitli_not_ozet else R.string.pin_4_hane)
             aciklama.setTextColor(ContextCompat.getColor(this, R.color.metin_ikincil))
         }, 1800)
     }
@@ -205,7 +248,7 @@ class KilitActivity : AppCompatActivity() {
             val sinyal = CancellationSignal()
             iptalSinyali = sinyal
             BiometricPrompt.Builder(this)
-                .setTitle(getString(R.string.kilit_ac))
+                .setTitle(getString(if (kip == KIP_NOT) R.string.kilitli_not else R.string.kilit_ac))
                 .setNegativeButton(
                     getString(R.string.pin_kullan),
                     mainExecutor
@@ -218,9 +261,7 @@ class KilitActivity : AppCompatActivity() {
                         override fun onAuthenticationSucceeded(
                             sonuc: BiometricPrompt.AuthenticationResult?
                         ) {
-                            Kilit.oturumAcik = true
-                            setResult(RESULT_OK)
-                            finish()
+                            acildi()
                         }
                     }
                 )
@@ -233,6 +274,7 @@ class KilitActivity : AppCompatActivity() {
         const val KIP_AC = 0
         const val KIP_KUR = 1
         const val KIP_KALDIR = 2
+        const val KIP_NOT = 3
         private const val PIN_UZUNLUK = 4
     }
 }

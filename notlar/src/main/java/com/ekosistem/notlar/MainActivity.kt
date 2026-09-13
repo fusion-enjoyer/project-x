@@ -63,11 +63,7 @@ class MainActivity : AppCompatActivity() {
                 android.view.WindowManager.LayoutParams.FLAG_SECURE
             )
         }
-        if (Kilit.gerekli(this)) {
-            startActivity(
-                Intent(this, KilitActivity::class.java).putExtra("kip", KilitActivity.KIP_AC)
-            )
-        }
+        // Kilit ekranını NotlarApp yaşam döngüsü açar (arka plandan dönüşte de).
         setContentView(R.layout.activity_main)
         depo = NotDeposu(this)
         vurgu = Renkler.vurgu(this)
@@ -157,6 +153,14 @@ class MainActivity : AppCompatActivity() {
         val aktifSorgu = sorgu
         val aktifKlasor = seciliKlasor
         Thread {
+            // Editörden yeni dönüldüyse kaydın bitmesini bekle, yoksa eski özet okunur.
+            NotDeposu.bekleyenKayit?.let { kayit ->
+                try {
+                    kayit.join(2000)
+                } catch (_: InterruptedException) {
+                }
+                NotDeposu.bekleyenKayit = null
+            }
             val notlar = try {
                 val etiket = seciliEtiket
                 if (etiket != null) depo.etiketliNotlar(etiket)
@@ -384,6 +388,7 @@ class MainActivity : AppCompatActivity() {
                 val intent = Intent(Intent.ACTION_SEND)
                     .setType("text/plain")
                     .putExtra(Intent.EXTRA_TEXT, metin)
+                Kilit.sistemAraciBekleniyor = true
                 startActivity(Intent.createChooser(intent, getString(R.string.paylas)))
             }
         }.start()
@@ -415,7 +420,14 @@ class MainActivity : AppCompatActivity() {
             ): Int = if (secimModu) 0 else super.getSwipeDirs(rv, vh)
 
             override fun onSwiped(vh: RecyclerView.ViewHolder, yon: Int) {
-                val not = adapter.notAl(vh.bindingAdapterPosition) ?: return
+                val konum = vh.bindingAdapterPosition
+                val not = adapter.notAl(konum) ?: return
+                /*
+                 * Kaydırılan satır, kendisini yenileyene kadar ekranda kayık ve
+                 * renkli zeminiyle asılı kalır. Klasör seçilmeden alt sayfa
+                 * kapatılırsa turuncu klasör ikonu notun üstünde kalıyordu.
+                 */
+                liste.post { adapter.notifyItemChanged(konum) }
                 if (yon == ItemTouchHelper.LEFT) silmeyiYap(listOf(not)) else tasiDialog(listOf(not))
             }
 

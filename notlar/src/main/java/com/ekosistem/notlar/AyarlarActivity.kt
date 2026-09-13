@@ -25,6 +25,7 @@ class AyarlarActivity : AppCompatActivity() {
     private lateinit var satirRenk: View
     private lateinit var satirKlasor: View
     private lateinit var satirSiralama: View
+    private lateinit var satirKilit: View
     private var renkSayfasi: AltSayfa? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,12 +72,13 @@ class AyarlarActivity : AppCompatActivity() {
             getString(R.string.ice_aktar),
             null
         )
+        satirKilit = findViewById(R.id.satirKilit)
         satirKur(
-            findViewById(R.id.satirKilit),
+            satirKilit,
             R.drawable.ic_ayar_kilit,
             KIRMIZI,
             getString(R.string.uygulama_kilidi),
-            if (Kilit.kurulu(this)) getString(R.string.kilit_acik) else getString(R.string.kilit_kapali)
+            kilitOzeti()
         )
         satirKur(
             findViewById(R.id.satirEkranGizle),
@@ -101,7 +103,7 @@ class AyarlarActivity : AppCompatActivity() {
         satirRenk.setOnClickListener { renkSec() }
         satirKlasor.setOnClickListener { klasorSec() }
         satirSiralama.setOnClickListener { siralamaSec() }
-        findViewById<View>(R.id.satirKilit).setOnClickListener { kilitAyari() }
+        satirKilit.setOnClickListener { kilitAyari() }
         findViewById<View>(R.id.satirEkranGizle).setOnClickListener {
             Prefs.ekranGizleKaydet(this, !Prefs.ekranGizle(this))
             recreate()
@@ -160,8 +162,65 @@ class AyarlarActivity : AppCompatActivity() {
         }
     }
 
+    private fun kilitOzeti(): String {
+        if (!Kilit.kurulu(this)) return getString(R.string.kilit_kapali)
+        val parcalar = mutableListOf(getString(R.string.kilit_acik), gecikmeAdi())
+        if (Kilit.parmakIziAcik(this)) parcalar.add(getString(R.string.parmak_izi))
+        return parcalar.joinToString(" · ")
+    }
+
+    private fun gecikmeAdi(): String = getString(
+        when (Prefs.kilitGecikmesi(this)) {
+            1 -> R.string.kilit_30sn
+            2 -> R.string.kilit_1dk
+            3 -> R.string.kilit_5dk
+            else -> R.string.kilit_hemen
+        }
+    )
+
+    /** Kilit kuruluysa seçenekler açılır; değilse doğrudan PIN kurulumuna gider. */
     private fun kilitAyari() {
-        val kip = if (Kilit.kurulu(this)) KilitActivity.KIP_KALDIR else KilitActivity.KIP_KUR
+        if (!Kilit.kurulu(this)) {
+            kilitEkraniAc(KilitActivity.KIP_KUR)
+            return
+        }
+        val sayfa = AltSayfa(this).baslik(getString(R.string.uygulama_kilidi))
+        if (Kilit.parmakIziDonanimi(this)) {
+            val acik = Prefs.parmakIzi(this)
+            sayfa.madde(R.drawable.ic_kilit, getString(R.string.parmak_izi), secili = acik) {
+                Prefs.parmakIziKaydet(this, !acik)
+                ozetGuncelle(satirKilit, kilitOzeti())
+            }
+        }
+        sayfa.madde(
+            R.drawable.ic_gecmis,
+            "${getString(R.string.otomatik_kilit)}: ${gecikmeAdi()}"
+        ) { gecikmeSec() }
+        sayfa.madde(R.drawable.ic_sil, getString(R.string.pin_kaldir), tehlikeli = true) {
+            kilitEkraniAc(KilitActivity.KIP_KALDIR)
+        }
+        sayfa.goster()
+    }
+
+    private fun gecikmeSec() {
+        val etiketler = listOf(
+            R.string.kilit_hemen,
+            R.string.kilit_30sn,
+            R.string.kilit_1dk,
+            R.string.kilit_5dk
+        )
+        val secili = Prefs.kilitGecikmesi(this)
+        val sayfa = AltSayfa(this).baslik(getString(R.string.otomatik_kilit))
+        etiketler.forEachIndexed { indeks, etiket ->
+            sayfa.madde(R.drawable.ic_gecmis, getString(etiket), secili = indeks == secili) {
+                Prefs.kilitGecikmesiKaydet(this, indeks)
+                ozetGuncelle(satirKilit, kilitOzeti())
+            }
+        }
+        sayfa.goster()
+    }
+
+    private fun kilitEkraniAc(kip: Int) {
         @Suppress("DEPRECATION")
         startActivityForResult(
             Intent(this, KilitActivity::class.java).putExtra("kip", kip),
@@ -262,6 +321,7 @@ class AyarlarActivity : AppCompatActivity() {
                 Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
         )
+        Kilit.sistemAraciBekleniyor = true
         @Suppress("DEPRECATION")
         startActivityForResult(intent, ISTEK_KLASOR)
     }
@@ -272,6 +332,7 @@ class AyarlarActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             .setType("application/zip")
             .putExtra(Intent.EXTRA_TITLE, Yedekleme.dosyaAdi())
+        Kilit.sistemAraciBekleniyor = true
         @Suppress("DEPRECATION")
         startActivityForResult(intent, ISTEK_DISA)
     }
@@ -280,6 +341,7 @@ class AyarlarActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .setType("application/zip")
             .addCategory(Intent.CATEGORY_OPENABLE)
+        Kilit.sistemAraciBekleniyor = true
         @Suppress("DEPRECATION")
         startActivityForResult(intent, ISTEK_ICE)
     }

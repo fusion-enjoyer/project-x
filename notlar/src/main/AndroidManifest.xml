@@ -41,6 +41,10 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".GecmisActivity"
+            android:parentActivityName=".EditorActivity" />
+
+        <activity
             android:name=".KilitActivity"
             android:excludeFromRecents="true"
             android:exported="false" />
