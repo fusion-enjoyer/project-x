@@ -161,7 +161,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="88dp"
             android:background="@drawable/bg_serit"
             android:gravity="center_vertical"
             android:orientation="horizontal"

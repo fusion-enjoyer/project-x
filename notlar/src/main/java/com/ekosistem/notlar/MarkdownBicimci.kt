@@ -63,6 +63,7 @@ class MarkdownBicimci(private val context: Context) {
         for (span in s.getSpans(0, s.length, GizliSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, AlintiSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, AyracSpan::class.java)) s.removeSpan(span)
+        for (span in s.getSpans(0, s.length, MaddeSpan::class.java)) s.removeSpan(span)
     }
 
     private fun sadeBicimle(s: Editable) {
@@ -134,6 +135,15 @@ class MarkdownBicimci(private val context: Context) {
         }
 
         if (onayKutusu(s, bas, son, satir)) return
+
+        val madde = MADDE.find(satir)
+        if (madde != null) {
+            val girinti = madde.groupValues[1].length
+            s.setSpan(MaddeSpan(), bas + girinti, bas + madde.value.length, EE)
+            satirIci(s, bas + madde.value.length, son, aktif)
+            return
+        }
+
         satirIci(s, bas, son, aktif)
     }
 
@@ -228,6 +238,7 @@ class MarkdownBicimci(private val context: Context) {
         val ONAY = Regex("^([ \\t]*)- \\[([ xX])\\]")
         private val BASLIK = Regex("^(#{1,6}) ")
         private val ALINTI = Regex("^> ?")
+        private val MADDE = Regex("^([ \\t]*)- ")
         private val AYRAC = Regex("^(-{3,}|\\*{3,}|_{3,})\\s*$")
         private val KOD = Regex("`([^`\\n]+)`")
         private val KALIN = Regex("\\*\\*([^*\\n]+)\\*\\*")

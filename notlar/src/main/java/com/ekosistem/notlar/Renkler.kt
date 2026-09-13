@@ -24,6 +24,27 @@ object Renkler {
         Secenek(R.string.renk_gri, 0xFF5F5E5A.toInt(), 0xFFB4B2A9.toInt())
     )
 
+    private val TEMALAR = intArrayOf(
+        R.style.Theme_Notlar_Vurgu0,
+        R.style.Theme_Notlar_Vurgu1,
+        R.style.Theme_Notlar_Vurgu2,
+        R.style.Theme_Notlar_Vurgu3,
+        R.style.Theme_Notlar_Vurgu4,
+        R.style.Theme_Notlar_Vurgu5,
+        R.style.Theme_Notlar_Vurgu6,
+        R.style.Theme_Notlar_Vurgu7,
+        R.style.Theme_Notlar_Vurgu8
+    )
+
+    /**
+     * Seçilen vurgu rengini taşıyan tema. Diyalog radyo düğmeleri, metin imleci
+     * ve seçim tutamakları rengi buradan alır; kod içinden boyanamıyorlar.
+     */
+    fun temaStili(context: Context): Int {
+        val indeks = Prefs.vurguIndeksi(context)
+        return TEMALAR[indeks.coerceIn(0, TEMALAR.size - 1)]
+    }
+
     fun geceMi(context: Context): Boolean =
         (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES

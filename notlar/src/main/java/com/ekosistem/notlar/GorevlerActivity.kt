@@ -25,6 +25,7 @@ class GorevlerActivity : AppCompatActivity() {
     private var tamamlananlar = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gorevler)
         depo = NotDeposu(this)

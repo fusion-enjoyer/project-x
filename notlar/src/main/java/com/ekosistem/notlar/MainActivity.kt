@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
     private var vurguUzeri = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         depo = NotDeposu(this)

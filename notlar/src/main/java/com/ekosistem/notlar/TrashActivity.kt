@@ -16,6 +16,7 @@ class TrashActivity : AppCompatActivity() {
     private lateinit var bosDurum: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_trash)
         depo = NotDeposu(this)

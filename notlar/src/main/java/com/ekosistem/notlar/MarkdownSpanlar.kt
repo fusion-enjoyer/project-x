@@ -31,6 +31,36 @@ class GizliSpan : ReplacementSpan() {
     }
 }
 
+/** "- " madde işaretini yuvarlak madde imine çevirir. */
+class MaddeSpan : ReplacementSpan() {
+
+    override fun getSize(
+        paint: Paint,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        fm: Paint.FontMetricsInt?
+    ): Int = paint.measureText(IM).toInt()
+
+    override fun draw(
+        canvas: Canvas,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        x: Float,
+        top: Int,
+        y: Int,
+        bottom: Int,
+        paint: Paint
+    ) {
+        canvas.drawText(IM, x, y.toFloat(), paint)
+    }
+
+    private companion object {
+        const val IM = "•  "
+    }
+}
+
 /** "> alıntı" satırının solundaki dikey çubuk. */
 class AlintiSpan(private val renk: Int, private val yogunluk: Float) : LeadingMarginSpan {
 

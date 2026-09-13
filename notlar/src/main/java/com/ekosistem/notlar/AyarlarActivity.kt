@@ -28,6 +28,7 @@ class AyarlarActivity : AppCompatActivity() {
     private lateinit var satirSiralama: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ayarlar)
         depo = NotDeposu(this)
@@ -51,7 +52,7 @@ class AyarlarActivity : AppCompatActivity() {
         )
         satirKur(
             satirSiralama,
-            R.drawable.ic_ayar_klasor,
+            R.drawable.ic_ayar_sirala,
             NOTR,
             getString(R.string.siralama),
             siralamaAdi()

@@ -8,4 +8,13 @@
     <color name="ayrac">#ECEAE6</color>
     <color name="vurgu">#B05E00</color>
     <color name="pill_metin">#FFFFFF</color>
+    <color name="vurgu_0">#B05E00</color>
+    <color name="vurgu_1">#C2410C</color>
+    <color name="vurgu_2">#A32D2D</color>
+    <color name="vurgu_3">#993556</color>
+    <color name="vurgu_4">#534AB7</color>
+    <color name="vurgu_5">#185FA5</color>
+    <color name="vurgu_6">#0F6E56</color>
+    <color name="vurgu_7">#3B6D11</color>
+    <color name="vurgu_8">#5F5E5A</color>
 </resources>

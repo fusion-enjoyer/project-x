@@ -232,11 +232,12 @@ class NotDeposu(private val context: Context) {
         )
     }
 
+    /** Kart önizlemesi için satırdaki Markdown işaretlerini söker. */
     private fun mdTemizle(satir: String): String =
         satir.trim()
             .trimStart('#', '>', ' ')
             .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
-            .replace("**", "").replace("__", "").replace("`", "")
+            .replace(ISARETLER, "")
             .trim()
 
     // --- Okuma / yazma ---
@@ -351,5 +352,9 @@ class NotDeposu(private val context: Context) {
     private fun sabitTemizle(uri: Uri) {
         val id = uri.toString()
         if (Prefs.sabitler(context).contains(id)) Prefs.sabitDegistir(context, id)
+    }
+
+    private companion object {
+        val ISARETLER = Regex("\\*{1,3}|~~|__|`|\\[\\[|]]")
     }
 }

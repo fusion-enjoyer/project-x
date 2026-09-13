@@ -10,6 +10,7 @@
         <item name="colorAccent">@color/vurgu</item>
         <item name="colorControlActivated">@color/vurgu</item>
         <item name="android:textCursorDrawable">@null</item>
+        <item name="colorBackgroundFloating">@color/kart</item>
     </style>
 
     <style name="Theme.Notlar.Translucent">
@@ -17,5 +18,49 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:backgroundDimEnabled">false</item>
+    </style>
+    <style name="Theme.Notlar.Vurgu0" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_0</item>
+        <item name="colorControlActivated">@color/vurgu_0</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu1" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_1</item>
+        <item name="colorControlActivated">@color/vurgu_1</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu2" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_2</item>
+        <item name="colorControlActivated">@color/vurgu_2</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu3" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_3</item>
+        <item name="colorControlActivated">@color/vurgu_3</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu4" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_4</item>
+        <item name="colorControlActivated">@color/vurgu_4</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu5" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_5</item>
+        <item name="colorControlActivated">@color/vurgu_5</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu6" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_6</item>
+        <item name="colorControlActivated">@color/vurgu_6</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu7" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_7</item>
+        <item name="colorControlActivated">@color/vurgu_7</item>
+    </style>
+
+    <style name="Theme.Notlar.Vurgu8" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_8</item>
+        <item name="colorControlActivated">@color/vurgu_8</item>
     </style>
 </resources>

@@ -55,6 +55,7 @@ class EditorActivity : AppCompatActivity() {
     private data class Durum(val metin: String, val imlec: Int)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
         depo = NotDeposu(this)
