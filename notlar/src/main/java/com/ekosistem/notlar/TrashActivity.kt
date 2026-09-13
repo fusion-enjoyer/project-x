@@ -25,6 +25,9 @@ class TrashActivity : AppCompatActivity() {
             onTikla = { not -> secenekler(not) },
             onUzunBas = { not -> secenekler(not) }
         )
+        adapter.vurgu = Renkler.vurgu(this)
+        adapter.kartRengi = androidx.core.content.ContextCompat.getColor(this, R.color.kart)
+        adapter.secimRengi = adapter.kartRengi
 
         val liste = findViewById<RecyclerView>(R.id.liste)
         liste.layoutManager = LinearLayoutManager(this)

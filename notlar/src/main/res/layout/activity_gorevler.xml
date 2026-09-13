@@ -23,6 +23,7 @@
             android:src="@drawable/ic_geri" />
 
         <TextView
+            android:id="@+id/ekranBasligi"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"

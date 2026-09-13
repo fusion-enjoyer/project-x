@@ -68,11 +68,14 @@ class NotAdapter(
         } else zaman
 
         t.sabit.visibility = if (not.sabit) View.VISIBLE else View.GONE
-        t.sabit.imageTintList = ColorStateList.valueOf(vurgu)
+        if (vurgu != 0) t.sabit.imageTintList = ColorStateList.valueOf(vurgu)
 
-        val secili = secililer.contains(not.uri.toString())
-        t.itemView.backgroundTintList =
-            ColorStateList.valueOf(if (secili) secimRengi else kartRengi)
+        // Renkler atanmadıysa karta dokunulmaz; yoksa zemin saydam kalır.
+        if (kartRengi != 0) {
+            val secili = secililer.contains(not.uri.toString())
+            t.itemView.backgroundTintList =
+                ColorStateList.valueOf(if (secili) secimRengi else kartRengi)
+        }
 
         t.itemView.setOnClickListener { onTikla(not) }
         t.itemView.setOnLongClickListener { onUzunBas(not); true }

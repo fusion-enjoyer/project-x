@@ -20,6 +20,7 @@ import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -88,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         secimCubuguKur()
         seritEylem.setTextColor(vurgu)
 
+        onBackPressedDispatcher.addCallback(this, geriTusu)
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener { v -> menuGoster(v) }
 
         findViewById<EditText>(R.id.arama).addTextChangedListener(object : TextWatcher {
@@ -110,13 +112,11 @@ class MainActivity : AppCompatActivity() {
         yenile()
     }
 
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        if (secimModu) {
+    /** Seçim modundayken geri tuşu seçimi kapatır, ekrandan çıkmaz. */
+    private val geriTusu = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
             secimBitir()
-            return
         }
-        super.onBackPressed()
     }
 
     private fun yeniNotDugmesiKur() {
@@ -359,6 +359,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun secimGorunumuGuncelle() {
+        geriTusu.isEnabled = secimModu
         secimCubugu.visibility = if (secimModu) View.VISIBLE else View.GONE
         baslikCubugu.visibility = if (secimModu) View.INVISIBLE else View.VISIBLE
         secimSayi.text = getString(R.string.secildi, secililer.size)

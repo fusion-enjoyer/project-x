@@ -30,6 +30,7 @@ class WidgetAyarActivity : AppCompatActivity() {
             return
         }
 
+        findViewById<TextView>(R.id.ekranBasligi).setText(R.string.widget_not_sec)
         findViewById<TextView>(R.id.bosDurum).setText(R.string.bos_durum)
         findViewById<ImageButton>(R.id.btnMenu).visibility = View.GONE
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }

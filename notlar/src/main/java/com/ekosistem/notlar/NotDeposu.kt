@@ -114,7 +114,8 @@ class NotDeposu(private val context: Context) {
         val baslangic = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return emptyList()
         val sonuc = mutableListOf<Not>()
         val temizSorgu = sorgu?.trim()?.takeIf { it.isNotEmpty() }?.lowercase(tr)
-        topla(baslangic, sonuc, Prefs.sabitler(context), temizSorgu, null)
+        // Klasör içindeyken de notun klasörü bilinsin ki taşıma geri alınabilsin.
+        topla(baslangic, sonuc, Prefs.sabitler(context), temizSorgu, klasorAdi)
         return sirala(sonuc)
     }
 

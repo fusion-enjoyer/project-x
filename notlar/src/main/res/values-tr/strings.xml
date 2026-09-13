@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Notlar</string>
+    <string name="ara">Ara</string>
+    <string name="yeni_not">Yeni not</string>
+    <string name="bos_durum">Henüz not yok.\nAlttaki düğmeyle ilk notunu oluştur.</string>
+    <string name="bos_arama">Aramanla eşleşen not bulunamadı.</string>
+    <string name="klasor_sec">Not klasörünü seç</string>
+    <string name="cop_kutusu">Çöp kutusu</string>
+    <string name="tema">Tema</string>
+    <string name="sabitle">Sabitle</string>
+    <string name="sabit_kaldir">Sabitlemeyi kaldır</string>
+    <string name="sil">Sil</string>
+    <string name="paylas">Paylaş</string>
+    <string name="geri_yukle">Geri yükle</string>
+    <string name="kalici_sil">Kalıcı olarak sil</string>
+    <string name="not_kaydedildi">Not kaydedildi</string>
+    <string name="cope_tasindi">Çöp kutusuna taşındı</string>
+    <string name="cop_bos">Çöp kutusu boş.</string>
+    <string name="tema_sistem">Sistemle aynı</string>
+    <string name="tema_acik">Açık</string>
+    <string name="tema_siyah">Saf siyah</string>
+    <string name="baslik_ipucu">Başlık</string>
+    <string name="notunu_yaz">Notunu buraya yaz</string>
+    <string name="tumu">Tümü</string>
+    <string name="yeni_klasor">Yeni klasör</string>
+    <string name="klasor_adi">Klasör adı</string>
+    <string name="olustur">Oluştur</string>
+    <string name="iptal">İptal</string>
+    <string name="ana_klasor">Ana klasör</string>
+    <string name="klasore_tasi">Klasöre taşı</string>
+    <string name="tasindi">Taşındı</string>
+    <string name="geri">Geri</string>
+    <string name="menu">Menü</string>
+    <string name="izin_yok_rozet">İnternet izni yok</string>
+    <string name="bicim_baslik">Başlık</string>
+    <string name="bicim_kalin">Kalın</string>
+    <string name="bicim_italik">İtalik</string>
+    <string name="bicim_liste">Madde listesi</string>
+    <string name="bicim_onay">Onay kutusu</string>
+
+    <!-- Geri al / yinele -->
+    <string name="geri_al">Geri al</string>
+    <string name="yinele">Yinele</string>
+
+    <!-- Bul ve değiştir -->
+    <string name="bul_degistir">Bul ve değiştir</string>
+    <string name="bul">Bul</string>
+    <string name="degistir">Değiştir</string>
+    <string name="tumu_degistir">Tümü</string>
+    <string name="onceki">Önceki</string>
+    <string name="sonraki">Sonraki</string>
+    <string name="kapat">Kapat</string>
+    <string name="bulunamadi">Bulunamadı</string>
+    <string name="degistirildi">%d yerde değiştirildi</string>
+
+    <!-- Ayarlar -->
+    <string name="ayarlar">Ayarlar</string>
+    <string name="gorunum">Görünüm</string>
+    <string name="vurgu_rengi">Vurgu rengi</string>
+    <string name="depolama">Depolama</string>
+    <string name="yedekleme">Yedekleme</string>
+    <string name="hakkinda">Hakkında</string>
+    <string name="surum">Sürüm</string>
+    <string name="disa_aktar">Zip olarak dışa aktar</string>
+    <string name="ice_aktar">Zip\'ten içe aktar</string>
+    <string name="yedek_alindi">Yedek kaydedildi</string>
+    <string name="yedek_yuklendi">%d not içe aktarıldı</string>
+    <string name="yedek_hata">İşlem tamamlanamadı</string>
+    <string name="klasor_uygulama">Uygulama deposu</string>
+    <string name="gizlilik_ozet">Bu uygulama internete bağlanmaz. Notlarının hepsi cihazında kalır.</string>
+
+    <!-- Renkler -->
+    <string name="renk_amber">Amber</string>
+    <string name="renk_turuncu">Turuncu</string>
+    <string name="renk_kirmizi">Kırmızı</string>
+    <string name="renk_pembe">Pembe</string>
+    <string name="renk_mor">Mor</string>
+    <string name="renk_mavi">Mavi</string>
+    <string name="renk_deniz">Deniz</string>
+    <string name="renk_yesil">Yeşil</string>
+    <string name="renk_gri">Gri</string>
+
+    <!-- Sıralama -->
+    <string name="siralama">Sıralama</string>
+    <string name="siralama_yeni">Önce yeni değişenler</string>
+    <string name="siralama_eski">Önce eski değişenler</string>
+    <string name="siralama_ad_az">Ada göre (A-Z)</string>
+    <string name="siralama_ad_za">Ada göre (Z-A)</string>
+
+    <!-- Klasör yönetimi -->
+    <string name="yeniden_adlandir">Yeniden adlandır</string>
+    <string name="klasoru_sil">Klasörü sil</string>
+    <string name="klasoru_sil_ozet">Klasördeki notlar ana klasöre taşınacak.</string>
+    <string name="klasor_silindi">Klasör silindi</string>
+
+    <!-- Çoklu seçim -->
+    <string name="secildi">%d seçildi</string>
+
+    <!-- Görevler -->
+    <string name="gorevler">Görevler</string>
+    <string name="gorev_yok">Açık görev yok.\nNotlarına onay kutusu ekleyerek başla.</string>
+    <string name="tamamlananlari_goster">Tamamlananları göster</string>
+
+    <!-- Widget -->
+    <string name="widget_hizli_not">Hızlı not</string>
+    <string name="widget_tek_not">Tek not</string>
+    <string name="widget_liste">Not listesi</string>
+    <string name="widget_not_sec">Gösterilecek notu seç</string>
+    <string name="widget_bos">Not yok</string>
+</resources>

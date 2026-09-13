@@ -47,7 +47,8 @@
 
         <receiver
             android:name=".HizliNotWidget"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/widget_hizli_not">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -58,7 +59,8 @@
 
         <receiver
             android:name=".TekNotWidget"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/widget_tek_not">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -69,7 +71,8 @@
 
         <receiver
             android:name=".ListeWidget"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/widget_liste">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
