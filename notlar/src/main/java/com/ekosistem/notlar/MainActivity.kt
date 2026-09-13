@@ -561,6 +561,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun menuGoster() {
         AltSayfa(this)
+            .madde(R.drawable.ic_gunluk, getString(R.string.bugunun_notu)) { bugununNotu() }
+            .madde(R.drawable.ic_sablon, getString(R.string.sablondan_not)) { sablonSec() }
             .madde(R.drawable.ic_bicim_onay, getString(R.string.gorevler)) {
                 startActivity(Intent(this, GorevlerActivity::class.java))
             }
@@ -573,6 +575,75 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, AyarlarActivity::class.java))
             }
             .goster()
+    }
+
+    // --- Günlük not ve şablonlar ---
+
+    /** Bugünün notu varsa açılır, yoksa `gunluk` şablonundan oluşturulur. */
+    private fun bugununNotu() {
+        Thread {
+            val baslik = Sablonlar.bugununBasligi()
+            val mevcut = depo.baslikIleBul(baslik)
+            val adres = mevcut?.uri
+                ?: depo.notOlustur(Sablonlar.gunlukIcerik(this, depo, baslik), null, baslik)
+            runOnUiThread {
+                if (adres == null) {
+                    Toast.makeText(this, R.string.sablon_hata, Toast.LENGTH_SHORT).show()
+                } else {
+                    editorAc(adres)
+                }
+            }
+        }.start()
+    }
+
+    private fun sablonSec() {
+        Thread {
+            val sablonlar = Sablonlar.listele(depo)
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.sablonlar))
+                if (sablonlar.isEmpty()) {
+                    sayfa.madde(R.drawable.ic_sablon, getString(R.string.ornek_sablonlar)) {
+                        ornekSablonlariOlustur()
+                    }
+                } else {
+                    for (sablon in sablonlar) {
+                        // Başlıktaki yer tutucu da doldurulsun; "{{tarih}}" yazmasın.
+                        sayfa.madde(
+                            R.drawable.ic_sablon,
+                            Sablonlar.uygula(this, sablon.baslik, "")
+                        ) { sablondanNot(sablon) }
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    private fun ornekSablonlariOlustur() {
+        Thread {
+            val sayi = Sablonlar.ornekleriOlustur(this, depo)
+            runOnUiThread {
+                yenile()
+                if (sayi > 0) sablonSec()
+                else Toast.makeText(this, R.string.sablon_hata, Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
+    private fun sablondanNot(sablon: Not) {
+        Thread {
+            val icerik = Sablonlar.uygula(this, depo.oku(sablon.uri), "")
+            // Şablon klasörü seçiliyken yeni not oraya değil ana klasöre gitsin.
+            val hedef = seciliKlasor?.takeIf { it != Sablonlar.KLASOR }
+            val adres = depo.notOlustur(icerik, hedef)
+            runOnUiThread {
+                if (adres == null) {
+                    Toast.makeText(this, R.string.sablon_hata, Toast.LENGTH_SHORT).show()
+                } else {
+                    editorAc(adres)
+                }
+            }
+        }.start()
     }
 
     private fun etiketleriGoster() {

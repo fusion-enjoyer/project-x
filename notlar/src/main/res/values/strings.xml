@@ -193,4 +193,16 @@
     <!-- Images -->
     <string name="gorsel_ekle">Insert image</string>
     <string name="gorsel_hata">Couldn\'t add that image</string>
+
+    <!-- Templates and daily note -->
+    <string name="bugunun_notu">Today\'s note</string>
+    <string name="sablondan_not">New note from template</string>
+    <string name="sablonlar">Templates</string>
+    <string name="ornek_sablonlar">Create starter templates</string>
+    <string name="sablon_olarak_kaydet">Save as template</string>
+    <string name="sablon_kaydedildi">Saved to templates</string>
+    <string name="sablon_hata">Couldn\'t do that</string>
+    <string name="sablon_gunluk">Daily note\n## Today\n-\u0020\n## Tasks\n- [ ]\u0020\n## Notes\n</string>
+    <string name="sablon_toplanti">{{date}} meeting\n## Present\n-\u0020\n## Discussed\n-\u0020\n## Decisions\n- [ ]\u0020\n</string>
+    <string name="sablon_alisveris">Shopping list {{date}}\n- [ ]\u0020\n- [ ]\u0020\n- [ ]\u0020\n</string>
 </resources>

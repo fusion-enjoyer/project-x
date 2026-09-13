@@ -790,6 +790,9 @@ class EditorActivity : AppCompatActivity() {
             }
             sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiAc() }
         }
+        sayfa.madde(R.drawable.ic_sablon, getString(R.string.sablon_olarak_kaydet)) {
+            sablonOlarakKaydet()
+        }
         sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
 
@@ -910,6 +913,22 @@ class EditorActivity : AppCompatActivity() {
                 metniYerlestir(eski)
                 dugmeleriGuncelle()
                 Toast.makeText(this, R.string.gecmise_donuldu, Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
+    /** Açık notu olduğu gibi şablon klasörüne kopyalar. */
+    private fun sablonOlarakKaydet() {
+        val metin = metinAlani.text.toString()
+        if (metin.isBlank()) return
+        Thread {
+            val adres = Sablonlar.kaydet(depo, metin)
+            runOnUiThread {
+                Toast.makeText(
+                    this,
+                    if (adres != null) R.string.sablon_kaydedildi else R.string.sablon_hata,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }.start()
     }

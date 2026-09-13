@@ -157,7 +157,12 @@ class NotDeposu(private val context: Context) {
         for (f in dir.listFiles()) {
             val ad = f.name ?: continue
             if (f.isDirectory) {
-                if (!ozelKlasor(ad)) topla(f, sonuc, sabitler, sorgu, etiket ?: ad)
+                // Şablonlar yalnızca kendi çipi seçiliyken listelenir; yoksa
+                // "Tümü" listesine, aramaya ve görevlere karışırlardı.
+                val sablonKlasoru = etiket == null && ad == Sablonlar.KLASOR
+                if (!ozelKlasor(ad) && !sablonKlasoru) {
+                    topla(f, sonuc, sabitler, sorgu, etiket ?: ad)
+                }
                 continue
             }
             if (!notDosyasi(ad)) continue
@@ -311,9 +316,9 @@ class NotDeposu(private val context: Context) {
         }
     }
 
-    fun notOlustur(icerik: String, klasorAdi: String? = null): Uri? {
+    fun notOlustur(icerik: String, klasorAdi: String? = null, ad: String? = null): Uri? {
         val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: kok()
-        return dosyaOlustur(hedef, icerik)
+        return dosyaOlustur(hedef, icerik, ad)
     }
 
     private fun dosyaOlustur(hedef: DocumentFile, icerik: String, istenenAd: String? = null): Uri? {
