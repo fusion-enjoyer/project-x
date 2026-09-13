@@ -12,13 +12,14 @@ data class Not(
     val baslik: String,
     val ozet: String,
     val degistirilme: Long,
-    val sabit: Boolean
+    val sabit: Boolean,
+    val klasor: String? = null
 )
 
 /**
  * Notlar düz Markdown dosyası olarak saklanır: kullanıcı klasör seçtiyse SAF
- * üzerinden o klasörde, seçmediyse uygulamanın kendi deposunda. Çöp kutusu,
- * kök altındaki gizli ".trash" klasörüdür.
+ * üzerinden o klasörde, seçmediyse uygulamanın kendi deposunda. Alt klasörler
+ * uygulamada "klasör" olarak görünür; çöp kutusu gizli ".trash" klasörüdür.
  */
 class NotDeposu(private val context: Context) {
 
@@ -45,10 +46,27 @@ class NotDeposu(private val context: Context) {
         return if (olustur) k.createDirectory(".trash") else null
     }
 
-    fun notlariListele(sorgu: String?): List<Not> {
+    fun klasorAdlari(): List<String> =
+        kok().listFiles()
+            .filter { it.isDirectory && !(it.name ?: ".").startsWith(".") }
+            .mapNotNull { it.name }
+            .sortedWith(compareBy(java.text.Collator.getInstance(tr)) { it })
+
+    fun klasorBul(ad: String): DocumentFile? =
+        kok().listFiles().firstOrNull { it.isDirectory && it.name == ad }
+
+    fun klasorOlustur(ad: String): Boolean {
+        val temiz = ad.trim().replace(Regex("[\\\\/:*?\"<>|]"), "").take(40)
+        if (temiz.isEmpty() || temiz.startsWith(".")) return false
+        if (klasorBul(temiz) != null) return true
+        return kok().createDirectory(temiz) != null
+    }
+
+    fun notlariListele(sorgu: String?, klasorAdi: String? = null): List<Not> {
+        val baslangic = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return emptyList()
         val sonuc = mutableListOf<Not>()
         val temizSorgu = sorgu?.trim()?.takeIf { it.isNotEmpty() }?.lowercase(tr)
-        topla(kok(), sonuc, Prefs.sabitler(context), temizSorgu)
+        topla(baslangic, sonuc, Prefs.sabitler(context), temizSorgu, null)
         return sonuc.sortedWith(
             compareByDescending<Not> { it.sabit }.thenByDescending { it.degistirilme }
         )
@@ -58,18 +76,19 @@ class NotDeposu(private val context: Context) {
         dir: DocumentFile,
         sonuc: MutableList<Not>,
         sabitler: Set<String>,
-        sorgu: String?
+        sorgu: String?,
+        etiket: String?
     ) {
         for (f in dir.listFiles()) {
             val ad = f.name ?: continue
             if (f.isDirectory) {
-                if (!ad.startsWith(".")) topla(f, sonuc, sabitler, sorgu)
+                if (!ad.startsWith(".")) topla(f, sonuc, sabitler, sorgu, etiket ?: ad)
                 continue
             }
             if (!notDosyasi(ad)) continue
             val icerik = oku(f.uri, 4096)
             if (sorgu != null && !(ad + "\n" + icerik).lowercase(tr).contains(sorgu)) continue
-            sonuc.add(notYap(f, icerik, sabitler))
+            sonuc.add(notYap(f, icerik, sabitler, etiket))
         }
     }
 
@@ -79,7 +98,7 @@ class NotDeposu(private val context: Context) {
         for (f in cop.listFiles()) {
             val ad = f.name ?: continue
             if (!f.isFile || !notDosyasi(ad)) continue
-            sonuc.add(notYap(f, oku(f.uri, 1024), emptySet()))
+            sonuc.add(notYap(f, oku(f.uri, 1024), emptySet(), null))
         }
         return sonuc.sortedByDescending { it.degistirilme }
     }
@@ -87,7 +106,12 @@ class NotDeposu(private val context: Context) {
     private fun notDosyasi(ad: String): Boolean =
         ad.endsWith(".md", true) || ad.endsWith(".txt", true)
 
-    private fun notYap(f: DocumentFile, icerik: String, sabitler: Set<String>): Not {
+    private fun notYap(
+        f: DocumentFile,
+        icerik: String,
+        sabitler: Set<String>,
+        klasor: String?
+    ): Not {
         val satirlar = icerik.lines()
         val ilkIndex = satirlar.indexOfFirst { it.isNotBlank() }
         val ilk = if (ilkIndex >= 0) mdTemizle(satirlar[ilkIndex]) else ""
@@ -105,7 +129,8 @@ class NotDeposu(private val context: Context) {
             baslik = baslik.take(80),
             ozet = ozet,
             degistirilme = f.lastModified(),
-            sabit = sabitler.contains(f.uri.toString())
+            sabit = sabitler.contains(f.uri.toString()),
+            klasor = klasor
         )
     }
 
@@ -149,7 +174,10 @@ class NotDeposu(private val context: Context) {
         }
     }
 
-    fun notOlustur(icerik: String): Uri? = dosyaOlustur(kok(), icerik)
+    fun notOlustur(icerik: String, klasorAdi: String? = null): Uri? {
+        val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: kok()
+        return dosyaOlustur(hedef, icerik)
+    }
 
     private fun dosyaOlustur(hedef: DocumentFile, icerik: String, istenenAd: String? = null): Uri? {
         var ad = istenenAd ?: icerik.lines().firstOrNull { it.isNotBlank() }
@@ -181,22 +209,25 @@ class NotDeposu(private val context: Context) {
             DocumentFile.fromSingleUri(context, uri)
         }
 
-    fun copeTasi(uri: Uri): Boolean {
+    private fun hedefeTasi(uri: Uri, hedef: DocumentFile): Boolean {
         val f = docGetir(uri) ?: return false
-        val cop = copKlasoru(true) ?: return false
         val icerik = oku(uri)
         val ad = (f.name ?: "not.md").removeSuffix(".md").removeSuffix(".txt")
-        if (dosyaOlustur(cop, icerik, ad) == null) return false
+        if (dosyaOlustur(hedef, icerik, ad) == null) return false
         sabitTemizle(uri)
         return f.delete()
     }
 
-    fun geriYukle(uri: Uri): Boolean {
-        val f = docGetir(uri) ?: return false
-        val icerik = oku(uri)
-        val ad = (f.name ?: "not.md").removeSuffix(".md").removeSuffix(".txt")
-        if (dosyaOlustur(kok(), icerik, ad) == null) return false
-        return f.delete()
+    fun copeTasi(uri: Uri): Boolean {
+        val cop = copKlasoru(true) ?: return false
+        return hedefeTasi(uri, cop)
+    }
+
+    fun geriYukle(uri: Uri): Boolean = hedefeTasi(uri, kok())
+
+    fun klasoreTasi(uri: Uri, klasorAdi: String?): Boolean {
+        val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return false
+        return hedefeTasi(uri, hedef)
     }
 
     fun kaliciSil(uri: Uri): Boolean {

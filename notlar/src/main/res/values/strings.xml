@@ -20,7 +20,16 @@
     <string name="tema_sistem">Sistemle aynı</string>
     <string name="tema_acik">Açık</string>
     <string name="tema_siyah">Saf siyah</string>
-    <string name="not_ipucu">Notunu yaz…\nİlk satır başlık olur.</string>
+    <string name="baslik_ipucu">Başlık</string>
+    <string name="notunu_yaz">Notunu buraya yaz</string>
+    <string name="tumu">Tümü</string>
+    <string name="yeni_klasor">Yeni klasör</string>
+    <string name="klasor_adi">Klasör adı</string>
+    <string name="olustur">Oluştur</string>
+    <string name="iptal">İptal</string>
+    <string name="ana_klasor">Ana klasör</string>
+    <string name="klasore_tasi">Klasöre taşı</string>
+    <string name="tasindi">Taşındı</string>
     <string name="geri">Geri</string>
     <string name="menu">Menü</string>
     <string name="izin_yok_rozet">İnternet izni yok</string>

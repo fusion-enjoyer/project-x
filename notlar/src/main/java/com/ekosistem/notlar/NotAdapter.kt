@@ -20,6 +20,8 @@ class NotAdapter(
         notifyDataSetChanged()
     }
 
+    fun notAl(pozisyon: Int): Not? = notlar.getOrNull(pozisyon)
+
     class Tutucu(v: View) : RecyclerView.ViewHolder(v) {
         val baslik: TextView = v.findViewById(R.id.notBaslik)
         val ozet: TextView = v.findViewById(R.id.notOzet)
@@ -39,9 +41,12 @@ class NotAdapter(
         t.baslik.text = not.baslik
         t.ozet.text = not.ozet
         t.ozet.visibility = if (not.ozet.isBlank()) View.GONE else View.VISIBLE
-        t.tarih.text = if (not.degistirilme > 0) {
-            DateUtils.getRelativeTimeSpanString(not.degistirilme)
+        val zaman = if (not.degistirilme > 0) {
+            DateUtils.getRelativeTimeSpanString(not.degistirilme).toString()
         } else ""
+        t.tarih.text = if (not.klasor != null) {
+            if (zaman.isBlank()) not.klasor else "$zaman · ${not.klasor}"
+        } else zaman
         t.sabit.visibility = if (not.sabit) View.VISIBLE else View.GONE
         t.itemView.setOnClickListener { onTikla(not) }
         t.itemView.setOnLongClickListener { onUzunBas(not); true }

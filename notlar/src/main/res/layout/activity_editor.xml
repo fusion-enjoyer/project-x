@@ -42,7 +42,6 @@
         android:layout_weight="1"
         android:background="@null"
         android:gravity="top"
-        android:hint="@string/not_ipucu"
         android:inputType="textMultiLine|textCapSentences"
         android:lineSpacingExtra="4dp"
         android:paddingLeft="20dp"
