@@ -238,4 +238,23 @@
     <string name="taslak_at">Onları at</string>
     <string name="taslak_kurtarildi">Kaydedilmemiş bir not kurtarıldı</string>
     <string name="klasor_kismen">Notlar taşındı. Klasörde başka dosyalar olduğu için klasör silinmedi.</string>
+    <string name="keep_aktar">Google Keep\'ten aktar</string>
+    <string name="keep_aktar_ozet">Notlar, listeler, etiketler ve fotoğraflar</string>
+    <string name="keep_aciklama">1. Tarayıcıda takeout.google.com adresini aç\n2. “Seçimi kaldır”a bas, yalnızca Keep\'i işaretle\n3. Dışa aktarımı oluştur ve zip dosyasını indir\n4. O zip dosyasını burada seç\n\nEtiketler #etikete, listeler onay kutusuna dönüşür, arşivdeki notlar Arşiv klasörüne gider. Aynı zip\'i yeniden aktarırsan notlar çiftlenmez.</string>
+    <string name="keep_zip_sec">Takeout zip dosyasını seç</string>
+    <string name="keep_aktariliyor">Keep\'ten aktarılıyor… bu biraz sürebilir.</string>
+    <string name="keep_bulunamadi">Bu dosyada Keep notu yok. Takeout zip\'ini seçtiğinden emin ol.</string>
+    <string name="keep_arsiv_klasoru">Arşiv</string>
+    <plurals name="keep_not_sayisi">
+        <item quantity="other">Keep\'ten %d not aktarıldı</item>
+    </plurals>
+    <plurals name="keep_gorsel_sayisi">
+        <item quantity="other">%d fotoğraf kopyalandı</item>
+    </plurals>
+    <plurals name="keep_zaten_vardi">
+        <item quantity="other">%d not daha önce aktarılmıştı, atlandı</item>
+    </plurals>
+    <plurals name="keep_ek_atlandi">
+        <item quantity="other">%d ses kaydı aktarılamıyor</item>
+    </plurals>
 </resources>

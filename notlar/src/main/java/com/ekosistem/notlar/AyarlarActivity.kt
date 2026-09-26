@@ -78,6 +78,13 @@ class AyarlarActivity : AppCompatActivity() {
             getString(R.string.ice_aktar),
             null
         )
+        satirKur(
+            findViewById(R.id.satirKeep),
+            R.drawable.ic_ayar_yedek,
+            YESIL,
+            getString(R.string.keep_aktar),
+            getString(R.string.keep_aktar_ozet)
+        )
         satirKilit = findViewById(R.id.satirKilit)
         satirKur(
             satirKilit,
@@ -118,6 +125,7 @@ class AyarlarActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.satirDisaAktar).setOnClickListener { disaAktarmayiBaslat() }
         findViewById<View>(R.id.satirIceAktar).setOnClickListener { iceAktarmayiBaslat() }
+        findViewById<View>(R.id.satirKeep).setOnClickListener { keepAciklamasi() }
     }
 
     private fun satirKur(satir: View, ikon: Int, rozetRengi: Int, baslik: String, ozet: String?) {
@@ -400,12 +408,87 @@ class AyarlarActivity : AppCompatActivity() {
         startActivityForResult(intent, ISTEK_ICE)
     }
 
+    // --- Google Keep ---
+
+    /** Kullanıcı Takeout'u bilmeyebilir: önce nereden ne indireceğini anlat. */
+    private fun keepAciklamasi() {
+        AltSayfa(this)
+            .baslik(getString(R.string.keep_aciklama))
+            .madde(R.drawable.ic_ayar_yedek, getString(R.string.keep_zip_sec)) { keepZipSec() }
+            .goster()
+    }
+
+    private fun keepZipSec() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .setType("application/zip")
+            .putExtra(
+                Intent.EXTRA_MIME_TYPES,
+                arrayOf("application/zip", "application/x-zip-compressed", "application/x-zip")
+            )
+            // Takeout büyük dışa aktarımı birden çok zip'e böler.
+            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            .addCategory(Intent.CATEGORY_OPENABLE)
+        Kilit.sistemAraciBekleniyor = true
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, ISTEK_KEEP)
+    }
+
+    private fun keepAktar(kaynaklar: List<Uri>) {
+        Toast.makeText(this, R.string.keep_aktariliyor, Toast.LENGTH_LONG).show()
+        val arsiv = getString(R.string.keep_arsiv_klasoru)
+        // Uzun sürebilir; kullanıcı ayarlardan çıksa da iş bitsin, sonuç yine gösterilsin.
+        val uygulama = applicationContext
+        NotDeposu.yazici.execute {
+            val s = KeepAktarma.aktar(uygulama, NotDeposu(uygulama), kaynaklar, arsiv)
+            val mesaj = keepSonucMetni(s)
+            runOnUiThread {
+                // Sonuç birkaç satır olabilir; bildirim iki satırda kesiyordu.
+                if (isFinishing || isDestroyed) {
+                    Toast.makeText(uygulama, mesaj, Toast.LENGTH_LONG).show()
+                } else {
+                    AltSayfa(this)
+                        .baslik(mesaj)
+                        .madde(R.drawable.ic_onay_isaret, getString(R.string.kapat)) {}
+                        .goster()
+                }
+            }
+        }
+    }
+
+    private fun keepSonucMetni(s: KeepAktarma.Sonuc?): String = when {
+        s == null -> getString(R.string.yedek_hata)
+        !s.keepBulundu -> getString(R.string.keep_bulunamadi)
+        else -> buildList {
+            add(resources.getQuantityString(R.plurals.keep_not_sayisi, s.not, s.not))
+            if (s.gorsel > 0) {
+                add(resources.getQuantityString(R.plurals.keep_gorsel_sayisi, s.gorsel, s.gorsel))
+            }
+            if (s.zatenVardi > 0) {
+                add(resources.getQuantityString(R.plurals.keep_zaten_vardi, s.zatenVardi, s.zatenVardi))
+            }
+            if (s.atlananEk > 0) {
+                add(resources.getQuantityString(R.plurals.keep_ek_atlandi, s.atlananEk, s.atlananEk))
+            }
+        }.joinToString("\n")
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(istek: Int, sonuc: Int, veri: Intent?) {
         super.onActivityResult(istek, sonuc, veri)
         if (sonuc != RESULT_OK) return
         if (istek == ISTEK_KILIT) {
             recreate()
+            return
+        }
+        if (istek == ISTEK_KEEP) {
+            val secilenler = mutableListOf<Uri>()
+            val coklu = veri?.clipData
+            if (coklu != null) {
+                for (i in 0 until coklu.itemCount) coklu.getItemAt(i).uri?.let { secilenler.add(it) }
+            } else {
+                veri?.data?.let { secilenler.add(it) }
+            }
+            if (secilenler.isNotEmpty()) keepAktar(secilenler)
             return
         }
         val uri = veri?.data ?: return
@@ -445,6 +528,7 @@ class AyarlarActivity : AppCompatActivity() {
         const val ISTEK_DISA = 43
         const val ISTEK_ICE = 44
         const val ISTEK_KILIT = 45
+        const val ISTEK_KEEP = 46
         val KIRMIZI = 0xFFA32D2D.toInt()
         val NOTR = 0xFF5F5E5A.toInt()
         val YESIL = 0xFF0F6E56.toInt()

@@ -238,4 +238,27 @@
     <string name="taslak_at">Discard them</string>
     <string name="taslak_kurtarildi">An unsaved note was recovered</string>
     <string name="klasor_kismen">Notes moved out. The folder still holds other files, so it was kept.</string>
+    <string name="keep_aktar">Import from Google Keep</string>
+    <string name="keep_aktar_ozet">Notes, lists, labels and photos</string>
+    <string name="keep_aciklama">1. Open takeout.google.com in a browser\n2. Click “Deselect all”, then tick only Keep\n3. Create the export and download the zip file\n4. Pick that zip here\n\nLabels become #tags, lists become checkboxes, archived notes go to an Archive folder. Importing the same zip again won\'t duplicate notes.</string>
+    <string name="keep_zip_sec">Pick the Takeout zip</string>
+    <string name="keep_aktariliyor">Importing from Keep… this can take a minute.</string>
+    <string name="keep_bulunamadi">No Keep notes in this file. Make sure you picked the Takeout zip.</string>
+    <string name="keep_arsiv_klasoru">Archive</string>
+    <plurals name="keep_not_sayisi">
+        <item quantity="one">%d note imported from Keep</item>
+        <item quantity="other">%d notes imported from Keep</item>
+    </plurals>
+    <plurals name="keep_gorsel_sayisi">
+        <item quantity="one">%d photo copied</item>
+        <item quantity="other">%d photos copied</item>
+    </plurals>
+    <plurals name="keep_zaten_vardi">
+        <item quantity="one">%d note was already imported, skipped</item>
+        <item quantity="other">%d notes were already imported, skipped</item>
+    </plurals>
+    <plurals name="keep_ek_atlandi">
+        <item quantity="one">%d audio recording can\'t be imported</item>
+        <item quantity="other">%d audio recordings can\'t be imported</item>
+    </plurals>
 </resources>

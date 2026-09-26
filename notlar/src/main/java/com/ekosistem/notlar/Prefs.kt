@@ -23,6 +23,17 @@ object Prefs {
         return eklendi
     }
 
+    /** Google Keep'ten daha önce alınmış notların anahtarları; ikinci aktarma çiftlemesin. */
+    fun keepAktarilanlar(c: Context): Set<String> =
+        sp(c).getStringSet("keep_aktarilanlar", emptySet()) ?: emptySet()
+
+    fun keepAktarilanlarEkle(c: Context, yeni: Collection<String>) {
+        if (yeni.isEmpty()) return
+        val s = keepAktarilanlar(c).toMutableSet()
+        s.addAll(yeni)
+        sp(c).edit().putStringSet("keep_aktarilanlar", s).apply()
+    }
+
     fun tema(c: Context): Int = sp(c).getInt("tema", 0)
 
     fun temaKaydet(c: Context, t: Int) {

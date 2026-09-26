@@ -195,24 +195,32 @@ object Gorseller {
      * Yedekten çıkan görseli `ekler/` klasörüne yazar. Aynı adlı dosya varsa
      * dokunulmaz: notlardaki bağlantılar ada göre çözüldüğü için ad korunmalı.
      */
-    fun geriYukle(context: Context, depo: NotDeposu, ad: String, bayt: ByteArray): Boolean {
+    fun geriYukle(context: Context, depo: NotDeposu, ad: String, bayt: ByteArray): Boolean =
+        disaridanAl(context, depo, ad, bayt) != null
+
+    /**
+     * Dışarıdan gelen (yedek, Google Keep) görseli `ekler/`e yazar ve dosyanın
+     * klasördeki adını döndürür. Sağlayıcı uzantıyı türe göre koyduğu için
+     * ("a.jpeg" → "a.jpg") nota yazılacak ad buradan alınmalı.
+     */
+    fun disaridanAl(context: Context, depo: NotDeposu, ad: String, bayt: ByteArray): String? {
         val temizAd = ad.substringAfterLast('/').trim()
-        if (temizAd.isEmpty() || temizAd.startsWith(".")) return false
-        val klasor = depo.eklerKlasoru(true) ?: return false
-        if (klasor.findFile(temizAd) != null) return true
+        if (temizAd.isEmpty() || temizAd.startsWith(".")) return null
+        val klasor = depo.eklerKlasoru(true) ?: return null
+        if (klasor.findFile(temizAd) != null) return temizAd
 
         val uzanti = temizAd.substringAfterLast('.', "")
         val tur = MimeTypeMap.getSingleton()
             .getMimeTypeFromExtension(uzanti.lowercase()) ?: "image/jpeg"
-        val hedef = klasor.createFile(tur, temizAd.substringBeforeLast('.')) ?: return false
+        val hedef = klasor.createFile(tur, temizAd.substringBeforeLast('.')) ?: return null
         return try {
             context.contentResolver.openOutputStream(hedef.uri)?.use { cikis ->
                 cikis.write(bayt)
                 adresleriUnut()
-                true
-            } ?: false
+                hedef.name ?: temizAd
+            }
         } catch (_: Exception) {
-            false
+            null
         }
     }
 
