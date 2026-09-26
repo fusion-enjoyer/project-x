@@ -37,12 +37,22 @@ class EditorActivity : AppCompatActivity() {
     /** Üstteki ikonlar şu an görünür mü? (kaydırmayla gizlenip geri gelirler) */
     private var ustCubukAcik = true
 
+    /** Kayıt iş parçacığı yeni notu oluşturunca yazar; sıradaki iş onu görmeli. */
+    @Volatile
     private var uri: Uri? = null
     private var hedefKlasor: String? = null
     private var acilisMetni = ""
     private var oncekiIcerik = ""
     private var silindi = false
     private var kilitBekliyor = false
+
+    /** Not içeriği alana yüklendi mi? Yüklenmeden kaydetmek boş metni yazardı. */
+    private var yuklendi = false
+
+    /** Kurtarma sorusu yanıtsız kapatıldıysa taslak bir sonraki açılışa kalır. */
+    private var taslakYanitBekliyor = false
+    private lateinit var taslaklar: Taslaklar
+    private val taslakYazici = Runnable { taslagiYaz() }
 
     private var bicimleniyor = false
     private var satirEklendi = false
@@ -79,6 +89,7 @@ class EditorActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_editor)
         depo = NotDeposu(this)
+        taslaklar = Taslaklar(this)
         bicimci = MarkdownBicimci(this)
         metinAlani = findViewById(R.id.metinAlani)
         bicimCubugu = findViewById(R.id.bicimCubugu)
@@ -111,7 +122,10 @@ class EditorActivity : AppCompatActivity() {
         hedefKlasor = intent.getStringExtra("klasor")
         val acilacak = uri
         when {
-            acilacak == null -> metinAlani.requestFocus()
+            acilacak == null -> {
+                yuklendi = true
+                metinAlani.requestFocus()
+            }
             // Kilitli notun içeriği kilit açılana kadar hiç yüklenmez.
             Kilit.notKilitli(this, acilacak.toString()) -> {
                 kilitBekliyor = true
@@ -179,13 +193,56 @@ class EditorActivity : AppCompatActivity() {
 
     private fun notuYukle(adres: Uri) {
         Thread {
-            val metin = depo.oku(adres)
+            val metin = depo.okuKesin(adres)
+            val taslak = if (metin != null) taslaklar.oku(adres.toString()) else null
             runOnUiThread {
+                if (metin == null) {
+                    // Boş not gibi açılsaydı ilk yazılan harf asıl notun üzerine yazılırdı.
+                    Toast.makeText(this, R.string.not_acilamadi, Toast.LENGTH_LONG).show()
+                    finish()
+                    return@runOnUiThread
+                }
                 acilisMetni = metin
                 oncekiIcerik = metin
                 metniYerlestir(metin)
+                yuklendi = true
+                when {
+                    taslak == null -> {}
+                    taslak.metin == metin -> NotDeposu.yazici.execute { taslaklar.sil(adres.toString()) }
+                    else -> taslakOner(adres, taslak.metin)
+                }
             }
         }.start()
+    }
+
+    /** Önceki oturumdan kaydedilememiş değişiklik kaldıysa geri yüklemeyi önerir. */
+    private fun taslakOner(adres: Uri, metin: String) {
+        taslakYanitBekliyor = true
+        AltSayfa(this)
+            .baslik(getString(R.string.taslak_bulundu))
+            .madde(R.drawable.ic_geri_al, getString(R.string.taslak_geri_yukle)) {
+                taslakYanitBekliyor = false
+                val s = metinAlani.text ?: return@madde
+                gecmis.addLast(Durum(s.toString(), metinAlani.selectionStart))
+                gelecek.clear()
+                // acilisMetni değişmez: alan artık farklı, ilk çıkışta nota yazılır.
+                metniYerlestir(metin)
+                dugmeleriGuncelle()
+            }
+            .madde(R.drawable.ic_sil, getString(R.string.taslak_at), tehlikeli = true) {
+                taslakYanitBekliyor = false
+                NotDeposu.yazici.execute { taslaklar.sil(adres.toString()) }
+            }
+            .goster()
+    }
+
+    /** Yazma durunca metnin güvenlik kopyasını alır (bkz. [Taslaklar]). */
+    private fun taslagiYaz() {
+        if (!yuklendi || silindi || kilitBekliyor || isFinishing) return
+        val metin = metinAlani.text.toString()
+        if (metin == acilisMetni) return
+        // Adres yürütme anında okunur: yeni not bu arada oluşturulduysa ona yazılır.
+        NotDeposu.yazici.execute { taslaklar.yaz(uri?.toString(), metin) }
     }
 
     /** Metni geri al yığınını bozmadan alana koyar. */
@@ -277,6 +334,9 @@ class EditorActivity : AppCompatActivity() {
             sonDurum = Durum(s.toString(), metinAlani.selectionStart)
 
             if (bulCubugu.visibility == View.VISIBLE) eslesmeleriBul(false)
+
+            metinAlani.removeCallbacks(taslakYazici)
+            metinAlani.postDelayed(taslakYazici, TASLAK_MS)
         }
     }
 
@@ -1059,25 +1119,60 @@ class EditorActivity : AppCompatActivity() {
         kaydet()
     }
 
+    /**
+     * Notu arka planda kaydeder. İş [NotDeposu.yazici] sırasına girer, böylece
+     * arkasından gelen "taşı" ya da ikinci bir kayıt bunun bitmesini bekler.
+     * Metin önce taslağa yazılır; asıl dosya yazılamazsa taslak kalır ve not
+     * bir sonraki açılışta kurtarılabilir.
+     */
     private fun kaydet() {
-        if (silindi || kilitBekliyor) return
+        metinAlani.removeCallbacks(taslakYazici)
+        if (silindi || kilitBekliyor || !yuklendi) return
         val metin = metinAlani.text.toString()
-        if (metin == acilisMetni) return
-        val hedef = uri
+        if (metin == acilisMetni) {
+            // Yazılıp ilk hale geri dönüldüyse eski taslak boşuna "geri yükle" sordurmasın.
+            // Yeni notun taslağına dokunulmaz: kurtarılmayı bekleyen bir not olabilir.
+            if (!taslakYanitBekliyor) {
+                uri?.let { adres -> NotDeposu.yazici.execute { taslaklar.sil(adres.toString()) } }
+            }
+            return
+        }
+        val oncekiAcilis = acilisMetni
         acilisMetni = metin
         val onceki = oncekiIcerik
         oncekiIcerik = metin
-        val kayit = Thread {
-            if (hedef == null) {
-                if (metin.isNotBlank()) uri = depo.notOlustur(metin, hedefKlasor)
+        val klasor = hedefKlasor
+        val uygulama = applicationContext
+        val kayit = NotDeposu.yazici.submit {
+            // Adres yürütme anında okunur: önceki kayıt yeni notu oluşturduysa
+            // ikinci bir kopya açılmaz, aynı nota yazılır.
+            val hedef = uri
+            val adres = hedef?.toString()
+            if (metin.isNotBlank()) taslaklar.yaz(adres, metin)
+            val tamam = if (hedef == null) {
+                if (metin.isBlank()) {
+                    true
+                } else {
+                    val yeni = depo.notOlustur(metin, klasor)
+                    if (yeni != null) uri = yeni
+                    yeni != null
+                }
             } else {
                 if (onceki.isNotBlank()) depo.gecmiseYaz(hedef, onceki)
                 depo.yaz(hedef, metin)
             }
-            NotWidget.hepsiniGuncelle(applicationContext)
+            if (tamam) {
+                taslaklar.sil(adres)
+            } else {
+                runOnUiThread {
+                    // Bir sonraki çıkışta yeniden denensin.
+                    if (acilisMetni == metin) acilisMetni = oncekiAcilis
+                    Toast.makeText(uygulama, R.string.kayit_hatasi, Toast.LENGTH_LONG).show()
+                }
+            }
+            NotWidget.hepsiniGuncelle(uygulama)
         }
         NotDeposu.bekleyenKayit = kayit
-        kayit.start()
     }
 
     private fun menuGoster() {
@@ -1290,17 +1385,16 @@ class EditorActivity : AppCompatActivity() {
 
     private fun klasoreTasi(mevcut: Uri, klasor: String?) {
         kaydet()
-        Thread {
-            val yeni = depo.klasoreTasi(mevcut, klasor)
+        // Kayıtla aynı sırada: taşıma, son yazılanlar dosyaya geçtikten sonra yapılır.
+        NotDeposu.yazici.execute {
+            val yeni = depo.klasoreTasi(uri ?: mevcut, klasor)
+            // Sıradaki kayıt yeni adrese yazsın diye burada, iş parçacığında atanır.
+            if (yeni != null) uri = yeni
             runOnUiThread {
-                if (yeni != null) {
-                    uri = yeni
-                    Toast.makeText(this, R.string.tasindi, Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
-                }
+                val mesaj = if (yeni != null) R.string.tasindi else R.string.yedek_hata
+                Toast.makeText(this, mesaj, Toast.LENGTH_SHORT).show()
             }
-        }.start()
+        }
     }
 
     private fun notuCogalt() {
@@ -1349,16 +1443,19 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun sil() {
-        val hedef = uri ?: return
+        if (uri == null) return
         silindi = true
-        Thread {
+        metinAlani.removeCallbacks(taslakYazici)
+        NotDeposu.yazici.execute {
+            val hedef = uri ?: return@execute
+            taslaklar.sil(hedef.toString())
             val oldu = depo.copeTasi(hedef) != null
             NotWidget.hepsiniGuncelle(applicationContext)
             runOnUiThread {
                 if (oldu) Toast.makeText(this, R.string.cope_tasindi, Toast.LENGTH_SHORT).show()
                 finish()
             }
-        }.start()
+        }
     }
 
     private companion object {
@@ -1373,6 +1470,9 @@ class EditorActivity : AppCompatActivity() {
         const val UZUN_BASMA_MS = 420L
         const val SURUKLEME_ESIGI = 24f
         const val BIRLESTIRME_MS = 700L
+
+        /** Yazma bu kadar durunca taslak alınır. */
+        const val TASLAK_MS = 1500L
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")
         val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- |(\\d+)\\. )")

@@ -11,8 +11,8 @@ android {
         applicationId = "com.ekosistem.notlar"
         minSdk = 21
         targetSdk = 36
-        versionCode = 14
-        versionName = "0.11.0"
+        versionCode = 15
+        versionName = "0.12.0"
         vectorDrawables.useSupportLibrary = true
         // AppCompat 80'den fazla dil taşıyor; sadece bizim dillerimiz kalsın.
         resourceConfigurations += listOf("tr", "en")
@@ -41,10 +41,17 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    testOptions {
+        // Saf mantık testleri Android sınıflarına dokunursa çökmesin, varsayılan dönsün.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.documentfile:documentfile:1.0.1")
+
+    testImplementation("junit:junit:4.13.2")
 }

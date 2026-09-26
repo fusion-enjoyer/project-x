@@ -27,6 +27,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -99,6 +100,7 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
         sablonlariHazirla()
+        if (savedInstanceState == null) yeniNotuKurtar()
 
         intent?.getStringExtra("etiket")?.let { etiket ->
             seciliEtiket = etiket
@@ -155,6 +157,29 @@ class MainActivity : AppCompatActivity() {
         yonetici?.showSoftInput(arama, 0)
     }
 
+    /**
+     * Yeni bir not yazılırken uygulama kapandıysa (çökme, bellek yetmemesi,
+     * son uygulamalardan kaydırıp atma) metin taslakta kalmıştır; nota çevrilir.
+     * Kayıtla aynı sırada çalışır, böylece editörün kendi kaydı hep önce biter.
+     */
+    private fun yeniNotuKurtar() {
+        val uygulama = applicationContext
+        NotDeposu.yazici.execute {
+            val taslaklar = Taslaklar(uygulama)
+            val taslak = taslaklar.oku(null) ?: return@execute
+            if (taslak.metin.isBlank()) {
+                taslaklar.sil(null)
+                return@execute
+            }
+            if (depo.notOlustur(taslak.metin) == null) return@execute
+            taslaklar.sil(null)
+            runOnUiThread {
+                Toast.makeText(this, R.string.taslak_kurtarildi, Toast.LENGTH_LONG).show()
+                yenile()
+            }
+        }
+    }
+
     // --- Liste ---
 
     private fun yenile() {
@@ -164,8 +189,8 @@ class MainActivity : AppCompatActivity() {
             // Editörden yeni dönüldüyse kaydın bitmesini bekle, yoksa eski özet okunur.
             NotDeposu.bekleyenKayit?.let { kayit ->
                 try {
-                    kayit.join(2000)
-                } catch (_: InterruptedException) {
+                    kayit.get(2, TimeUnit.SECONDS)
+                } catch (_: Exception) {
                 }
                 NotDeposu.bekleyenKayit = null
             }
@@ -310,16 +335,19 @@ class MainActivity : AppCompatActivity() {
         AltSayfa(this)
             .baslik(getString(R.string.klasoru_sil_ozet))
             .madde(R.drawable.ic_sil, getString(R.string.klasoru_sil), tehlikeli = true) {
-                Thread {
-                    val oldu = depo.klasorSil(ad)
+                NotDeposu.yazici.execute {
+                    val sonuc = depo.klasorSil(ad)
                     runOnUiThread {
-                        if (seciliKlasor == ad) seciliKlasor = null
-                        if (oldu) {
-                            Toast.makeText(this, R.string.klasor_silindi, Toast.LENGTH_SHORT).show()
+                        val mesaj = when (sonuc) {
+                            NotDeposu.KLASOR_SILINDI -> R.string.klasor_silindi
+                            NotDeposu.KLASOR_KISMEN -> R.string.klasor_kismen
+                            else -> R.string.yedek_hata
                         }
+                        if (sonuc == NotDeposu.KLASOR_SILINDI && seciliKlasor == ad) seciliKlasor = null
+                        Toast.makeText(this, mesaj, Toast.LENGTH_LONG).show()
                         yenile()
                     }
-                }.start()
+                }
             }
             .goster()
     }

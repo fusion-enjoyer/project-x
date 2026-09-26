@@ -231,4 +231,11 @@
     <string name="boy_cok_buyuk">Extra large</string>
     <string name="sablon_haftalik">Weekly plan\n## Goals\n- [ ]\u0020\n## Monday\n-\u0020\n## Tuesday\n-\u0020\n## Wednesday\n-\u0020\n## Thursday\n-\u0020\n## Friday\n-\u0020\n## Weekend\n-\u0020\n</string>
     <string name="sablon_kitap">Book notes\n**Author:**\u0020\n**Started:** {{date}}\n## Summary\n-\u0020\n## Quotes\n>\u0020\n## Thoughts\n-\u0020\n</string>
+    <string name="not_acilamadi">Couldn\'t open this note. It wasn\'t changed.</string>
+    <string name="kayit_hatasi">Couldn\'t save the note. Your text is kept and will be offered next time.</string>
+    <string name="taslak_bulundu">Unsaved changes were found from last time</string>
+    <string name="taslak_geri_yukle">Restore unsaved changes</string>
+    <string name="taslak_at">Discard them</string>
+    <string name="taslak_kurtarildi">An unsaved note was recovered</string>
+    <string name="klasor_kismen">Notes moved out. The folder still holds other files, so it was kept.</string>
 </resources>

@@ -6,8 +6,12 @@ import android.os.Build
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
+import java.io.FileOutputStream
 import java.text.Collator
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 data class Not(
     val uri: Uri,
@@ -103,9 +107,15 @@ class NotDeposu(private val context: Context) {
         }
     }
 
-    /** Klasörü siler; içindeki notlar ana klasöre taşınır. */
-    fun klasorSil(ad: String): Boolean {
-        val klasor = klasorBul(ad) ?: return false
+    /**
+     * Klasörün notlarını ana klasöre taşır, klasör boşaldıysa siler.
+     *
+     * Seçilen klasörde (SAF) silme, içindekilerle birlikte yapılır ve çöpe
+     * uğramaz. Klasörde alt klasör, görsel, PDF ya da Obsidian dosyası kaldıysa
+     * (veya bir not taşınamadıysa) klasöre dokunulmaz, [KLASOR_KISMEN] döner.
+     */
+    fun klasorSil(ad: String): Int {
+        val klasor = klasorBul(ad) ?: return KLASOR_HATA
         val hedef = kok()
         for (f in klasor.listFiles()) {
             val dosyaAdi = f.name ?: continue
@@ -113,10 +123,11 @@ class NotDeposu(private val context: Context) {
                 hedefeTasi(f.uri, hedef, klasor)
             }
         }
+        if (klasor.listFiles().isNotEmpty()) return KLASOR_KISMEN
         return try {
-            klasor.delete()
+            if (klasor.delete()) KLASOR_SILINDI else KLASOR_HATA
         } catch (_: Exception) {
-            false
+            KLASOR_HATA
         }
     }
 
@@ -279,7 +290,13 @@ class NotDeposu(private val context: Context) {
 
     // --- Okuma / yazma ---
 
-    fun oku(uri: Uri, limit: Int = Int.MAX_VALUE): String {
+    fun oku(uri: Uri, limit: Int = Int.MAX_VALUE): String = okuKesin(uri, limit) ?: ""
+
+    /**
+     * Okuma başarısızsa null döner. Editör bunu kullanır: okunamayan notu boş
+     * sanıp açarsa kullanıcının yazdığı ilk harf asıl notun üzerine yazılırdı.
+     */
+    fun okuKesin(uri: Uri, limit: Int = Int.MAX_VALUE): String? {
         return try {
             context.contentResolver.openInputStream(uri)?.use { akis ->
                 val bytes = if (limit == Int.MAX_VALUE) {
@@ -295,19 +312,45 @@ class NotDeposu(private val context: Context) {
                     tampon.copyOf(toplam)
                 }
                 String(bytes, Charsets.UTF_8)
-            } ?: ""
+            }
         } catch (_: Exception) {
-            ""
+            null
         }
     }
 
     fun yaz(uri: Uri, metin: String): Boolean {
+        val bayt = metin.toByteArray(Charsets.UTF_8)
+        val tamam = if (uri.scheme == "file") {
+            // Uygulama deposu: geçici dosya + yeniden adlandırma, yarım dosya kalmaz.
+            val yol = uri.path ?: return false
+            DosyaYazici.atomikYaz(File(yol), bayt)
+        } else {
+            saglayiciyaYaz(uri, bayt)
+        }
+        // Not yeniden yazıldı; artık dosyanın kendi tarihi geçerli.
+        if (tamam && Prefs.zamanDamgasi(context, uri.toString()) > 0) {
+            Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
+        }
+        return tamam
+    }
+
+    /**
+     * Kullanıcının seçtiği klasör (SAF) yeniden adlandırarak değiştirmeye izin
+     * vermez; adres değişir, sabitleme ve kilit kaybolurdu. Burada dosya yerinde
+     * yazılır ve diske işlenir. Yarıda kalma riskine karşı editör aynı metni önce
+     * [Taslaklar]'a koyar, dosya yazılınca taslağı siler.
+     */
+    private fun saglayiciyaYaz(uri: Uri, bayt: ByteArray): Boolean {
         return try {
-            context.contentResolver.openOutputStream(uri, "wt")?.use {
-                it.write(metin.toByteArray(Charsets.UTF_8))
-                // Not yeniden yazıldı; artık dosyanın kendi tarihi geçerli.
-                if (Prefs.zamanDamgasi(context, uri.toString()) > 0) {
-                    Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
+            context.contentResolver.openFileDescriptor(uri, "wt")?.use { pfd ->
+                FileOutputStream(pfd.fileDescriptor).use { akis ->
+                    akis.write(bayt)
+                    akis.flush()
+                    try {
+                        akis.fd.sync()
+                    } catch (_: Exception) {
+                        // Bazı sağlayıcılar (ör. ağ sürücüleri) sync desteklemez.
+                    }
                 }
                 true
             } ?: false
@@ -362,10 +405,12 @@ class NotDeposu(private val context: Context) {
     private fun hedefeTasi(uri: Uri, hedef: DocumentFile, kaynakUst: DocumentFile? = null): Uri? {
         val f = docGetir(uri) ?: return null
         val zaman = Prefs.zamanDamgasi(context, uri.toString()).takeIf { it > 0 } ?: f.lastModified()
+        val gecmisAnahtari = goreliParcalar(uri)?.let { gecmisAnahtari(it) }
         val yeni = gercektenTasi(f, hedef, kaynakUst)
             ?: kopyalayarakTasi(f, uri, hedef, zaman)
             ?: return null
         ayarlariTasi(uri, yeni)
+        gecmisiTasi(gecmisAnahtari, yeni)
         return yeni
     }
 
@@ -417,6 +462,7 @@ class NotDeposu(private val context: Context) {
         val y = yeni.toString()
         if (e == y) return
         Prefs.adresTasi(context, e, y)
+        Taslaklar(context).tasi(e, y)
         val hatirlatma = Prefs.hatirlatici(context, e)
         if (hatirlatma > 0) {
             Hatirlatici.kaldir(context, e)
@@ -452,6 +498,7 @@ class NotDeposu(private val context: Context) {
         sabitTemizle(uri)
         Prefs.copKaynagiSil(context, uri.toString())
         Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
+        Taslaklar(context).sil(uri.toString())
         return docGetir(uri)?.delete() ?: false
     }
 
@@ -534,14 +581,55 @@ class NotDeposu(private val context: Context) {
         return if (olustur) k.createDirectory(".gecmis") else null
     }
 
+    /**
+     * Notun ana klasöre göre yolu: ["fikir.md"] ya da ["İş", "fikir.md"].
+     * Önce adresin kendisinden çıkarılır (hızlı); sağlayıcı adresi anlamsız bir
+     * kimlikle veriyorsa klasörler tek tek taranır.
+     */
+    private fun goreliParcalar(uri: Uri): List<String>? {
+        val k = kok()
+        try {
+            if (uri.scheme == "file" && k.uri.scheme == "file") {
+                val kokYolu = File(k.uri.path ?: return null).canonicalPath + "/"
+                val yol = File(uri.path ?: return null).canonicalPath
+                if (yol.startsWith(kokYolu)) return yol.removePrefix(kokYolu).split('/')
+            } else if (uri.scheme == "content" && k.uri.scheme == "content") {
+                val kokKimligi = DocumentsContract.getTreeDocumentId(k.uri) + "/"
+                val kimlik = DocumentsContract.getDocumentId(uri)
+                if (kimlik.startsWith(kokKimligi)) return kimlik.removePrefix(kokKimligi).split('/')
+            }
+        } catch (_: Exception) {
+        }
+        val ad = docGetir(uri)?.name ?: return null
+        val ust = ustDizin(uri) ?: return null
+        return if (ust.uri == k.uri) listOf(ad) else listOf(ust.name ?: return null, ad)
+    }
+
+    private fun gecmisDizini(uri: Uri, olustur: Boolean): DocumentFile? {
+        val kok = gecmisKlasoru(olustur) ?: return null
+        val anahtar = gecmisAnahtari(goreliParcalar(uri) ?: return null)
+        return kok.findFile(anahtar)?.takeIf { it.isDirectory }
+            ?: if (olustur) kok.createDirectory(anahtar) else null
+    }
+
+    /** Not taşınınca geçmişi de yeni anahtarına geçer; yoksa taşınan notun geçmişi kaybolurdu. */
+    private fun gecmisiTasi(eskiAnahtar: String?, yeni: Uri) {
+        eskiAnahtar ?: return
+        val yeniAnahtar = gecmisAnahtari(goreliParcalar(yeni) ?: return)
+        if (eskiAnahtar == yeniAnahtar) return
+        val kok = gecmisKlasoru(false) ?: return
+        val eski = kok.findFile(eskiAnahtar)?.takeIf { it.isDirectory } ?: return
+        if (kok.findFile(yeniAnahtar) != null) return
+        try {
+            eski.renameTo(yeniAnahtar)
+        } catch (_: Exception) {
+        }
+    }
+
     /** Kaydetmeden önceki hali gizli klasöre yedekler (en fazla 20 sürüm). */
     fun gecmiseYaz(uri: Uri, icerik: String) {
         if (icerik.isBlank()) return
-        val kok = gecmisKlasoru(true) ?: return
-        val notAdi = (docGetir(uri)?.name ?: return)
-            .removeSuffix(".md").removeSuffix(".txt")
-        val dizin = kok.findFile(notAdi)?.takeIf { it.isDirectory }
-            ?: kok.createDirectory(notAdi) ?: return
+        val dizin = gecmisDizini(uri, true) ?: return
         val damga = System.currentTimeMillis().toString()
         val dosya = dizin.createFile("text/markdown", damga) ?: return
         yaz(dosya.uri, icerik)
@@ -555,10 +643,7 @@ class NotDeposu(private val context: Context) {
     data class Surum(val uri: Uri, val zaman: Long)
 
     fun gecmisiListele(uri: Uri): List<Surum> {
-        val kok = gecmisKlasoru(false) ?: return emptyList()
-        val notAdi = (docGetir(uri)?.name ?: return emptyList())
-            .removeSuffix(".md").removeSuffix(".txt")
-        val dizin = kok.findFile(notAdi)?.takeIf { it.isDirectory } ?: return emptyList()
+        val dizin = gecmisDizini(uri, false) ?: return emptyList()
         return dizin.listFiles()
             .filter { it.isFile }
             .mapNotNull { dosya ->
@@ -570,13 +655,35 @@ class NotDeposu(private val context: Context) {
 
     companion object {
         /**
-         * Editörün arka plandaki kaydı. Liste, tazelemeden önce bunu bekler;
-         * yoksa notu düzenleyip geri dönünce kartta bir süre eski özet kalırdı.
+         * Nota yazan her iş (kaydet, taşı, sil) bu tek iş parçacığında sırayla
+         * çalışır. Ayrı ayrı çalıştıklarında "klasöre taşı" kaydı beklemiyor,
+         * son yazılanlar eski konuma gidip notu ikiye bölüyordu.
+         */
+        val yazici: ExecutorService = Executors.newSingleThreadExecutor()
+
+        /**
+         * Editörün son kaydı. Liste, tazelemeden önce bunu bekler; yoksa notu
+         * düzenleyip geri dönünce kartta bir süre eski özet kalırdı.
          */
         @Volatile
-        var bekleyenKayit: Thread? = null
+        var bekleyenKayit: Future<*>? = null
+
+        const val KLASOR_SILINDI = 0
+        const val KLASOR_KISMEN = 1
+        const val KLASOR_HATA = 2
 
         private const val GECMIS_SINIRI = 20
+
+        /**
+         * Sürüm geçmişi klasörünün adı. Ana klasördeki not yalnızca adıyla
+         * anılır (eski kayıtlar bozulmasın); alt klasördeki not klasör adıyla
+         * birlikte. Önceden yalnızca ad kullanılıyordu ve "İş/fikir" ile
+         * "Kişisel/fikir" aynı geçmişi paylaşıyordu.
+         */
+        fun gecmisAnahtari(parcalar: List<String>): String {
+            val ad = parcalar.last().removeSuffix(".md").removeSuffix(".txt")
+            return (parcalar.dropLast(1) + ad).joinToString("__")
+        }
         private val ISARETLER = Regex("\\*{1,3}|~~|__|`|\\[\\[|]]")
     }
 }

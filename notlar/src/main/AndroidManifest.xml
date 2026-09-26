@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- İnternet izni bilinçli olarak yok. Bildirim yalnızca hatırlatıcılar için. -->
+    <!-- İnternet izni bilinçli olarak yok. Bildirim yalnızca hatırlatıcılar için.
+         allowBackup kapalı: açıkken Android notları ve ayarları sormadan Google
+         Drive'a yedekliyor, eski sürümlerde de kablo ile kilidi aşarak çekilebiliyordu. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:name=".NotlarApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
