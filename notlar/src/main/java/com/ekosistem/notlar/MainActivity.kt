@@ -111,6 +111,7 @@ class MainActivity : AppCompatActivity() {
         intent?.getStringExtra("etiket")?.let { etiket ->
             seciliEtiket = etiket
         }
+        onbellektenGoster()
 
         findViewById<EditText>(R.id.arama).setOnFocusChangeListener { _, odakta ->
             if (odakta && !aramaHazirlandi && !listeIsci.isShutdown) {
@@ -141,8 +142,17 @@ class MainActivity : AppCompatActivity() {
             recreate()
             return
         }
+        donusZamani = SystemClock.elapsedRealtime()
+        // Editörden dönüş: düzenlenen kart hemen, tam tarama arkadan.
+        NotDeposu.sonDuzenleme?.let { d ->
+            NotDeposu.sonDuzenleme = null
+            duzenlemeyiUygula(d)
+        }
         yenile()
     }
+
+    /** Hız ölçümü için: ekrana son dönüş anı. */
+    private var donusZamani = 0L
 
     /** Seçim modundayken geri tuşu seçimi kapatır, ekrandan çıkmaz. */
     private val geriTusu = object : OnBackPressedCallback(false) {
@@ -233,6 +243,74 @@ class MainActivity : AppCompatActivity() {
         listeIsci.shutdown()
     }
 
+    /** Gerçek tarama sonucu ekrana geldi mi? Geldiyse anlık liste artık gösterilmez. */
+    private var gercekListeGeldi = false
+
+    /** Hız ölçümü için: ekranın oluştuğu an. */
+    private val olusmaZamani = SystemClock.elapsedRealtime()
+
+    private fun acilisOlcumu(ne: String, sayi: Int) {
+        if (BuildConfig.DEBUG) {
+            Log.d("NotlarHiz", "$ne ekranda: $sayi not, açılıştan ${SystemClock.elapsedRealtime() - olusmaZamani} ms")
+        }
+    }
+
+    /**
+     * Soğuk açılışta son bilinen listeyi hemen gösterir (klasörler taranmadan).
+     * Aynı iş sırasında yenilemeden önce çalışır; tarama bitince yerini alır.
+     */
+    private fun onbellektenGoster() {
+        if (seciliEtiket != null) return
+        listeIsci.execute {
+            val notlar = runCatching { depo.onbellektenListe() }.getOrNull()
+            if (notlar.isNullOrEmpty()) return@execute
+            runOnUiThread {
+                if (gercekListeGeldi || sorgu != null || seciliKlasor != null || seciliEtiket != null) {
+                    return@runOnUiThread
+                }
+                adapter.guncelle(notlar)
+                bosDurum.visibility = View.GONE
+                acilisOlcumu("anlık liste", notlar.size)
+            }
+        }
+    }
+
+    /**
+     * Editörde kaydedilen/silinen notu, tam tarama bitmeden listeye yansıtır.
+     * Arama ya da etiket süzgeci açıkken tahmin yürütülmez; tam liste gelir.
+     */
+    private fun duzenlemeyiUygula(d: Duzenleme) {
+        if (sorgu != null || seciliEtiket != null) return
+        val liste = adapter.tumNotlar().toMutableList()
+        val sira = liste.indexOfFirst { it.uri == d.uri }
+        when {
+            d.silindi -> if (sira >= 0) liste.removeAt(sira) else return
+            sira >= 0 -> {
+                val eski = liste[sira]
+                val (baslik, ozet) = NotDeposu.onizlemeCikar(d.metin, eski.ad)
+                liste[sira] = eski.copy(
+                    baslik = baslik,
+                    ozet = if (eski.kilitli) "" else ozet,
+                    degistirilme = d.zaman
+                )
+            }
+            else -> {
+                // Yeni not: yalnızca şu an bakılan klasöre aitse eklenir.
+                if (seciliKlasor != null && seciliKlasor != d.klasor) return
+                val ad = Uri.decode(d.uri.lastPathSegment ?: "").substringAfterLast('/')
+                val (baslik, ozet) = NotDeposu.onizlemeCikar(d.metin, ad)
+                liste.add(
+                    Not(d.uri, ad, baslik, ozet, d.zaman, sabit = false, klasor = d.klasor)
+                )
+            }
+        }
+        adapter.guncelle(depo.sirala(liste))
+        bosDurum.visibility = if (liste.isEmpty()) View.VISIBLE else View.GONE
+        if (BuildConfig.DEBUG) {
+            Log.d("NotlarHiz", "düzenleme kartta: dönüşten ${SystemClock.elapsedRealtime() - donusZamani} ms")
+        }
+    }
+
     private fun yenile() {
         val aktifSorgu = sorgu
         val aktifKlasor = seciliKlasor
@@ -247,6 +325,10 @@ class MainActivity : AppCompatActivity() {
                 } catch (_: Exception) {
                 }
                 NotDeposu.bekleyenKayit = null
+            }
+            NotDeposu.sonDuzenleme?.let { d ->
+                NotDeposu.sonDuzenleme = null
+                runOnUiThread { duzenlemeyiUygula(d) }
             }
             val baslangic = SystemClock.elapsedRealtime()
             val notlar = try {
@@ -268,6 +350,11 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 if (nesil != listeNesli.get()) return@runOnUiThread
                 if (aktifSorgu != sorgu || aktifKlasor != seciliKlasor) return@runOnUiThread
+                if (!gercekListeGeldi) acilisOlcumu("gerçek liste", notlar.size)
+                if (BuildConfig.DEBUG) {
+                    Log.d("NotlarHiz", "tam liste ekranda: dönüşten ${SystemClock.elapsedRealtime() - donusZamani} ms")
+                }
+                gercekListeGeldi = true
                 val mevcutAdresler = notlar.map { it.uri.toString() }.toSet()
                 secililer.retainAll(mevcutAdresler)
                 if (secimModu && secililer.isEmpty()) secimBitir()
@@ -294,7 +381,11 @@ class MainActivity : AppCompatActivity() {
 
     // --- Klasör çubuğu ---
 
+    /** Son gösterilen klasör adları (iyimser yeniden adlandırma için). */
+    private var sonKlasorler: List<String> = emptyList()
+
     private fun klasorCubuguGuncelle(adlar: List<String>) {
+        sonKlasorler = adlar
         klasorSatiri.removeAllViews()
         chipEkle(getString(R.string.tumu), seciliKlasor == null, null)
         // Şablon klasörü sıradan çip olarak listelenmez; gezinme çubuğundan
@@ -380,10 +471,28 @@ class MainActivity : AppCompatActivity() {
                 baslangic = eski,
                 dugmeMetni = getString(R.string.yeniden_adlandir)
             ) { yeni ->
+                val temiz = depo.adTemizle(yeni)
+                if (temiz.isEmpty() || temiz == eski || temiz in sonKlasorler) {
+                    Thread {
+                        depo.klasorYenidenAdlandir(eski, yeni)
+                        runOnUiThread { yenile() }
+                    }.start()
+                    return@girdi
+                }
+                // Seçilen klasörde Android her dosyayı kendi veritabanında da
+                // güncellediği için yeniden adlandırma saniyeler sürebiliyor;
+                // çip ve kart etiketleri beklemeden yeni adı gösterir.
+                val oncekiSecili = seciliKlasor
+                if (seciliKlasor == eski) seciliKlasor = temiz
+                adapter.guncelle(adapter.tumNotlar().map { if (it.klasor == eski) it.copy(klasor = temiz) else it })
+                klasorCubuguGuncelle(sonKlasorler.map { if (it == eski) temiz else it })
                 Thread {
                     val oldu = depo.klasorYenidenAdlandir(eski, yeni)
                     runOnUiThread {
-                        if (oldu && seciliKlasor == eski) seciliKlasor = yeni
+                        if (!oldu) {
+                            seciliKlasor = oncekiSecili
+                            Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+                        }
                         yenile()
                     }
                 }.start()

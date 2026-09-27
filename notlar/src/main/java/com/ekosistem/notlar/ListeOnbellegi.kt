@@ -1,5 +1,6 @@
 package com.ekosistem.notlar
 
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -21,6 +22,10 @@ import java.util.concurrent.ConcurrentHashMap
  * tutulur; diskte tutmak notların bir kopyasını daha çıkarmak olurdu.
  * Kilit, sabitleme ve korunan tarih burada tutulmaz: her listede güncel
  * ayardan okunur.
+ *
+ * Ayrıca son "Tümü" listesinde hangi notların olduğu ([anaListe]) saklanır:
+ * uygulama soğuk açılınca liste, klasörler taranmadan önce buradan hemen
+ * gösterilir, gerçek tarama bitince yerine geçer.
  */
 class ListeOnbellegi {
 
@@ -33,7 +38,13 @@ class ListeOnbellegi {
         @Volatile var icerik: String? = null
     )
 
+    /** Ana listedeki bir notun, önizleme dışında kalan bilgisi. */
+    data class AnaGirdi(val ad: String, val klasor: String?)
+
     private val kayitlar = ConcurrentHashMap<String, Kayit>()
+
+    @Volatile
+    private var anaListe: Map<String, AnaGirdi> = emptyMap()
 
     /** Diske yazılmamış değişiklik var mı? */
     @Volatile
@@ -46,6 +57,17 @@ class ListeOnbellegi {
     }
 
     fun icerik(adres: String): String? = kayitlar[adres]?.icerik
+
+    /** Tarih/boyut denetimi olmadan; yalnızca geçici (anlık) liste için. */
+    fun kayit(adres: String): Kayit? = kayitlar[adres]
+
+    fun anaListe(): Map<String, AnaGirdi> = anaListe
+
+    fun anaListeyiYaz(yeni: Map<String, AnaGirdi>) {
+        if (yeni == anaListe) return
+        anaListe = yeni
+        kirli = true
+    }
 
     fun koy(adres: String, kayit: Kayit) {
         val eski = kayitlar.put(adres, kayit)
@@ -72,23 +94,43 @@ class ListeOnbellegi {
 
     fun temizle() {
         kayitlar.clear()
+        anaListe = emptyMap()
         kirli = true
     }
 
     // --- Disk ---
 
+    /*
+     * Dosya biçimi (sürüm 3):
+     *   sürüm, ortak önek, kayıt sayısı,
+     *   her kayıt: adres (önekten sonrası), tarih, boyut, başlık, özet,
+     *              ana listede mi, [ad, klasör var mı, klasör]
+     * Seçilen klasörde her adres ~130 karakterlik aynı başlangıçla gelir;
+     * önek bir kez yazılır, adres de iki kez yazılmaz. 1.000 notta dosya
+     * 518 KB'tan yarısına iner, soğuk açılışta okuma süresi de onunla.
+     */
     fun diskeYaz(dosya: File): Boolean {
+        val anlik = kayitlar.entries.map { it.key to it.value }
+        val ana = anaListe
+        val onek = ortakOnek(anlik.map { it.first })
         val bayt = ByteArrayOutputStream()
         DataOutputStream(bayt).use { d ->
             d.writeInt(SURUM)
-            val anlik = kayitlar.entries.toList()
+            d.writeUTF(onek)
             d.writeInt(anlik.size)
             for ((adres, k) in anlik) {
-                d.writeUTF(adres)
+                d.writeUTF(adres.substring(onek.length))
                 d.writeLong(k.degistirilme)
                 d.writeLong(k.boyut)
                 d.writeUTF(k.baslik)
                 d.writeUTF(k.ozet)
+                val g = ana[adres]
+                d.writeBoolean(g != null)
+                if (g != null) {
+                    d.writeUTF(g.ad)
+                    d.writeBoolean(g.klasor != null)
+                    d.writeUTF(g.klasor ?: "")
+                }
             }
         }
         val tamam = DosyaYazici.atomikYaz(dosya, bayt.toByteArray())
@@ -100,21 +142,45 @@ class ListeOnbellegi {
     fun disktenOku(dosya: File) {
         if (!dosya.isFile) return
         try {
-            DataInputStream(dosya.inputStream().buffered()).use { d ->
+            // Tek seferde okunur; akıştan küçük parçalarla okumak eski telefonda yavaş.
+            DataInputStream(ByteArrayInputStream(dosya.readBytes())).use { d ->
                 if (d.readInt() != SURUM) return
+                val onek = d.readUTF()
                 val sayi = d.readInt()
+                val ana = HashMap<String, AnaGirdi>(sayi * 2)
                 repeat(sayi) {
-                    val adres = d.readUTF()
+                    val adres = onek + d.readUTF()
                     val kayit = Kayit(d.readLong(), d.readLong(), d.readUTF(), d.readUTF())
+                    if (d.readBoolean()) {
+                        val ad = d.readUTF()
+                        val klasorVar = d.readBoolean()
+                        val klasor = d.readUTF()
+                        ana[adres] = AnaGirdi(ad, if (klasorVar) klasor else null)
+                    }
                     // Bellekte daha yeni bir kayıt varsa ona dokunma.
                     kayitlar.putIfAbsent(adres, kayit)
                 }
+                if (anaListe.isEmpty()) anaListe = ana
             }
         } catch (_: Exception) {
         }
     }
 
+    private fun ortakOnek(adresler: List<String>): String {
+        if (adresler.isEmpty()) return ""
+        var onek = adresler[0]
+        for (a in adresler) {
+            var i = 0
+            val sinir = minOf(onek.length, a.length)
+            while (i < sinir && onek[i] == a[i]) i++
+            onek = onek.substring(0, i)
+            if (onek.isEmpty()) break
+        }
+        return onek
+    }
+
     companion object {
-        private const val SURUM = 1
+        /** 3: ortak önek, ana liste kayıtla birlikte. Eski dosya yok sayılır, yeniden kurulur. */
+        private const val SURUM = 3
     }
 }

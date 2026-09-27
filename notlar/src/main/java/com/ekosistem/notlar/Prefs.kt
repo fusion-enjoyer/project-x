@@ -164,31 +164,48 @@ object Prefs {
     }
 
     /** Notun adresi değiştiğinde ona bağlı tüm ayarları yeni adrese taşır. */
-    fun adresTasi(c: Context, eski: String, yeni: String) {
-        if (eski == yeni) return
+    fun adresTasi(c: Context, eski: String, yeni: String) = adresleriTasi(c, mapOf(eski to yeni))
+
+    /**
+     * Birden çok notun adresi değişti (klasör yeniden adlandırma): hepsi tek
+     * seferde taşınır. Not başına çağırmak, 1.000 notluk klasörde bütün ayarları
+     * 1.000 kez okuyup yazmak demekti.
+     */
+    fun adresleriTasi(c: Context, degisim: Map<String, String>) {
+        val tasinan = degisim.filter { it.key != it.value }
+        if (tasinan.isEmpty()) return
         val d = sp(c).edit()
+        var degisti = false
 
-        val sabitler = sabitler(c).toMutableSet()
-        if (sabitler.remove(eski)) {
-            sabitler.add(yeni)
-            d.putStringSet("sabitler", sabitler)
+        val sabitler = sabitler(c)
+        if (sabitler.any { it in tasinan }) {
+            d.putStringSet("sabitler", sabitler.mapTo(HashSet()) { tasinan[it] ?: it })
+            degisti = true
         }
 
-        val kilitliler = kilitliNotlar(c).toMutableSet()
-        if (kilitliler.remove(eski)) {
-            kilitliler.add(yeni)
-            d.putStringSet("kilitli_notlar", kilitliler)
+        val kilitliler = kilitliNotlar(c)
+        if (kilitliler.any { it in tasinan }) {
+            d.putStringSet("kilitli_notlar", kilitliler.mapTo(HashSet()) { tasinan[it] ?: it })
+            degisti = true
         }
 
-        val damga = zamanDamgasi(c, eski)
-        if (damga > 0) d.remove("zaman:$eski").putLong("zaman:$yeni", damga)
+        for ((eski, yeni) in tasinan) {
+            val damga = zamanDamgasi(c, eski)
+            if (damga > 0) {
+                d.remove("zaman:$eski").putLong("zaman:$yeni", damga)
+                degisti = true
+            }
+        }
 
         // Notu gösteren widget'lar da yeni adresi izlesin.
         for ((anahtar, deger) in sp(c).all) {
-            if (anahtar.startsWith("widget_") && deger == eski) d.putString(anahtar, yeni)
+            if (anahtar.startsWith("widget_") && deger is String && deger in tasinan) {
+                d.putString(anahtar, tasinan.getValue(deger))
+                degisti = true
+            }
         }
 
-        d.apply()
+        if (degisti) d.apply()
     }
 
     // --- Hatırlatıcılar ---

@@ -25,6 +25,16 @@ data class Not(
     val kilitli: Boolean = false
 )
 
+/** Editörden listeye iletilen değişiklik (bkz. [NotDeposu.sonDuzenleme]). */
+data class Duzenleme(
+    val uri: Uri,
+    val metin: String,
+    val zaman: Long,
+    /** Yeni notun klasörü; var olan not kendi klasöründe kalır. */
+    val klasor: String?,
+    val silindi: Boolean = false
+)
+
 /** Bir notun içindeki tek bir görev satırı. */
 data class Gorev(
     val notUri: Uri,
@@ -118,11 +128,24 @@ class NotDeposu(private val context: Context) {
         val temiz = adTemizle(yeni)
         if (temiz.isEmpty() || temiz == eski) return false
         val klasor = klasorBul(eski) ?: return false
-        return try {
+        // Adres klasör adını içerir: sabitleme, not kilidi, hatırlatıcı ve
+        // taslak adrese bağlı. Önceden yeniden adlandırma bunları koparıyordu;
+        // kilitli bir notun klasörünü yeniden adlandırmak kilidini açıyordu.
+        val eskiAdresler = girdiler(klasor.uri).filter { !it.dizin }.associate { it.ad to it.uri }
+        val oldu = try {
             klasor.renameTo(temiz)
         } catch (_: Exception) {
             false
         }
+        if (!oldu) return false
+        klasorBul(temiz)?.let { yeniKlasor ->
+            val degisim = girdiler(yeniKlasor.uri)
+                .filter { !it.dizin }
+                .mapNotNull { g -> eskiAdresler[g.ad]?.let { it to g.uri } }
+            ayarlariTopluTasi(degisim)
+        }
+        klasorGecmisiniTasi(eski, temiz)
+        return true
     }
 
     /**
@@ -149,7 +172,8 @@ class NotDeposu(private val context: Context) {
         }
     }
 
-    private fun adTemizle(ad: String): String =
+    /** Klasör adının dosya sisteminde kullanılacak hali (arayüz de aynısını göstersin). */
+    fun adTemizle(ad: String): String =
         ad.trim().replace(Regex("[\\\\/:*?\"<>|]"), "").take(40).let {
             if (it.startsWith(".")) "" else it
         }
@@ -196,6 +220,10 @@ class NotDeposu(private val context: Context) {
             }
             sonuc.add(notYap(g, kayit, sabitler, klasor, eslesmeSatiri))
         }
+        if (klasorAdi == null && temizSorgu == null) {
+            // Soğuk açılışta anında gösterilecek "son bilinen liste".
+            ONBELLEK.anaListeyiYaz(notlar.associate { (g, k) -> g.uri.toString() to ListeOnbellegi.AnaGirdi(g.ad, k) })
+        }
         if (klasorAdi == null && ONBELLEK.boyut > gorulen.size + ONBELLEK_PAYI) {
             // Silinen, taşınan ya da başka klasöre geçilince eskiyen kayıtlar.
             ONBELLEK.yalnizcaBunlarKalsin(gorulen)
@@ -205,6 +233,32 @@ class NotDeposu(private val context: Context) {
     }
 
     private fun onbellekDosyasi() = File(context.cacheDir, "liste-onbellegi")
+
+    /**
+     * Son bilinen "Tümü" listesi, hiçbir klasör taranmadan. Soğuk açılışta
+     * liste 1-2 saniye boş kalmasın diye hemen gösterilir; gerçek tarama
+     * bitince yerine geçer. Kilit, sabitleme ve korunan tarih güncel ayardan.
+     */
+    fun onbellektenListe(): List<Not> {
+        onbellegiHazirla()
+        val sabitler = Prefs.sabitler(context)
+        val notlar = ONBELLEK.anaListe().mapNotNull { (adres, g) ->
+            val k = ONBELLEK.kayit(adres) ?: return@mapNotNull null
+            val korunan = Prefs.zamanDamgasi(context, adres)
+            val kilitli = Kilit.notKilitli(context, adres)
+            Not(
+                uri = Uri.parse(adres),
+                ad = g.ad,
+                baslik = k.baslik,
+                ozet = if (kilitli) "" else k.ozet,
+                degistirilme = if (korunan > 0) korunan else k.degistirilme,
+                sabit = sabitler.contains(adres),
+                klasor = g.klasor,
+                kilitli = kilitli
+            )
+        }
+        return sirala(notlar)
+    }
 
     /** Süreç başladıktan sonraki ilk listede diskteki önbellek yüklenir. */
     private fun onbellegiHazirla() {
@@ -238,7 +292,7 @@ class NotDeposu(private val context: Context) {
     private fun onizlemeIcerigi(uri: Uri): String =
         ONBELLEK.icerik(uri.toString()) ?: oku(uri, ONIZLEME_SINIRI)
 
-    private fun sirala(notlar: List<Not>): List<Not> {
+    fun sirala(notlar: List<Not>): List<Not> {
         val collator = Collator.getInstance(tr)
         val karsilastirici = when (Prefs.siralama(context)) {
             1 -> compareBy<Not> { it.degistirilme }
@@ -583,16 +637,21 @@ class NotDeposu(private val context: Context) {
     }
 
     /** Adres değişti: sabitleme, not kilidi, widget ve hatırlatıcı yeni adrese geçer. */
-    private fun ayarlariTasi(eski: Uri, yeni: Uri) {
-        val e = eski.toString()
-        val y = yeni.toString()
-        if (e == y) return
-        Prefs.adresTasi(context, e, y)
-        Taslaklar(context).tasi(e, y)
-        val hatirlatma = Prefs.hatirlatici(context, e)
-        if (hatirlatma > 0) {
-            Hatirlatici.kaldir(context, e)
-            Hatirlatici.kur(context, y, hatirlatma)
+    private fun ayarlariTasi(eski: Uri, yeni: Uri) = ayarlariTopluTasi(listOf(eski to yeni))
+
+    /** Adresi değişen notların ayarları (sabitleme, kilit, widget, taslak, hatırlatıcı). */
+    private fun ayarlariTopluTasi(degisim: List<Pair<Uri, Uri>>) {
+        val tasinan = degisim.map { (e, y) -> e.toString() to y.toString() }.filter { it.first != it.second }
+        if (tasinan.isEmpty()) return
+        Prefs.adresleriTasi(context, tasinan.toMap())
+        val taslaklar = Taslaklar(context)
+        for ((e, y) in tasinan) {
+            taslaklar.tasi(e, y)
+            val hatirlatma = Prefs.hatirlatici(context, e)
+            if (hatirlatma > 0) {
+                Hatirlatici.kaldir(context, e)
+                Hatirlatici.kur(context, y, hatirlatma)
+            }
         }
     }
 
@@ -700,11 +759,37 @@ class NotDeposu(private val context: Context) {
 
     // --- Sürüm geçmişi ---
 
+    /**
+     * Geçmiş klasörleri her kayıtta aranmaz, adresleri bellekte tutulur.
+     * Seçilen klasörün kökünde 1.000 not varken ".gecmis"i bulmak her
+     * kayıtta kökü listelemek demekti; editörden dönüş bunu bekliyordu.
+     */
     private fun gecmisKlasoru(olustur: Boolean): DocumentFile? {
         val k = kok()
-        val mevcut = cocukBul(k, ".gecmis")
-        if (mevcut != null && mevcut.isDirectory) return mevcut
-        return if (olustur) k.createDirectory(".gecmis") else null
+        val anahtar = k.uri.toString()
+        GECMIS_ADRESLERI[anahtar]?.let { return dizinBelgesi(it) }
+        val dizin = cocukBul(k, ".gecmis")?.takeIf { it.isDirectory }
+            ?: (if (olustur) k.createDirectory(".gecmis") else null)
+            ?: return null
+        GECMIS_ADRESLERI[anahtar] = dizin.uri
+        return dizin
+    }
+
+    private fun dizinBelgesi(uri: Uri): DocumentFile? =
+        if (uri.scheme == "file") {
+            uri.path?.let { DocumentFile.fromFile(File(it)) }
+        } else {
+            DocumentFile.fromTreeUri(context, uri)
+        }
+
+    private fun belgeSil(uri: Uri): Boolean = try {
+        if (uri.scheme == "file") {
+            File(uri.path ?: "").delete()
+        } else {
+            DocumentsContract.deleteDocument(context.contentResolver, uri)
+        }
+    } catch (_: Exception) {
+        false
     }
 
     /**
@@ -734,8 +819,13 @@ class NotDeposu(private val context: Context) {
     private fun gecmisDizini(uri: Uri, olustur: Boolean): DocumentFile? {
         val kok = gecmisKlasoru(olustur) ?: return null
         val anahtar = gecmisAnahtari(goreliParcalar(uri) ?: return null)
-        return cocukBul(kok, anahtar)?.takeIf { it.isDirectory }
-            ?: if (olustur) kok.createDirectory(anahtar) else null
+        val bellekAnahtari = kok.uri.toString() + "|" + anahtar
+        GECMIS_ADRESLERI[bellekAnahtari]?.let { return dizinBelgesi(it) }
+        val dizin = cocukBul(kok, anahtar)?.takeIf { it.isDirectory }
+            ?: (if (olustur) kok.createDirectory(anahtar) else null)
+            ?: return null
+        GECMIS_ADRESLERI[bellekAnahtari] = dizin.uri
+        return dizin
     }
 
     /** Not taşınınca geçmişi de yeni anahtarına geçer; yoksa taşınan notun geçmişi kaybolurdu. */
@@ -750,19 +840,47 @@ class NotDeposu(private val context: Context) {
             eski.renameTo(yeniAnahtar)
         } catch (_: Exception) {
         }
+        GECMIS_ADRESLERI.clear()
+    }
+
+    /**
+     * Klasör yeniden adlandırılınca içindeki notların geçmiş klasörleri de
+     * ("Eski__not" → "Yeni__not") adlandırılır; yoksa geçmiş kopardı.
+     */
+    private fun klasorGecmisiniTasi(eski: String, yeni: String) {
+        val kok = gecmisKlasoru(false) ?: return
+        val onek = eski + "__"
+        val mevcut = cocukAdlari(kok)
+        for (g in girdiler(kok.uri)) {
+            if (!g.dizin || !g.ad.startsWith(onek)) continue
+            val hedef = yeni + "__" + g.ad.removePrefix(onek)
+            if (hedef in mevcut) continue
+            try {
+                dizinBelgesi(g.uri)?.renameTo(hedef)
+            } catch (_: Exception) {
+            }
+        }
+        GECMIS_ADRESLERI.clear()
     }
 
     /** Kaydetmeden önceki hali gizli klasöre yedekler (en fazla 20 sürüm). */
     fun gecmiseYaz(uri: Uri, icerik: String) {
         if (icerik.isBlank()) return
-        val dizin = gecmisDizini(uri, true) ?: return
         val damga = System.currentTimeMillis().toString()
-        val dosya = dizin.createFile("text/markdown", damga) ?: return
+        var dizin = gecmisDizini(uri, true) ?: return
+        var dosya = dizin.createFile("text/markdown", damga)
+        if (dosya == null) {
+            // Bellekteki adres bayatlamış olabilir (klasör dışarıdan silindi/taşındı).
+            GECMIS_ADRESLERI.clear()
+            dizin = gecmisDizini(uri, true) ?: return
+            dosya = dizin.createFile("text/markdown", damga) ?: return
+        }
         yaz(dosya.uri, icerik)
 
-        val surumler = dizin.listFiles().filter { it.isFile }.sortedBy { it.name }
+        // Tek sorgu: listFiles her dosyanın adını ayrıca soruyordu.
+        val surumler = girdiler(dizin.uri).filter { !it.dizin }.sortedBy { it.ad }
         if (surumler.size > GECMIS_SINIRI) {
-            surumler.take(surumler.size - GECMIS_SINIRI).forEach { it.delete() }
+            surumler.take(surumler.size - GECMIS_SINIRI).forEach { belgeSil(it.uri) }
         }
     }
 
@@ -770,11 +888,11 @@ class NotDeposu(private val context: Context) {
 
     fun gecmisiListele(uri: Uri): List<Surum> {
         val dizin = gecmisDizini(uri, false) ?: return emptyList()
-        return dizin.listFiles()
-            .filter { it.isFile }
-            .mapNotNull { dosya ->
-                val damga = (dosya.name ?: "").removeSuffix(".md").toLongOrNull() ?: return@mapNotNull null
-                Surum(dosya.uri, damga)
+        return girdiler(dizin.uri)
+            .filter { !it.dizin }
+            .mapNotNull { g ->
+                val damga = g.ad.removeSuffix(".md").toLongOrNull() ?: return@mapNotNull null
+                Surum(g.uri, damga)
             }
             .sortedByDescending { it.zaman }
     }
@@ -794,11 +912,22 @@ class NotDeposu(private val context: Context) {
         @Volatile
         var bekleyenKayit: Future<*>? = null
 
+        /**
+         * Editörde son kaydedilen ya da silinen not. Liste, klasörleri baştan
+         * taramadan önce bunu kendi kartına uygular; seçilen klasörde tam tarama
+         * 1-2 saniye sürdüğü için düzenlenen kart o süre eski kalıyordu.
+         */
+        @Volatile
+        var sonDuzenleme: Duzenleme? = null
+
         const val KLASOR_SILINDI = 0
         const val KLASOR_KISMEN = 1
         const val KLASOR_HATA = 2
 
         private const val GECMIS_SINIRI = 20
+
+        /** Kök adresi (ve "kök|anahtar") → geçmiş klasörünün adresi. */
+        private val GECMIS_ADRESLERI = java.util.concurrent.ConcurrentHashMap<String, Uri>()
 
         /** Liste, arama ve etiketler notun yalnızca bu kadarına bakar. */
         const val ONIZLEME_SINIRI = 8192

@@ -106,6 +106,68 @@ class ListeHiziTest {
     }
 
     @Test
+    fun anaListeDiskeYazilipGeriOkunur() {
+        val dosya = File(klasor.root, "onbellek")
+        val o = ListeOnbellegi()
+        o.koy("a", kayit())
+        o.koy("b", kayit())
+        val ana = mapOf(
+            "a" to ListeOnbellegi.AnaGirdi("a.md", null),
+            "b" to ListeOnbellegi.AnaGirdi("Toplantı notu.md", "İş")
+        )
+        o.anaListeyiYaz(ana)
+        o.diskeYaz(dosya)
+
+        val yeni = ListeOnbellegi()
+        yeni.disktenOku(dosya)
+        assertEquals(ana, yeni.anaListe())
+        assertEquals("B", yeni.kayit("b")!!.baslik)
+    }
+
+    @Test
+    fun ortakOnekliAdreslerDogruGeriGelir() {
+        val kok = "content://com.android.externalstorage.documents/tree/primary%3ANotlar/document/primary%3ANotlar%2F"
+        val adresler = listOf(kok + "a.md", kok + "ab.md", kok + "İş%2Fa.md", kok)
+        val o = ListeOnbellegi()
+        adresler.forEachIndexed { i, a -> o.koy(a, kayit(tarih = i.toLong())) }
+        o.anaListeyiYaz(mapOf(adresler[1] to ListeOnbellegi.AnaGirdi("ab.md", null)))
+        val dosya = File(klasor.root, "onbellek")
+        o.diskeYaz(dosya)
+        val yeni = ListeOnbellegi()
+        yeni.disktenOku(dosya)
+        adresler.forEachIndexed { i, a -> assertNotNull(a, yeni.al(a, i.toLong(), 10)) }
+        assertEquals(setOf(adresler[1]), yeni.anaListe().keys)
+        // Önek bir kez yazıldığı için dosya, adresleri tekrar tekrar yazmaktan küçük.
+        assertTrue(dosya.length() < adresler.sumOf { it.length } + 200)
+    }
+
+    @Test
+    fun ayniAnaListeKirletmez() {
+        val o = ListeOnbellegi()
+        o.anaListeyiYaz(mapOf("a" to ListeOnbellegi.AnaGirdi("a.md", null)))
+        o.diskeYaz(File(klasor.root, "x"))
+        o.anaListeyiYaz(mapOf("a" to ListeOnbellegi.AnaGirdi("a.md", null)))
+        assertFalse(o.kirli)
+        o.anaListeyiYaz(mapOf("a" to ListeOnbellegi.AnaGirdi("a.md", "Okul")))
+        assertTrue(o.kirli)
+    }
+
+    @Test
+    fun eskiSurumDosyasiYokSayilir() {
+        // Sürüm 1 dosyası (ana liste yok): okunmamalı, çökmemeli.
+        val bayt = java.io.ByteArrayOutputStream()
+        java.io.DataOutputStream(bayt).use { d ->
+            d.writeInt(1); d.writeInt(1)
+            d.writeUTF("a"); d.writeLong(1); d.writeLong(2); d.writeUTF("B"); d.writeUTF("Ö")
+        }
+        val dosya = File(klasor.root, "eski").apply { writeBytes(bayt.toByteArray()) }
+        val o = ListeOnbellegi()
+        o.disktenOku(dosya)
+        assertEquals(0, o.boyut)
+        assertTrue(o.anaListe().isEmpty())
+    }
+
+    @Test
     fun bozukDosyaYokSayilir() {
         val dosya = File(klasor.root, "onbellek").apply { writeBytes(byteArrayOf(0, 0, 0, 1, 7)) }
         val o = ListeOnbellegi()

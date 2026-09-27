@@ -1143,6 +1143,9 @@ class EditorActivity : AppCompatActivity() {
         oncekiIcerik = metin
         val klasor = hedefKlasor
         val uygulama = applicationContext
+        // Var olan notun kartı kaydın bitmesini beklemeden güncellensin:
+        // seçilen klasörde kayıt (sürüm geçmişiyle) bir saniyeyi bulabiliyor.
+        uri?.let { NotDeposu.sonDuzenleme = Duzenleme(it, metin, System.currentTimeMillis(), null) }
         val kayit = NotDeposu.yazici.submit {
             // Adres yürütme anında okunur: önceki kayıt yeni notu oluşturduysa
             // ikinci bir kopya açılmaz, aynı nota yazılır.
@@ -1163,6 +1166,13 @@ class EditorActivity : AppCompatActivity() {
             }
             if (tamam) {
                 taslaklar.sil(adres)
+                // Yeni not: adresi ancak şimdi belli; liste bunu tam taramadan önce ekler.
+                if (hedef == null) {
+                    uri?.let { olusan ->
+                        NotDeposu.sonDuzenleme =
+                            Duzenleme(olusan, metin, System.currentTimeMillis(), klasor)
+                    }
+                }
             } else {
                 runOnUiThread {
                     // Bir sonraki çıkışta yeniden denensin.
@@ -1443,9 +1453,12 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun sil() {
-        if (uri == null) return
+        val silinecek = uri ?: return
         silindi = true
         metinAlani.removeCallbacks(taslakYazici)
+        // Kart hemen kalksın; silme başarısız olursa tam tarama geri getirir.
+        NotDeposu.sonDuzenleme =
+            Duzenleme(silinecek, "", System.currentTimeMillis(), null, silindi = true)
         NotDeposu.yazici.execute {
             val hedef = uri ?: return@execute
             taslaklar.sil(hedef.toString())
