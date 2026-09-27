@@ -4,11 +4,14 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.Log
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -27,7 +30,9 @@ import androidx.core.graphics.drawable.DrawableCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity() {
 
@@ -95,6 +100,7 @@ class MainActivity : AppCompatActivity() {
         swipeKur(liste)
 
         yeniNotDugmesiKur()
+        klavyedeCubuguGizle()
         secimCubuguKur()
         seritEylem.setTextColor(vurgu)
 
@@ -106,13 +112,25 @@ class MainActivity : AppCompatActivity() {
             seciliEtiket = etiket
         }
 
+        findViewById<EditText>(R.id.arama).setOnFocusChangeListener { _, odakta ->
+            if (odakta && !aramaHazirlandi && !listeIsci.isShutdown) {
+                aramaHazirlandi = true
+                listeIsci.execute { runCatching { depo.aramaIcinHazirla() } }
+            }
+        }
         findViewById<EditText>(R.id.arama).addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                sorgu = s?.toString()
+                // Boş kutu "arama yok" demek; ekran geri yüklenirken gelen boş
+                // değişiklik de açılışta listeyi ikinci kez yüklüyordu.
+                val yeni = s?.toString()?.takeIf { it.isNotBlank() }
+                if (yeni == sorgu) return
+                sorgu = yeni
                 adapter.sorgu = sorgu
-                yenile()
+                // Her harfte bütün notları taramak yerine yazma durunca bir kez ara.
+                liste.removeCallbacks(aramaGecikmeli)
+                liste.postDelayed(aramaGecikmeli, ARAMA_GECIKMESI)
             }
         })
     }
@@ -149,6 +167,23 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.navMenu).setOnClickListener { menuGoster() }
     }
 
+    /**
+     * Klavye açıkken yüzen gezinme çubuğu klavyenin hemen üstüne çıkıp arama
+     * sonuçlarını örtüyordu. Klavye açılınca gizlenir, kapanınca geri gelir.
+     * Pencerenin görünen alanına bakılır: her Android sürümünde çalışır.
+     */
+    private fun klavyedeCubuguGizle() {
+        val cubuk = findViewById<View>(R.id.gezinmeCubugu)
+        val kok = window.decorView
+        val alan = Rect()
+        kok.viewTreeObserver.addOnGlobalLayoutListener {
+            kok.getWindowVisibleDisplayFrame(alan)
+            val klavyeAcik = kok.height - alan.bottom > kok.height * KLAVYE_ORANI
+            val hedef = if (klavyeAcik) View.GONE else View.VISIBLE
+            if (cubuk.visibility != hedef) cubuk.visibility = hedef
+        }
+    }
+
     private fun aramaOdakla() {
         val arama = findViewById<EditText>(R.id.arama)
         arama.requestFocus()
@@ -182,10 +217,29 @@ class MainActivity : AppCompatActivity() {
 
     // --- Liste ---
 
+    private val aramaGecikmeli = Runnable { yenile() }
+
+    /**
+     * Liste işleri tek sırada çalışır; sırası gelince daha yeni bir istek varsa
+     * atlanır. Önceden her yenileme (aramada her harf) ayrı bir iş parçacığında
+     * bütün notları tarıyordu ve hepsi aynı anda çalışıp birbirini yavaşlatıyordu.
+     */
+    private val listeIsci = Executors.newSingleThreadExecutor()
+    private val listeNesli = AtomicInteger()
+    private var aramaHazirlandi = false
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listeIsci.shutdown()
+    }
+
     private fun yenile() {
         val aktifSorgu = sorgu
         val aktifKlasor = seciliKlasor
-        Thread {
+        val nesil = listeNesli.incrementAndGet()
+        if (listeIsci.isShutdown) return
+        listeIsci.execute {
+            if (nesil != listeNesli.get()) return@execute
             // Editörden yeni dönüldüyse kaydın bitmesini bekle, yoksa eski özet okunur.
             NotDeposu.bekleyenKayit?.let { kayit ->
                 try {
@@ -194,6 +248,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 NotDeposu.bekleyenKayit = null
             }
+            val baslangic = SystemClock.elapsedRealtime()
             val notlar = try {
                 val etiket = seciliEtiket
                 if (etiket != null) depo.etiketliNotlar(etiket)
@@ -201,12 +256,17 @@ class MainActivity : AppCompatActivity() {
             } catch (_: Exception) {
                 emptyList()
             }
+            if (BuildConfig.DEBUG) {
+                // Hız ölçümü: adb logcat -s NotlarHiz
+                Log.d("NotlarHiz", "liste: ${notlar.size} not, ${SystemClock.elapsedRealtime() - baslangic} ms, sorgu=${aktifSorgu != null}")
+            }
             val klasorler = try {
                 depo.klasorAdlari()
             } catch (_: Exception) {
                 emptyList()
             }
             runOnUiThread {
+                if (nesil != listeNesli.get()) return@runOnUiThread
                 if (aktifSorgu != sorgu || aktifKlasor != seciliKlasor) return@runOnUiThread
                 val mevcutAdresler = notlar.map { it.uri.toString() }.toSet()
                 secililer.retainAll(mevcutAdresler)
@@ -223,7 +283,7 @@ class MainActivity : AppCompatActivity() {
                     bosDurum.visibility = View.GONE
                 }
             }
-        }.start()
+        }
     }
 
     private fun editorAc(uri: Uri) {
@@ -753,5 +813,9 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val SERIT_SURESI = 5000L
+        const val ARAMA_GECIKMESI = 200L
+
+        /** Ekranın bu kadarından fazlası kapandıysa klavye açık sayılır. */
+        const val KLAVYE_ORANI = 0.15f
     }
 }

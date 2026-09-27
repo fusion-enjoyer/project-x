@@ -13,7 +13,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import java.util.Locale
 
 class NotAdapter(
     private val onTikla: (Not) -> Unit,
@@ -21,7 +20,6 @@ class NotAdapter(
 ) : RecyclerView.Adapter<NotAdapter.Tutucu>() {
 
     private var notlar: List<Not> = emptyList()
-    private val tr: Locale = Locale.forLanguageTag("tr-TR")
 
     var secililer: Set<String> = emptySet()
     var sorgu: String? = null
@@ -90,9 +88,10 @@ class NotAdapter(
 
     /** Arama yapılıyorsa eşleşen kısmı vurgu renginde ve kalın gösterir. */
     private fun vurgula(metin: String): CharSequence {
-        val aranan = sorgu?.trim()?.lowercase(tr)
+        val aranan = Arama.ifade(sorgu)
         if (aranan.isNullOrEmpty() || metin.isEmpty()) return metin
-        val kucuk = metin.lowercase(tr)
+        // Aynı uzunlukta sadeleştirilir; bulunan konum asıl metinde de doğru.
+        val kucuk = Arama.sadelestir(metin)
         var i = kucuk.indexOf(aranan)
         if (i < 0) return metin
         val s = SpannableString(metin)

@@ -59,7 +59,7 @@ class NotDeposu(private val context: Context) {
 
     private fun copKlasoru(olustur: Boolean): DocumentFile? {
         val k = kok()
-        val mevcut = k.findFile(".trash")
+        val mevcut = cocukBul(k, ".trash")
         if (mevcut != null && mevcut.isDirectory) return mevcut
         return if (olustur) k.createDirectory(".trash") else null
     }
@@ -71,7 +71,7 @@ class NotDeposu(private val context: Context) {
      */
     fun eklerKlasoru(olustur: Boolean): DocumentFile? {
         val k = kok()
-        val mevcut = k.findFile(Gorseller.EKLER)
+        val mevcut = cocukBul(k, Gorseller.EKLER)
         if (mevcut != null && mevcut.isDirectory) return mevcut
         return if (olustur) k.createDirectory(Gorseller.EKLER) else null
     }
@@ -81,13 +81,31 @@ class NotDeposu(private val context: Context) {
     // --- Klasörler ---
 
     fun klasorAdlari(): List<String> =
-        kok().listFiles()
-            .filter { it.isDirectory && !ozelKlasor(it.name ?: ".") }
-            .mapNotNull { it.name }
+        girdiler(kok().uri)
+            .filter { it.dizin && !ozelKlasor(it.ad) }
+            .map { it.ad }
             .sortedWith(compareBy(Collator.getInstance(tr)) { it })
 
     fun klasorBul(ad: String): DocumentFile? =
-        kok().listFiles().firstOrNull { it.isDirectory && it.name == ad }
+        cocukBul(kok(), ad)?.takeIf { it.isDirectory }
+
+    /**
+     * DocumentFile.findFile'ın karşılığı. O, klasördeki her dosyanın adını
+     * sağlayıcıya ayrı ayrı soruyordu: kökte 1.000 not varken her kayıtta
+     * (geçmiş klasörünü bulmak için) 1.000 sorgu. Bu tek sorgu yapar.
+     */
+    fun cocukBul(dizin: DocumentFile, ad: String): DocumentFile? {
+        val g = girdiler(dizin.uri).firstOrNull { it.ad == ad } ?: return null
+        return if (g.uri.scheme == "file") {
+            DocumentFile.fromFile(File(g.uri.path ?: return null))
+        } else {
+            DocumentFile.fromTreeUri(context, g.uri)
+        }
+    }
+
+    /** Dizindeki bütün adlar tek sorguda; tekil ad üretirken döngüde kullanılır. */
+    fun cocukAdlari(dizin: DocumentFile): Set<String> =
+        girdiler(dizin.uri).mapTo(HashSet()) { it.ad }
 
     fun klasorOlustur(ad: String): Boolean {
         val temiz = adTemizle(ad)
@@ -138,14 +156,87 @@ class NotDeposu(private val context: Context) {
 
     // --- Listeleme ---
 
-    fun notlariListele(sorgu: String?, klasorAdi: String? = null): List<Not> {
-        val baslangic = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return emptyList()
+    fun notlariListele(sorgu: String?, klasorAdi: String? = null): List<Not> =
+        listele(sorgu, klasorAdi, icerikGerekli = false)
+
+    /**
+     * [icerikGerekli]: etiket, bağlantı, görev gibi içeriğe bakan işler için
+     * her notun ilk 8 KB'ı önbelleğe alınır; [onizlemeIcerigi] oradan okur.
+     */
+    private fun listele(sorgu: String?, klasorAdi: String?, icerikGerekli: Boolean): List<Not> {
+        onbellegiHazirla()
+        val kokDizin = kok()
+        val baslangic = if (klasorAdi == null) kokDizin else klasorBul(klasorAdi) ?: return emptyList()
         val sonuc = mutableListOf<Not>()
-        val temizSorgu = sorgu?.trim()?.takeIf { it.isNotEmpty() }?.lowercase(tr)
+        val temizSorgu = Arama.ifade(sorgu)
+        val gorulen = mutableSetOf<String>()
         // Klasör içindeyken de notun klasörü bilinsin ki taşıma geri alınabilsin.
-        topla(baslangic, sonuc, Prefs.sabitler(context), temizSorgu, klasorAdi)
+        val notlar = mutableListOf<Pair<Girdi, String?>>()
+        notGirdileri(baslangic.uri, klasorAdi, notlar)
+        val icerikLazim = icerikGerekli || temizSorgu != null
+        onceOku(notlar.map { it.first }, icerikLazim)
+        val sabitler = Prefs.sabitler(context)
+        for ((g, klasor) in notlar) {
+            val adres = g.uri.toString()
+            gorulen.add(adres)
+            val kayit = onizleme(g, icerikLazim) ?: continue
+            var eslesmeSatiri: String? = null
+            if (temizSorgu != null) {
+                val icerik = kayit.icerik.orEmpty()
+                // Kilitli notta yalnızca dosya adı aranır; içeriği aramaya sızmaz.
+                val kilitli = Kilit.notKilitli(context, adres)
+                val aranacak = if (kilitli) g.ad else g.ad + "\n" + icerik
+                if (!Arama.sadelestir(aranacak).contains(temizSorgu)) continue
+                if (!kilitli) {
+                    eslesmeSatiri = icerik.lineSequence()
+                        .firstOrNull { Arama.sadelestir(it).contains(temizSorgu) }
+                        ?.let { mdTemizle(it) }
+                        ?.takeIf { it.isNotBlank() }
+                }
+            }
+            sonuc.add(notYap(g, kayit, sabitler, klasor, eslesmeSatiri))
+        }
+        if (klasorAdi == null && ONBELLEK.boyut > gorulen.size + ONBELLEK_PAYI) {
+            // Silinen, taşınan ya da başka klasöre geçilince eskiyen kayıtlar.
+            ONBELLEK.yalnizcaBunlarKalsin(gorulen)
+        }
+        if (ONBELLEK.kirli) ONBELLEK.diskeYaz(onbellekDosyasi())
         return sirala(sonuc)
     }
+
+    private fun onbellekDosyasi() = File(context.cacheDir, "liste-onbellegi")
+
+    /** Süreç başladıktan sonraki ilk listede diskteki önbellek yüklenir. */
+    private fun onbellegiHazirla() {
+        if (onbellekYuklendi) return
+        synchronized(ONBELLEK) {
+            if (onbellekYuklendi) return
+            ONBELLEK.disktenOku(onbellekDosyasi())
+            onbellekYuklendi = true
+        }
+    }
+
+    /**
+     * Arama kutusuna dokunulunca çağrılır: notların içeriği arka planda belleğe
+     * alınır. İlk aramada 1.000 not seçilen klasörden okunurken 5 saniye
+     * bekleniyordu; kullanıcı yazarken bu iş bitmiş olur.
+     */
+    fun aramaIcinHazirla() {
+        listele(null, null, icerikGerekli = true)
+    }
+
+    /** Notun tamamı: önbellekteki içerik sınırın altındaysa zaten tamdır. */
+    private fun tamIcerik(uri: Uri): String {
+        val onbellekte = ONBELLEK.icerik(uri.toString())
+        if (onbellekte != null && onbellekte.toByteArray(Charsets.UTF_8).size < ONIZLEME_SINIRI) {
+            return onbellekte
+        }
+        return oku(uri)
+    }
+
+    /** Listelemede önbelleğe alınan ilk 8 KB; yoksa dosyadan okunur. */
+    private fun onizlemeIcerigi(uri: Uri): String =
+        ONBELLEK.icerik(uri.toString()) ?: oku(uri, ONIZLEME_SINIRI)
 
     private fun sirala(notlar: List<Not>): List<Not> {
         val collator = Collator.getInstance(tr)
@@ -158,60 +249,115 @@ class NotDeposu(private val context: Context) {
         return notlar.sortedWith(compareByDescending<Not> { it.sabit }.then(karsilastirici))
     }
 
-    private fun topla(
-        dir: DocumentFile,
-        sonuc: MutableList<Not>,
-        sabitler: Set<String>,
-        sorgu: String?,
-        etiket: String?
-    ) {
-        for (f in dir.listFiles()) {
-            val ad = f.name ?: continue
-            if (f.isDirectory) {
+    /** Bir dizindeki tek girdi; özellikleri tek seferde okunmuş halde. */
+    private class Girdi(
+        val uri: Uri,
+        val ad: String,
+        val dizin: Boolean,
+        val degistirilme: Long,
+        /** Bilinmiyorsa -1 (bazı sağlayıcılar vermez). */
+        val boyut: Long
+    )
+
+    /**
+     * Dizinin içeriği, özellikleriyle birlikte. DocumentFile her girdinin adını,
+     * türünü ve tarihini ayrı ayrı sağlayıcıya soruyordu (seçilen klasörde not
+     * başına 3 sorgu); burada klasör başına tek sorgu yapılır.
+     */
+    private fun girdiler(dizinUri: Uri): List<Girdi> {
+        if (dizinUri.scheme == "file") {
+            val dizin = File(dizinUri.path ?: return emptyList())
+            return dizin.listFiles()?.map {
+                Girdi(Uri.fromFile(it), it.name, it.isDirectory, it.lastModified(), it.length())
+            } ?: emptyList()
+        }
+        val sonuc = mutableListOf<Girdi>()
+        try {
+            val cocuklar = DocumentsContract.buildChildDocumentsUriUsingTree(
+                dizinUri, DocumentsContract.getDocumentId(dizinUri)
+            )
+            context.contentResolver.query(cocuklar, GIRDI_SUTUNLARI, null, null, null)?.use { c ->
+                while (c.moveToNext()) {
+                    val kimlik = c.getString(0) ?: continue
+                    val ad = c.getString(1) ?: continue
+                    sonuc.add(
+                        Girdi(
+                            uri = DocumentsContract.buildDocumentUriUsingTree(dizinUri, kimlik),
+                            ad = ad,
+                            dizin = c.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR,
+                            degistirilme = if (c.isNull(3)) 0L else c.getLong(3),
+                            boyut = if (c.isNull(4)) -1L else c.getLong(4)
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return sonuc
+    }
+
+    /** Klasörleri gezip not dosyalarını, bulundukları klasörün adıyla toplar. */
+    private fun notGirdileri(dizinUri: Uri, etiket: String?, hedef: MutableList<Pair<Girdi, String?>>) {
+        for (g in girdiler(dizinUri)) {
+            if (g.dizin) {
                 // Şablonlar yalnızca kendi çipi seçiliyken listelenir; yoksa
                 // "Tümü" listesine, aramaya ve görevlere karışırlardı.
-                val sablonKlasoru = etiket == null && ad == Sablonlar.KLASOR
-                if (!ozelKlasor(ad) && !sablonKlasoru) {
-                    topla(f, sonuc, sabitler, sorgu, etiket ?: ad)
-                }
-                continue
+                val sablonKlasoru = etiket == null && g.ad == Sablonlar.KLASOR
+                if (!ozelKlasor(g.ad) && !sablonKlasoru) notGirdileri(g.uri, etiket ?: g.ad, hedef)
+            } else if (notDosyasi(g.ad)) {
+                hedef.add(g to etiket)
             }
-            if (!notDosyasi(ad)) continue
-            val icerik = oku(f.uri, 8192)
-            var eslesmeSatiri: String? = null
-            if (sorgu != null) {
-                // Kilitli notta yalnızca dosya adı aranır; içeriği aramaya sızmaz.
-                val kilitli = Kilit.notKilitli(context, f.uri.toString())
-                val aranacak = if (kilitli) ad else ad + "\n" + icerik
-                if (!aranacak.lowercase(tr).contains(sorgu)) continue
-                if (!kilitli) {
-                    eslesmeSatiri = icerik.lines()
-                        .firstOrNull { it.lowercase(tr).contains(sorgu) }
-                        ?.let { mdTemizle(it) }
-                        ?.takeIf { it.isNotBlank() }
-                }
-            }
-            sonuc.add(notYap(f, icerik, sabitler, etiket, eslesmeSatiri))
         }
+    }
+
+    /**
+     * Önbellekte olmayan notları aynı anda birkaç iş parçacığıyla okur.
+     * Seçilen klasörde her okuma sistemin dosya aracısına bir istek; tek tek
+     * okununca 1.000 notun ilk yüklenmesi emülatörde 11 saniye sürüyordu.
+     */
+    private fun onceOku(girdiler: List<Girdi>, icerikGerekli: Boolean) {
+        val eksik = girdiler.filter { g ->
+            val k = ONBELLEK.al(g.uri.toString(), g.degistirilme, g.boyut)
+            k == null || (icerikGerekli && k.icerik == null)
+        }
+        if (eksik.size < PARALEL_ESIGI) return // az sayıda not: iş parçacığı açmaya değmez
+        val havuz = Executors.newFixedThreadPool(OKUYUCU_SAYISI)
+        try {
+            havuz.invokeAll(eksik.map { g -> java.util.concurrent.Callable { onizleme(g, icerikGerekli) } })
+        } finally {
+            havuz.shutdown()
+        }
+    }
+
+    /**
+     * Notun başlık ve özeti: dosya değişmediyse önbellekten, değiştiyse
+     * okunarak. [icerikGerekli] ise içerik de bellekte olmalı (arama vb.).
+     */
+    private fun onizleme(g: Girdi, icerikGerekli: Boolean): ListeOnbellegi.Kayit? {
+        val adres = g.uri.toString()
+        val mevcut = ONBELLEK.al(adres, g.degistirilme, g.boyut)
+        if (mevcut != null && (!icerikGerekli || mevcut.icerik != null)) return mevcut
+        val icerik = okuKesin(g.uri, ONIZLEME_SINIRI) ?: return mevcut
+        val (baslik, ozet) = onizlemeCikar(icerik, g.ad)
+        val yeni = ListeOnbellegi.Kayit(g.degistirilme, g.boyut, baslik, ozet, icerik)
+        ONBELLEK.koy(adres, yeni)
+        return yeni
     }
 
     fun copListele(): List<Not> {
         val cop = copKlasoru(false) ?: return emptyList()
-        val sonuc = mutableListOf<Not>()
-        for (f in cop.listFiles()) {
-            val ad = f.name ?: continue
-            if (!f.isFile || !notDosyasi(ad)) continue
-            sonuc.add(notYap(f, oku(f.uri, 1024), emptySet(), null, null))
-        }
-        return sonuc.sortedByDescending { it.degistirilme }
+        return girdiler(cop.uri)
+            .filter { !it.dizin && notDosyasi(it.ad) }
+            .mapNotNull { g -> onizleme(g, false)?.let { notYap(g, it, emptySet(), null, null) } }
+            .sortedByDescending { it.degistirilme }
     }
 
     /** Tüm notlardaki onay kutusu satırlarını toplar. */
     fun gorevleriListele(tamamlananlar: Boolean): List<Gorev> {
         val sonuc = mutableListOf<Gorev>()
-        for (not in notlariListele(null, null)) {
+        for (not in listele(null, null, icerikGerekli = true)) {
             if (not.kilitli) continue
-            val satirlar = oku(not.uri).lines()
+            val satirlar = tamIcerik(not.uri).lines()
             satirlar.forEachIndexed { indeks, satir ->
                 val eslesme = MarkdownBicimci.ONAY.find(satir) ?: return@forEachIndexed
                 val isaretli = !eslesme.groupValues[2].equals(" ", true)
@@ -242,51 +388,29 @@ class NotDeposu(private val context: Context) {
         ad.endsWith(".md", true) || ad.endsWith(".txt", true)
 
     private fun notYap(
-        f: DocumentFile,
-        icerik: String,
+        g: Girdi,
+        kayit: ListeOnbellegi.Kayit,
         sabitler: Set<String>,
         klasor: String?,
         eslesme: String?
     ): Not {
-        val satirlar = icerik.lines()
-        val ilkIndex = satirlar.indexOfFirst { it.isNotBlank() }
-        val ilk = if (ilkIndex >= 0) mdTemizle(satirlar[ilkIndex]) else ""
-        val dosyaAdi = f.name ?: "not"
-        val baslik = ilk.ifBlank { dosyaAdi.removeSuffix(".md").removeSuffix(".txt") }
-        val ozet = if (ilkIndex >= 0) {
-            satirlar.drop(ilkIndex + 1)
-                .filter { it.isNotBlank() }
-                .joinToString(" ") { mdTemizle(it) }
-                .take(150)
-        } else ""
-        val adres = f.uri.toString()
+        val adres = g.uri.toString()
         // Kopyalanarak taşınmış notun gerçek tarihi ayrıca saklanır.
         val korunan = Prefs.zamanDamgasi(context, adres)
         val kilitli = Kilit.notKilitli(context, adres)
         return Not(
-            uri = f.uri,
-            ad = dosyaAdi,
-            baslik = baslik.take(80),
+            uri = g.uri,
+            ad = g.ad,
+            baslik = kayit.baslik,
             // Kilitli notun içeriği listeye, widget'a ve göreve hiç çıkmaz.
-            ozet = if (kilitli) "" else ozet,
-            degistirilme = if (korunan > 0) korunan else f.lastModified(),
+            ozet = if (kilitli) "" else kayit.ozet,
+            degistirilme = if (korunan > 0) korunan else g.degistirilme,
             sabit = sabitler.contains(adres),
             klasor = klasor,
             eslesme = if (kilitli) null else eslesme,
             kilitli = kilitli
         )
     }
-
-    /** Kart önizlemesi için satırdaki Markdown işaretlerini söker. */
-    private fun mdTemizle(satir: String): String =
-        satir.trim()
-            // Görsel bağlantısı önizlemede ham metin olarak görünmesin.
-            .replace(MarkdownBicimci.GORSEL, "")
-            .replace(MarkdownBicimci.GORSEL_WIKI, "")
-            .trimStart('#', '>', ' ')
-            .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
-            .replace(ISARETLER, "")
-            .trim()
 
     // --- Okuma / yazma ---
 
@@ -327,6 +451,7 @@ class NotDeposu(private val context: Context) {
         } else {
             saglayiciyaYaz(uri, bayt)
         }
+        if (tamam) ONBELLEK.sil(uri.toString())
         // Not yeniden yazıldı; artık dosyanın kendi tarihi geçerli.
         if (tamam && Prefs.zamanDamgasi(context, uri.toString()) > 0) {
             Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
@@ -375,7 +500,8 @@ class NotDeposu(private val context: Context) {
         ad = ad.removeSuffix(".md").removeSuffix(".txt")
         var tekilAd = ad
         var i = 2
-        while (hedef.findFile("$tekilAd.md") != null || hedef.findFile(tekilAd) != null) {
+        val mevcutAdlar = cocukAdlari(hedef)
+        while ("$tekilAd.md" in mevcutAdlar || tekilAd in mevcutAdlar) {
             tekilAd = "$ad-$i"
             i++
         }
@@ -420,7 +546,7 @@ class NotDeposu(private val context: Context) {
         kaynakUst: DocumentFile?
     ): Uri? {
         val ad = f.name ?: return null
-        if (hedef.findFile(ad) != null) return null // ad çakışması: kopyalama yolu adı tekilleştirir
+        if (ad in cocukAdlari(hedef)) return null // ad çakışması: kopyalama yolu adı tekilleştirir
 
         // Uygulama deposu düz dosya sistemi: yeniden adlandırmak taşımaktır.
         if (f.uri.scheme == "file" && hedef.uri.scheme == "file") {
@@ -535,8 +661,8 @@ class NotDeposu(private val context: Context) {
     /** Tüm notlardaki #etiketleri toplar. */
     fun etiketleriListele(): List<String> {
         val bulunan = sortedSetOf<String>(Collator.getInstance(tr))
-        for (not in notlariListele(null, null)) {
-            for (e in MarkdownBicimci.ETIKET.findAll(oku(not.uri, 8192))) {
+        for (not in listele(null, null, icerikGerekli = true)) {
+            for (e in MarkdownBicimci.ETIKET.findAll(onizlemeIcerigi(not.uri))) {
                 bulunan.add(e.groupValues[1])
             }
         }
@@ -545,8 +671,8 @@ class NotDeposu(private val context: Context) {
 
     fun etiketliNotlar(etiket: String): List<Not> {
         val kucuk = etiket.lowercase(tr)
-        return notlariListele(null, null).filter { not ->
-            MarkdownBicimci.ETIKET.findAll(oku(not.uri, 8192))
+        return listele(null, null, icerikGerekli = true).filter { not ->
+            MarkdownBicimci.ETIKET.findAll(onizlemeIcerigi(not.uri))
                 .any { it.groupValues[1].lowercase(tr) == kucuk }
         }
     }
@@ -566,8 +692,8 @@ class NotDeposu(private val context: Context) {
             not.baslik.lowercase(tr),
             not.ad.removeSuffix(".md").removeSuffix(".txt").lowercase(tr)
         )
-        return notlariListele(null, null).filter { aday ->
-            aday.uri != not.uri && MarkdownBicimci.BAGLANTI.findAll(oku(aday.uri, 8192))
+        return listele(null, null, icerikGerekli = true).filter { aday ->
+            aday.uri != not.uri && MarkdownBicimci.BAGLANTI.findAll(onizlemeIcerigi(aday.uri))
                 .any { hedefler.contains(it.groupValues[1].trim().lowercase(tr)) }
         }
     }
@@ -576,7 +702,7 @@ class NotDeposu(private val context: Context) {
 
     private fun gecmisKlasoru(olustur: Boolean): DocumentFile? {
         val k = kok()
-        val mevcut = k.findFile(".gecmis")
+        val mevcut = cocukBul(k, ".gecmis")
         if (mevcut != null && mevcut.isDirectory) return mevcut
         return if (olustur) k.createDirectory(".gecmis") else null
     }
@@ -608,7 +734,7 @@ class NotDeposu(private val context: Context) {
     private fun gecmisDizini(uri: Uri, olustur: Boolean): DocumentFile? {
         val kok = gecmisKlasoru(olustur) ?: return null
         val anahtar = gecmisAnahtari(goreliParcalar(uri) ?: return null)
-        return kok.findFile(anahtar)?.takeIf { it.isDirectory }
+        return cocukBul(kok, anahtar)?.takeIf { it.isDirectory }
             ?: if (olustur) kok.createDirectory(anahtar) else null
     }
 
@@ -618,8 +744,8 @@ class NotDeposu(private val context: Context) {
         val yeniAnahtar = gecmisAnahtari(goreliParcalar(yeni) ?: return)
         if (eskiAnahtar == yeniAnahtar) return
         val kok = gecmisKlasoru(false) ?: return
-        val eski = kok.findFile(eskiAnahtar)?.takeIf { it.isDirectory } ?: return
-        if (kok.findFile(yeniAnahtar) != null) return
+        val eski = cocukBul(kok, eskiAnahtar)?.takeIf { it.isDirectory } ?: return
+        if (yeniAnahtar in cocukAdlari(kok)) return
         try {
             eski.renameTo(yeniAnahtar)
         } catch (_: Exception) {
@@ -673,6 +799,69 @@ class NotDeposu(private val context: Context) {
         const val KLASOR_HATA = 2
 
         private const val GECMIS_SINIRI = 20
+
+        /** Liste, arama ve etiketler notun yalnızca bu kadarına bakar. */
+        const val ONIZLEME_SINIRI = 8192
+        private const val OZET_UZUNLUGU = 150
+        private const val BASLIK_UZUNLUGU = 80
+
+        /** Tüm uygulama için tek önbellek (widget, editör ve liste paylaşır). */
+        val ONBELLEK = ListeOnbellegi()
+
+        @Volatile
+        private var onbellekYuklendi = false
+
+        /** Önbellek, görülen not sayısını bu kadar aşınca eskiler atılır. */
+        private const val ONBELLEK_PAYI = 50
+
+        /** Önbellekte olmayan bu kadar not varsa paralel okunur. */
+        private const val PARALEL_ESIGI = 8
+        private const val OKUYUCU_SAYISI = 4
+
+        private val GIRDI_SUTUNLARI = arrayOf(
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            DocumentsContract.Document.COLUMN_SIZE
+        )
+
+        /**
+         * Kart başlığı ve özeti. İlk dolu satır başlıktır; özet sonraki satırlardan
+         * 150 karakter dolana kadar toplanır. Önceden 8 KB'daki bütün satırlar
+         * temizlenip sonra kırpılıyordu; 400 satırlık notta yüzlerce boşa düzenli
+         * ifade işlemi demekti ve listenin yavaşlığının asıl sebebiydi.
+         */
+        fun onizlemeCikar(icerik: String, dosyaAdi: String): Pair<String, String> {
+            var baslik: String? = null
+            val ozet = StringBuilder()
+            for (satir in icerik.lineSequence()) {
+                if (satir.isBlank()) continue
+                if (baslik == null) {
+                    baslik = mdTemizle(satir)
+                    continue
+                }
+                val temiz = mdTemizle(satir)
+                if (temiz.isEmpty()) continue
+                if (ozet.isNotEmpty()) ozet.append(' ')
+                ozet.append(temiz)
+                if (ozet.length >= OZET_UZUNLUGU) break
+            }
+            val ad = baslik?.takeIf { it.isNotBlank() }
+                ?: dosyaAdi.removeSuffix(".md").removeSuffix(".txt")
+            return ad.take(BASLIK_UZUNLUGU) to ozet.take(OZET_UZUNLUGU).toString()
+        }
+
+        /** Kart önizlemesi için satırdaki Markdown işaretlerini söker. */
+        fun mdTemizle(satir: String): String =
+            satir.trim()
+                // Görsel bağlantısı önizlemede ham metin olarak görünmesin.
+                .replace(MarkdownBicimci.GORSEL, "")
+                .replace(MarkdownBicimci.GORSEL_WIKI, "")
+                .trimStart('#', '>', ' ')
+                .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
+                .replace(ISARETLER, "")
+                .trim()
 
         /**
          * Sürüm geçmişi klasörünün adı. Ana klasördeki not yalnızca adıyla

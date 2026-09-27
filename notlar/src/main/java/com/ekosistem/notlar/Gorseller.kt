@@ -82,7 +82,7 @@ object Gorseller {
             .filter { it.isNotEmpty() && it != "." && it != ".." }
         var dosya: DocumentFile? = depo.kok()
         for ((i, parca) in parcalar.withIndex()) {
-            dosya = dosya?.findFile(parca)
+            dosya = dosya?.let { depo.cocukBul(it, parca) }
             if (dosya == null) break
             if (i < parcalar.size - 1 && !dosya.isDirectory) {
                 dosya = null
@@ -178,7 +178,7 @@ object Gorseller {
         val klasor = depo.eklerKlasoru(true) ?: return null
         val tur = context.contentResolver.getType(kaynak) ?: "image/jpeg"
         val uzanti = MimeTypeMap.getSingleton().getExtensionFromMimeType(tur) ?: "jpg"
-        val govde = tekilAd(klasor, gosterilenAd(context, kaynak), uzanti)
+        val govde = tekilAd(depo.cocukAdlari(klasor), gosterilenAd(context, kaynak), uzanti)
 
         val hedef = klasor.createFile(tur, govde) ?: return null
         if (!kopyala(context, kaynak, hedef.uri)) {
@@ -207,7 +207,7 @@ object Gorseller {
         val temizAd = ad.substringAfterLast('/').trim()
         if (temizAd.isEmpty() || temizAd.startsWith(".")) return null
         val klasor = depo.eklerKlasoru(true) ?: return null
-        if (klasor.findFile(temizAd) != null) return temizAd
+        if (temizAd in depo.cocukAdlari(klasor)) return temizAd
 
         val uzanti = temizAd.substringAfterLast('.', "")
         val tur = MimeTypeMap.getSingleton()
@@ -253,10 +253,10 @@ object Gorseller {
             .ifBlank { "gorsel" }
     }
 
-    private fun tekilAd(klasor: DocumentFile, govde: String, uzanti: String): String {
+    private fun tekilAd(mevcutAdlar: Set<String>, govde: String, uzanti: String): String {
         var deneme = govde
         var i = 2
-        while (klasor.findFile("$deneme.$uzanti") != null || klasor.findFile(deneme) != null) {
+        while ("$deneme.$uzanti" in mevcutAdlar || deneme in mevcutAdlar) {
             deneme = "$govde-$i"
             i++
         }
