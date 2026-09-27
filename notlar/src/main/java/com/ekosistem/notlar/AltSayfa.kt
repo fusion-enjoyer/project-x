@@ -12,6 +12,7 @@ import android.view.Window
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 
@@ -176,6 +177,9 @@ class AltSayfa(private val activity: Activity) {
             kok.addView(gorunum, lp)
         }
 
+        // Uzun listeler ([[ önerisi gibi) ekranı taşırmasın: maddeler kaydırılır.
+        val maddeKutusu = LinearLayout(activity)
+        maddeKutusu.orientation = LinearLayout.VERTICAL
         for (madde in maddeler) {
             val satir = LinearLayout(activity)
             satir.orientation = LinearLayout.HORIZONTAL
@@ -217,13 +221,23 @@ class AltSayfa(private val activity: Activity) {
                 dialog.dismiss()
                 madde.tikla()
             }
-            kok.addView(
+            maddeKutusu.addView(
                 satir,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     (56 * y).toInt()
                 )
             )
+        }
+        val toplam = (maddeler.size * 56 * y).toInt()
+        val sinir = (activity.resources.displayMetrics.heightPixels * 0.6f).toInt()
+        if (toplam > sinir) {
+            val kaydirici = ScrollView(activity)
+            kaydirici.isVerticalScrollBarEnabled = true
+            kaydirici.addView(maddeKutusu)
+            kok.addView(kaydirici, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, sinir))
+        } else if (maddeler.isNotEmpty()) {
+            kok.addView(maddeKutusu)
         }
 
         // Alt sayfayı ekranın altına yasla, üstündeki boşluğa dokununca kapansın.

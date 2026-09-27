@@ -219,3 +219,41 @@ class AyracSpan(private val genislik: Int, private val renk: Int) : ReplacementS
         canvas.drawLine(x, orta, x + genislik, orta, boya)
     }
 }
+
+/**
+ * Kod bloğu (```) satırlarının zemini: satırın tamamını kaplar, art arda
+ * satırlar tek bir blok gibi görünür. Yazı zaten eş aralıklıdır.
+ */
+class KodBlokSpan(
+    private val renk: Int,
+    /** Yazının zemin kenarına yapışmaması için soldan boşluk (piksel). */
+    private val bosluk: Int
+) : android.text.style.LineBackgroundSpan, LeadingMarginSpan {
+
+    override fun getLeadingMargin(first: Boolean): Int = bosluk
+
+    override fun drawLeadingMargin(
+        c: Canvas, p: Paint, x: Int, dir: Int, top: Int, baseline: Int, bottom: Int,
+        text: CharSequence, start: Int, end: Int, first: Boolean, layout: Layout?
+    ) {
+    }
+
+    override fun drawBackground(
+        c: Canvas,
+        p: Paint,
+        left: Int,
+        right: Int,
+        top: Int,
+        baseline: Int,
+        bottom: Int,
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        lineNumber: Int
+    ) {
+        val eski = p.color
+        p.color = renk
+        c.drawRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(), p)
+        p.color = eski
+    }
+}

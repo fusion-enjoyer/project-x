@@ -267,4 +267,10 @@
     <string name="dosya_notlara_kopyala_soru">“%1$s” notlarına kopyalansın mı?</string>
     <string name="dosya_kopyala_ac">Kopyala ve aç</string>
     <string name="vazgec">Vazgeç</string>
+    <string name="baglanti_ac">Tarayıcıda aç</string>
+    <string name="baglanti_uygulama_yok">Bu bağlantıyı açacak uygulama yok</string>
+    <string name="baglanti_kopyala">Bağlantıyı kopyala</string>
+    <string name="kopyalandi">Kopyalandı</string>
+    <string name="not_bagla">Not bağla</string>
+    <string name="tarih_ekle">Tarih ekle</string>
 </resources>

@@ -56,6 +56,7 @@ class EditorActivity : AppCompatActivity() {
 
     private var bicimleniyor = false
     private var satirEklendi = false
+    private var baglantiOnerisi = false
     private var aktifSatirBasi = -1
     private var okumaModu = false
 
@@ -304,6 +305,10 @@ class EditorActivity : AppCompatActivity() {
             if (bicimleniyor || geriAliniyor) return
             satirEklendi = s != null && onceki == 0 && sayi == 1 &&
                 bas < s.length && s[bas] == '\n'
+            // Az önce ikinci "[" yazıldıysa not önerisi açılır.
+            baglantiOnerisi = s != null && onceki == 0 && sayi == 1 && bas >= 1 &&
+                bas < s.length && s[bas] == '[' && s[bas - 1] == '[' &&
+                (bas < 2 || s[bas - 2] != '[')
         }
 
         override fun afterTextChanged(s: Editable?) {
@@ -337,6 +342,11 @@ class EditorActivity : AppCompatActivity() {
 
             metinAlani.removeCallbacks(taslakYazici)
             metinAlani.postDelayed(taslakYazici, TASLAK_MS)
+
+            if (baglantiOnerisi) {
+                baglantiOnerisi = false
+                metinAlani.post { notOner() }
+            }
         }
     }
 
@@ -473,6 +483,23 @@ class EditorActivity : AppCompatActivity() {
     private fun baglantiyaDokunuldu(konum: Int): Boolean {
         val s = metinAlani.text ?: return false
         val metin = s.toString()
+        // Yalnızca dokunulan satıra bakılır; uzun notta her dokunuşta bütün metni taramayalım.
+        val satirBasi = metin.lastIndexOf('\n', (konum - 1).coerceAtLeast(0)).let { if (it < 0 || konum == 0) 0 else it + 1 }
+        val satirSonu = metin.indexOf('\n', konum).let { if (it < 0) metin.length else it }
+        val satir = metin.substring(satirBasi, satirSonu)
+        val yerel = konum - satirBasi
+        for (m in MarkdownBicimci.MD_BAGLANTI.findAll(satir)) {
+            if (yerel in m.range) {
+                webBaglantisi(m.groupValues[2], konum)
+                return true
+            }
+        }
+        for (m in MarkdownBicimci.URL.findAll(satir)) {
+            if (yerel in m.range) {
+                webBaglantisi(m.value, konum)
+                return true
+            }
+        }
         for (m in MarkdownBicimci.BAGLANTI.findAll(metin)) {
             if (konum in m.range) {
                 baglantiyiAc(m.groupValues[1].trim())
@@ -493,6 +520,86 @@ class EditorActivity : AppCompatActivity() {
     }
 
     /** Bağlantı hedefi varsa açar, yoksa o başlıkla yeni not oluşturur. */
+    /**
+     * `[[` yazılınca son düzenlenen notlar önerilir; seçilen ad ve `]]`
+     * eklenir. Sayfa kapatılırsa kullanıcı adı kendisi yazmaya devam eder.
+     */
+    private fun notOner() {
+        val benim = uri
+        Thread {
+            val notlar = runCatching { depo.onbellektenListe() }.getOrDefault(emptyList())
+                .ifEmpty { runCatching { depo.notlariListele(null, null) }.getOrDefault(emptyList()) }
+                .filter { it.uri != benim && !it.kilitli }
+                .sortedByDescending { it.degistirilme }
+                .take(ONERI_SAYISI)
+            runOnUiThread {
+                if (isFinishing || notlar.isEmpty()) return@runOnUiThread
+                val sayfa = AltSayfa(this).baslik(getString(R.string.not_bagla))
+                for (n in notlar) {
+                    sayfa.madde(R.drawable.ic_baglanti, n.baslik) {
+                        val alan = metinAlani.text ?: return@madde
+                        val imlec = metinAlani.selectionStart.coerceIn(0, alan.length)
+                        alan.insert(imlec, n.baslik + "]]")
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    /** Biçim çubuğundan: tarih ve saat, imlecin olduğu yere. */
+    private fun tarihEkle() {
+        val simdi = java.util.Date()
+        val secenekler = listOf(
+            java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).format(simdi),
+            java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG).format(simdi),
+            java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(simdi),
+            android.text.format.DateFormat.getTimeFormat(this).format(simdi)
+        ).distinct()
+        val sayfa = AltSayfa(this).baslik(getString(R.string.tarih_ekle))
+        for (metin in secenekler) {
+            sayfa.madde(R.drawable.ic_gunluk, metin) {
+                val alan = metinAlani.text ?: return@madde
+                val bas = minOf(metinAlani.selectionStart, metinAlani.selectionEnd).coerceIn(0, alan.length)
+                val son = maxOf(metinAlani.selectionStart, metinAlani.selectionEnd).coerceIn(0, alan.length)
+                alan.replace(bas, son, metin)
+            }
+        }
+        sayfa.goster()
+    }
+
+    /**
+     * Web bağlantısına dokunuldu. Uygulamanın interneti yok; adres telefondaki
+     * tarayıcıya verilir. "Düzenle" imleci oraya koyar, yoksa bağlantılı satır
+     * dokunarak düzenlenemezdi.
+     */
+    private fun webBaglantisi(adres: String, konum: Int) {
+        AltSayfa(this)
+            .baslik(adres)
+            .madde(R.drawable.ic_baglanti, getString(R.string.baglanti_ac)) {
+                try {
+                    Kilit.sistemAraciBekleniyor = true
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(adres)))
+                } catch (_: android.content.ActivityNotFoundException) {
+                    Kilit.sistemAraciBekleniyor = false
+                    Toast.makeText(this, R.string.baglanti_uygulama_yok, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .madde(R.drawable.ic_paylas, getString(R.string.baglanti_kopyala)) {
+                val pano = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                pano.setPrimaryClip(android.content.ClipData.newPlainText(adres, adres))
+                Toast.makeText(this, R.string.kopyalandi, Toast.LENGTH_SHORT).show()
+            }
+            .madde(R.drawable.ic_duzenle, getString(R.string.duzenle)) {
+                if (okumaModu) okumaModunuDegistir()
+                metinAlani.requestFocus()
+                metinAlani.setSelection(konum.coerceIn(0, metinAlani.length()))
+                (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(metinAlani, 0)
+            }
+            .goster()
+    }
+
     private fun baglantiyiAc(baslik: String) {
         if (baslik.isEmpty()) return
         kaydet()
@@ -528,6 +635,7 @@ class EditorActivity : AppCompatActivity() {
             Arac(R.drawable.ic_bicim_onay, R.string.bicim_onay) { onekDegistir("- [ ] ") },
             Arac(R.drawable.ic_gorsel, R.string.gorsel_ekle) { gorselSec() },
             Arac(R.drawable.ic_etiket, R.string.etiket_ekle) { etiketEkle() },
+            Arac(R.drawable.ic_gunluk, R.string.tarih_ekle) { tarihEkle() },
             Arac(R.drawable.ic_girinti_arti, R.string.girinti_arti) { girintiDegistir(true) },
             Arac(R.drawable.ic_girinti_eksi, R.string.girinti_eksi) { girintiDegistir(false) }
         )
@@ -1486,6 +1594,9 @@ class EditorActivity : AppCompatActivity() {
 
         /** Yazma bu kadar durunca taslak alınır. */
         const val TASLAK_MS = 1500L
+
+        /** `[[` yazınca önerilen en fazla not sayısı. */
+        const val ONERI_SAYISI = 40
         const val YIGIN_SINIRI = 60
         val TR: Locale = Locale.forLanguageTag("tr-TR")
         val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- |(\\d+)\\. )")

@@ -271,4 +271,10 @@
     <string name="dosya_notlara_kopyala_soru">Copy “%1$s” into your notes?</string>
     <string name="dosya_kopyala_ac">Copy and open</string>
     <string name="vazgec">Cancel</string>
+    <string name="baglanti_ac">Open in browser</string>
+    <string name="baglanti_uygulama_yok">No app can open this link</string>
+    <string name="baglanti_kopyala">Copy link</string>
+    <string name="kopyalandi">Copied</string>
+    <string name="not_bagla">Link a note</string>
+    <string name="tarih_ekle">Insert date</string>
 </resources>

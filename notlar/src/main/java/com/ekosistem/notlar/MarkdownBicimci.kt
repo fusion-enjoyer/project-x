@@ -74,10 +74,21 @@ class MarkdownBicimci(private val context: Context) {
 
         var bas = 0
         var satirNo = 0
+        var kodBlogunda = false
         while (bas <= s.length) {
             var son = s.indexOf('\n', bas)
             if (son < 0) son = s.length
-            satirBicimle(s, bas, son, satirNo == 0, imlec in bas..son, genislik)
+            val aktif = imlec in bas..son
+            // ``` ile açılıp kapanan kod bloğu: içinde başka işaret yorumlanmaz.
+            val cit = satirNo > 0 && KOD_CITI.containsMatchIn(s.subSequence(bas, son))
+            when {
+                cit -> {
+                    kodSatiri(s, bas, son, cit = true)
+                    kodBlogunda = !kodBlogunda
+                }
+                kodBlogunda -> kodSatiri(s, bas, son, cit = false)
+                else -> satirBicimle(s, bas, son, satirNo == 0, aktif, genislik)
+            }
             if (son >= s.length) break
             bas = son + 1
             satirNo++
@@ -98,6 +109,16 @@ class MarkdownBicimci(private val context: Context) {
         for (span in s.getSpans(0, s.length, MaddeSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, GorselSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, UnderlineSpan::class.java)) s.removeSpan(span)
+        for (span in s.getSpans(0, s.length, KodBlokSpan::class.java)) s.removeSpan(span)
+    }
+
+    /** Kod bloğu satırı: eş aralıklı yazı, satır boyu zemin; çit (```) soluk. */
+    private fun kodSatiri(s: Editable, bas: Int, son: Int, cit: Boolean) {
+        val satirSonu = minOf(son + 1, s.length)
+        s.setSpan(AbsoluteSizeSpan(govdeSp, true), bas, if (son > bas) son else satirSonu, EE)
+        s.setSpan(KodBlokSpan(kodZemin, (10 * yogunluk).toInt()), bas, satirSonu, EE)
+        if (son > bas) s.setSpan(TypefaceSpan("monospace"), bas, son, EE)
+        if (cit && son > bas) s.setSpan(ForegroundColorSpan(soluk), bas, son, EE)
     }
 
     private fun sadeBicimle(s: Editable) {
@@ -218,8 +239,10 @@ class MarkdownBicimci(private val context: Context) {
         // adındaki * ya da _ yüzünden görselin üstüne span binerdi.
         val gorseller = gorselleriIsle(s, bas, metin, aktif)
 
+        val kodlar = mutableListOf<IntRange>()
         for (m in KOD.findAll(metin)) {
             if (kapsaniyor(gorseller, m.range)) continue
+            kodlar.add(m.range)
             val ic = m.groups[1] ?: continue
             s.setSpan(TypefaceSpan("monospace"), bas + ic.range.first, bas + ic.range.last + 1, EE)
             s.setSpan(
@@ -275,6 +298,24 @@ class MarkdownBicimci(private val context: Context) {
                 bas + m.range.last + 1,
                 EE
             )
+        }
+
+        // [metin](https://...): metin bağlantı gibi görünür, adres gizlenir.
+        val webler = mutableListOf<IntRange>()
+        for (m in MD_BAGLANTI.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range) || kapsaniyor(kodlar, m.range)) continue
+            webler.add(m.range)
+            val ic = m.groups[1] ?: continue
+            s.setSpan(ForegroundColorSpan(vurgu), bas + ic.range.first, bas + ic.range.last + 1, EE)
+            s.setSpan(UnderlineSpan(), bas + ic.range.first, bas + ic.range.last + 1, EE)
+            isaret(s, bas + m.range.first, bas + ic.range.first, aktif)
+            isaret(s, bas + ic.range.last + 1, bas + m.range.last + 1, aktif)
+        }
+        // Düz web adresi: vurgu renginde, altı çizili; dokununca açılır.
+        for (m in URL.findAll(metin)) {
+            if (kapsaniyor(gorseller, m.range) || kapsaniyor(kodlar, m.range) || kapsaniyor(webler, m.range)) continue
+            s.setSpan(ForegroundColorSpan(vurgu), bas + m.range.first, bas + m.range.last + 1, EE)
+            s.setSpan(UnderlineSpan(), bas + m.range.first, bas + m.range.last + 1, EE)
         }
 
         // [[bağlantı]]: içerik vurgu renginde ve altı çizili, köşeli parantezler gizli
@@ -373,6 +414,15 @@ class MarkdownBicimci(private val context: Context) {
         // "!" ile başlayan gömme görseldir, bağlantı değil.
         val BAGLANTI = Regex("(?<!!)\\[\\[([^\\[\\]\\n]{1,80})]]")
         val GORSEL = Regex("!\\[([^\\]\\n]*)]\\(([^)\\n]+)\\)")
+        /** Düz web adresi. Sondaki nokta, virgül, parantez adrese dahil edilmez. */
+        val URL = Regex("(?<![\\w@/])https?://[^\\s<>\"'`\\[\\]()]*[^\\s<>\"'`\\[\\]().,;:!?]")
+
+        /** Markdown bağlantısı: [metin](https://adres) */
+        val MD_BAGLANTI = Regex("(?<!!)\\[([^\\[\\]\\n]+)]\\((https?://[^\\s)]+)\\)")
+
+        /** Kod bloğu çiti: satır ``` ile başlar (dil adı gelebilir). */
+        val KOD_CITI = Regex("^\\s*```")
+
         val GORSEL_WIKI = Regex("!\\[\\[([^\\[\\]\\n]{1,120})]]")
     }
 }
