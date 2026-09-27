@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity() {
             seciliEtiket = etiket
         }
         onbellektenGoster()
+        if (savedInstanceState == null) kisayoluIsle(intent)
 
         findViewById<EditText>(R.id.arama).setOnFocusChangeListener { _, odakta ->
             if (odakta && !aramaHazirlandi && !listeIsci.isShutdown) {
@@ -134,6 +135,23 @@ class MainActivity : AppCompatActivity() {
                 liste.postDelayed(aramaGecikmeli, ARAMA_GECIKMESI)
             }
         })
+    }
+
+    override fun onNewIntent(yeni: Intent) {
+        super.onNewIntent(yeni)
+        kisayoluIsle(yeni)
+    }
+
+    /** Simgeye uzun basınca çıkan kısayollar (res/xml-v25/kisayollar.xml). */
+    private fun kisayoluIsle(gelen: Intent?) {
+        when (gelen?.action) {
+            KISAYOL_YENI -> startActivity(Intent(this, EditorActivity::class.java))
+            KISAYOL_GUNLUK -> bugununNotu()
+            KISAYOL_ARA -> liste.post { aramaOdakla() }
+            else -> return
+        }
+        // Ekran döndürülünce ya da geri gelince aynı kısayol tekrar çalışmasın.
+        gelen.action = Intent.ACTION_MAIN
     }
 
     override fun onResume() {
@@ -808,10 +826,7 @@ class MainActivity : AppCompatActivity() {
     /** Bugünün notu varsa açılır, yoksa `gunluk` şablonundan oluşturulur. */
     private fun bugununNotu() {
         Thread {
-            val baslik = Sablonlar.bugununBasligi()
-            val mevcut = depo.baslikIleBul(baslik)
-            val adres = mevcut?.uri
-                ?: depo.notOlustur(Sablonlar.gunlukIcerik(this, depo, baslik), null, baslik)
+            val adres = Sablonlar.bugununNotu(this, depo)
             runOnUiThread {
                 if (adres == null) {
                     Toast.makeText(this, R.string.sablon_hata, Toast.LENGTH_SHORT).show()
@@ -923,6 +938,10 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         const val SERIT_SURESI = 5000L
         const val ARAMA_GECIKMESI = 200L
+
+        const val KISAYOL_YENI = "com.ekosistem.notlar.YENI_NOT"
+        const val KISAYOL_GUNLUK = "com.ekosistem.notlar.GUNLUK"
+        const val KISAYOL_ARA = "com.ekosistem.notlar.ARA"
 
         /** Ekranın bu kadarından fazlası kapandıysa klavye açık sayılır. */
         const val KLAVYE_ORANI = 0.15f

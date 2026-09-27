@@ -88,6 +88,25 @@ object Sablonlar {
         return (listOf(baslik) + govde.lines().drop(1)).joinToString("\n")
     }
 
+    /** Bugünün notu: varsa bulunur, yoksa (şablonuyla) oluşturulur. */
+    fun bugununNotu(context: Context, depo: NotDeposu): Uri? {
+        val baslik = bugununBasligi()
+        return depo.baslikIleBul(baslik)?.uri
+            ?: depo.notOlustur(gunlukIcerik(context, depo, baslik), null, baslik)
+    }
+
+    /**
+     * Metni bugünün notunun sonuna ekler ("Notlara ekle" → "Bugünün notuna").
+     * Önceki hali sürüm geçmişine düşer; ekleme geri alınabilir.
+     */
+    fun bugununNotunaEkle(context: Context, depo: NotDeposu, metin: String): Uri? {
+        val adres = bugununNotu(context, depo) ?: return null
+        val mevcut = depo.okuKesin(adres) ?: return null
+        val ayrac = if (mevcut.isEmpty() || mevcut.endsWith("\n\n")) "" else if (mevcut.endsWith("\n")) "\n" else "\n\n"
+        depo.gecmiseYaz(adres, mevcut)
+        return if (depo.yaz(adres, mevcut + ayrac + metin.trim() + "\n")) adres else null
+    }
+
     private fun gunlukSablonu(depo: NotDeposu): Not? = listele(depo).firstOrNull {
         it.ad.removeSuffix(".md").removeSuffix(".txt").equals(GUNLUK, ignoreCase = true)
     }

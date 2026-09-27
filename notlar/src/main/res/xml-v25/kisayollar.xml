@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Simgeye uzun basınca çıkan kısayollar (Android 7.1+). Eski sürümlerde
+  sistem bu dosyayı hiç okumaz; uygulama aynı şekilde çalışır.
+  Hepsi MainActivity'ye gider, eylem adına göre yönlenir (kisayoluIsle).
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="yeni_not"
+        android:enabled="true"
+        android:icon="@drawable/kisayol_yeni"
+        android:shortcutShortLabel="@string/kisayol_yeni"
+        android:shortcutLongLabel="@string/kisayol_yeni">
+        <intent
+            android:action="com.ekosistem.notlar.YENI_NOT"
+            android:targetClass="com.ekosistem.notlar.MainActivity"
+            android:targetPackage="com.ekosistem.notlar" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="bugunun_notu"
+        android:enabled="true"
+        android:icon="@drawable/kisayol_gunluk"
+        android:shortcutShortLabel="@string/kisayol_gunluk"
+        android:shortcutLongLabel="@string/kisayol_gunluk">
+        <intent
+            android:action="com.ekosistem.notlar.GUNLUK"
+            android:targetClass="com.ekosistem.notlar.MainActivity"
+            android:targetPackage="com.ekosistem.notlar" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="ara"
+        android:enabled="true"
+        android:icon="@drawable/kisayol_ara"
+        android:shortcutShortLabel="@string/kisayol_ara"
+        android:shortcutLongLabel="@string/kisayol_ara">
+        <intent
+            android:action="com.ekosistem.notlar.ARA"
+            android:targetClass="com.ekosistem.notlar.MainActivity"
+            android:targetPackage="com.ekosistem.notlar" />
+    </shortcut>
+</shortcuts>

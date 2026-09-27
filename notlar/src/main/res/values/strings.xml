@@ -261,4 +261,14 @@
         <item quantity="one">%d audio recording can\'t be imported</item>
         <item quantity="other">%d audio recordings can\'t be imported</item>
     </plurals>
+    <string name="kisayol_yeni">New note</string>
+    <string name="kisayol_gunluk">Today\'s note</string>
+    <string name="kisayol_ara">Search notes</string>
+    <string name="notlara_ekle">Add to Notes</string>
+    <string name="yeni_not_olarak">Save as a new note</string>
+    <string name="bugunun_notuna_ekle">Add to today\'s note</string>
+    <string name="bugunun_notuna_eklendi">Added to today\'s note</string>
+    <string name="dosya_notlara_kopyala_soru">Copy “%1$s” into your notes?</string>
+    <string name="dosya_kopyala_ac">Copy and open</string>
+    <string name="vazgec">Cancel</string>
 </resources>

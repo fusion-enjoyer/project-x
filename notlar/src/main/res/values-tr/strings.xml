@@ -257,4 +257,14 @@
     <plurals name="keep_ek_atlandi">
         <item quantity="other">%d ses kaydı aktarılamıyor</item>
     </plurals>
+    <string name="kisayol_yeni">Yeni not</string>
+    <string name="kisayol_gunluk">Bugünün notu</string>
+    <string name="kisayol_ara">Notlarda ara</string>
+    <string name="notlara_ekle">Notlara ekle</string>
+    <string name="yeni_not_olarak">Yeni not olarak kaydet</string>
+    <string name="bugunun_notuna_ekle">Bugünün notuna ekle</string>
+    <string name="bugunun_notuna_eklendi">Bugünün notuna eklendi</string>
+    <string name="dosya_notlara_kopyala_soru">“%1$s” notlarına kopyalansın mı?</string>
+    <string name="dosya_kopyala_ac">Kopyala ve aç</string>
+    <string name="vazgec">Vazgeç</string>
 </resources>

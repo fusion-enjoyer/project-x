@@ -23,6 +23,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Simgeye uzun basınca: yeni not, bugünün notu, ara (Android 7.1+) -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/kisayollar" />
         </activity>
 
         <activity
@@ -108,17 +112,49 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <!--
+          Dışarıdan gelen metin: "Paylaş", seçili metinde "Notlara ekle"
+          (Android 6+) ve .md/.txt dosyasını "Birlikte aç".
+        -->
         <activity
             android:name=".ShareActivity"
             android:exported="true"
             android:excludeFromRecents="true"
+            android:label="@string/notlara_ekle"
+            android:taskAffinity=""
             android:theme="@style/Theme.Notlar.Translucent">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="text/markdown" />
+                <data android:mimeType="text/x-markdown" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
+
+        <!-- Bildirim panelinde "Yeni not" döşemesi (Android 7+). -->
+        <service
+            android:name=".YeniNotDosemesi"
+            android:exported="true"
+            android:icon="@drawable/ic_duzenle"
+            android:label="@string/kisayol_yeni"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
