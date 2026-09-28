@@ -441,17 +441,7 @@ class AyarlarActivity : AppCompatActivity() {
         NotDeposu.yazici.execute {
             val s = KeepAktarma.aktar(uygulama, NotDeposu(uygulama), kaynaklar, arsiv)
             val mesaj = keepSonucMetni(s)
-            runOnUiThread {
-                // Sonuç birkaç satır olabilir; bildirim iki satırda kesiyordu.
-                if (isFinishing || isDestroyed) {
-                    Toast.makeText(uygulama, mesaj, Toast.LENGTH_LONG).show()
-                } else {
-                    AltSayfa(this)
-                        .baslik(mesaj)
-                        .madde(R.drawable.ic_onay_isaret, getString(R.string.kapat)) {}
-                        .goster()
-                }
-            }
+            runOnUiThread { sonucGoster(mesaj) }
         }
     }
 
@@ -509,12 +499,37 @@ class AyarlarActivity : AppCompatActivity() {
                 val sayi = Yedekleme.disaAktar(this, depo, uri)
                 runOnUiThread { bilgi(sayi >= 0, getString(R.string.yedek_alindi)) }
             }.start()
-            ISTEK_ICE -> Thread {
-                val sayi = Yedekleme.iceAktar(this, depo, uri)
-                runOnUiThread {
-                    bilgi(sayi >= 0, getString(R.string.yedek_yuklendi, maxOf(sayi, 0)))
+            ISTEK_ICE -> {
+                // Kullanıcı ayarlardan çıksa da iş bitsin, sonuç yine gösterilsin.
+                val uygulama = applicationContext
+                NotDeposu.yazici.execute {
+                    val s = Yedekleme.iceAktar(uygulama, NotDeposu(uygulama), uri)
+                    val mesaj = if (s == null) {
+                        getString(R.string.yedek_hata)
+                    } else {
+                        listOfNotNull(
+                            resources.getQuantityString(R.plurals.yedek_yuklendi, s.yeni, s.yeni),
+                            s.zatenVardi.takeIf { it > 0 }?.let {
+                                resources.getQuantityString(R.plurals.keep_zaten_vardi, it, it)
+                            },
+                            getString(R.string.yedek_yarim).takeIf { s.yarim }
+                        ).joinToString("\n")
+                    }
+                    runOnUiThread { sonucGoster(mesaj) }
                 }
-            }.start()
+            }
+        }
+    }
+
+    /** Birkaç satırlık sonuç alt sayfada; bildirim (toast) iki satırda kesiyor. */
+    private fun sonucGoster(mesaj: String) {
+        if (isFinishing || isDestroyed) {
+            Toast.makeText(applicationContext, mesaj, Toast.LENGTH_LONG).show()
+        } else {
+            AltSayfa(this)
+                .baslik(mesaj)
+                .madde(R.drawable.ic_onay_isaret, getString(R.string.kapat)) {}
+                .goster()
         }
     }
 

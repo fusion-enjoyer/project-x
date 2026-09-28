@@ -170,10 +170,35 @@ object Prefs {
      */
     fun zamanDamgasi(c: Context, uri: String): Long = sp(c).getLong("zaman:$uri", 0L)
 
+    /** Damganın yanında ne zaman yazıldığı da saklanır; bkz. [korunanZaman]. */
     fun zamanDamgasiKaydet(c: Context, uri: String, zaman: Long) {
-        if (zaman <= 0) sp(c).edit().remove("zaman:$uri").apply()
-        else sp(c).edit().putLong("zaman:$uri", zaman).apply()
+        val d = sp(c).edit()
+        if (zaman <= 0) d.remove("zaman:$uri").remove("zamanyaz:$uri")
+        else d.putLong("zaman:$uri", zaman).putLong("zamanyaz:$uri", System.currentTimeMillis())
+        d.apply()
     }
+
+    /**
+     * Listede ve yedekte gösterilecek tarih: korunan tarih varsa o, yoksa
+     * dosyanın kendi tarihi. Not uygulama dışında (Obsidian, Syncthing)
+     * sonradan düzenlendiyse dosyanın tarihi daha yenidir ve o geçer.
+     */
+    fun gosterilenZaman(c: Context, uri: String, dosyaZamani: Long): Long {
+        val damga = zamanDamgasi(c, uri)
+        if (damga <= 0) return dosyaZamani
+        val yazilma = sp(c).getLong("zamanyaz:$uri", 0L)
+        return korunanZaman(damga, yazilma, dosyaZamani)
+    }
+
+    /**
+     * Saf karar: damga yazıldıktan sonra dosya değiştiyse damga eskimiştir.
+     * Yazılma anı bilinmeyen eski damgalar geçerli sayılır. Dosya damgadan
+     * hemen önce yazıldığı için birkaç saniyelik pay bırakılır.
+     */
+    fun korunanZaman(damga: Long, yazilma: Long, dosyaZamani: Long): Long =
+        if (yazilma > 0 && dosyaZamani > yazilma + DAMGA_PAYI) dosyaZamani else damga
+
+    private const val DAMGA_PAYI = 10_000L
 
     /** Notun adresi değiştiğinde ona bağlı tüm ayarları yeni adrese taşır. */
     fun adresTasi(c: Context, eski: String, yeni: String) = adresleriTasi(c, mapOf(eski to yeni))
@@ -205,6 +230,8 @@ object Prefs {
             val damga = zamanDamgasi(c, eski)
             if (damga > 0) {
                 d.remove("zaman:$eski").putLong("zaman:$yeni", damga)
+                val yazilma = sp(c).getLong("zamanyaz:$eski", 0L)
+                if (yazilma > 0) d.remove("zamanyaz:$eski").putLong("zamanyaz:$yeni", yazilma)
                 degisti = true
             }
         }

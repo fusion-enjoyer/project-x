@@ -247,14 +247,13 @@ class NotDeposu(private val context: Context) {
         val sabitler = Prefs.sabitler(context)
         val notlar = ONBELLEK.anaListe().mapNotNull { (adres, g) ->
             val k = ONBELLEK.kayit(adres) ?: return@mapNotNull null
-            val korunan = Prefs.zamanDamgasi(context, adres)
             val kilitli = Kilit.notKilitli(context, adres)
             Not(
                 uri = Uri.parse(adres),
                 ad = g.ad,
                 baslik = k.baslik,
                 ozet = if (kilitli) "" else k.ozet,
-                degistirilme = if (korunan > 0) korunan else k.degistirilme,
+                degistirilme = Prefs.gosterilenZaman(context, adres, k.degistirilme),
                 sabit = sabitler.contains(adres),
                 klasor = g.klasor,
                 kilitli = kilitli,
@@ -309,7 +308,7 @@ class NotDeposu(private val context: Context) {
     }
 
     /** Bir dizindeki tek girdi; özellikleri tek seferde okunmuş halde. */
-    private class Girdi(
+    class Girdi(
         val uri: Uri,
         val ad: String,
         val dizin: Boolean,
@@ -323,7 +322,7 @@ class NotDeposu(private val context: Context) {
      * türünü ve tarihini ayrı ayrı sağlayıcıya soruyordu (seçilen klasörde not
      * başına 3 sorgu); burada klasör başına tek sorgu yapılır.
      */
-    private fun girdiler(dizinUri: Uri): List<Girdi> {
+    fun girdiler(dizinUri: Uri): List<Girdi> {
         if (dizinUri.scheme == "file") {
             val dizin = File(dizinUri.path ?: return emptyList())
             return dizin.listFiles()?.map {
@@ -455,8 +454,7 @@ class NotDeposu(private val context: Context) {
         eslesme: String?
     ): Not {
         val adres = g.uri.toString()
-        // Kopyalanarak taşınmış notun gerçek tarihi ayrıca saklanır.
-        val korunan = Prefs.zamanDamgasi(context, adres)
+        // Kopyalanarak taşınmış ya da yedekten gelen notun gerçek tarihi ayrıca saklanır.
         val kilitli = Kilit.notKilitli(context, adres)
         return Not(
             uri = g.uri,
@@ -464,7 +462,7 @@ class NotDeposu(private val context: Context) {
             baslik = kayit.baslik,
             // Kilitli notun içeriği listeye, widget'a ve göreve hiç çıkmaz.
             ozet = if (kilitli) "" else kayit.ozet,
-            degistirilme = if (korunan > 0) korunan else g.degistirilme,
+            degistirilme = Prefs.gosterilenZaman(context, adres, g.degistirilme),
             sabit = sabitler.contains(adres),
             klasor = klasor,
             eslesme = if (kilitli) null else eslesme,
@@ -551,7 +549,55 @@ class NotDeposu(private val context: Context) {
         return dosyaOlustur(hedef, icerik, ad)
     }
 
-    private fun dosyaOlustur(hedef: DocumentFile, icerik: String, istenenAd: String? = null): Uri? {
+    /**
+     * Yedekten gelen "İş/2026/plan.md" gibi yolun klasörlerini sırayla bulur
+     * ya da kurar. Önceden iç içe klasörler "İş2026" diye birleşiyordu.
+     */
+    fun dizinZinciri(klasorler: List<String>): DocumentFile {
+        var dizin = kok()
+        for (ham in klasorler) {
+            val ad = adTemizle(ham)
+            if (ad.isEmpty()) continue
+            dizin = cocukBul(dizin, ad)?.takeIf { it.isDirectory }
+                ?: dizin.createDirectory(ad)
+                ?: return dizin
+        }
+        return dizin
+    }
+
+    /**
+     * Belirli bir dizinde not oluşturur; ad çakışırsa "ad-2" olur. Toplu geri
+     * yüklemede dizin her not için yeniden listelenmesin diye bilinen adlar
+     * verilir; dönen çift notun adresi ve diskteki son adıdır.
+     */
+    fun dizindeOlustur(
+        dizin: DocumentFile,
+        icerik: String,
+        ad: String,
+        mevcutAdlar: Set<String>
+    ): Pair<Uri, String>? = dosyaOlusturAdli(dizin, icerik, ad, mevcutAdlar)
+
+    /**
+     * Notun tarihini verilen zamana çeker (yedekten ya da Keep'ten gelen not).
+     * Uygulama deposunda dosyanın kendi tarihi değişir; seçilen klasörde (SAF)
+     * değiştirilemediği için ayrıca saklanır.
+     */
+    fun tarihiKoru(uri: Uri, zaman: Long) {
+        if (zaman <= 0) return
+        val yol = if (uri.scheme == "file") uri.path else null
+        if (yol != null && File(yol).setLastModified(zaman)) return
+        Prefs.zamanDamgasiKaydet(context, uri.toString(), zaman)
+    }
+
+    private fun dosyaOlustur(hedef: DocumentFile, icerik: String, istenenAd: String? = null): Uri? =
+        dosyaOlusturAdli(hedef, icerik, istenenAd, null)?.first
+
+    private fun dosyaOlusturAdli(
+        hedef: DocumentFile,
+        icerik: String,
+        istenenAd: String?,
+        bilinenAdlar: Set<String>?
+    ): Pair<Uri, String>? {
         var ad = istenenAd ?: icerik.lines().firstOrNull { it.isNotBlank() }
             ?.let { mdTemizle(it) }
             ?.take(40)
@@ -562,17 +608,17 @@ class NotDeposu(private val context: Context) {
         ad = ad.removeSuffix(".md").removeSuffix(".txt")
         var tekilAd = ad
         var i = 2
-        val mevcutAdlar = cocukAdlari(hedef)
+        val mevcutAdlar = bilinenAdlar ?: cocukAdlari(hedef)
         while ("$tekilAd.md" in mevcutAdlar || tekilAd in mevcutAdlar) {
             tekilAd = "$ad-$i"
             i++
         }
         val f = hedef.createFile("text/markdown", tekilAd) ?: return null
-        val sonAd = f.name ?: tekilAd
+        var sonAd = f.name ?: tekilAd
         if (!sonAd.endsWith(".md", true) && !sonAd.endsWith(".txt", true)) {
-            f.renameTo("$tekilAd.md")
+            sonAd = if (f.renameTo("$tekilAd.md")) "$tekilAd.md" else sonAd
         }
-        return if (yaz(f.uri, icerik)) f.uri else null
+        return if (yaz(f.uri, icerik)) f.uri to sonAd else null
     }
 
     fun docGetir(uri: Uri): DocumentFile? =
@@ -592,7 +638,7 @@ class NotDeposu(private val context: Context) {
      */
     private fun hedefeTasi(uri: Uri, hedef: DocumentFile, kaynakUst: DocumentFile? = null): Uri? {
         val f = docGetir(uri) ?: return null
-        val zaman = Prefs.zamanDamgasi(context, uri.toString()).takeIf { it > 0 } ?: f.lastModified()
+        val zaman = Prefs.gosterilenZaman(context, uri.toString(), f.lastModified())
         val gecmisAnahtari = goreliParcalar(uri)?.let { gecmisAnahtari(it) }
         val yeni = gercektenTasi(f, hedef, kaynakUst)
             ?: kopyalayarakTasi(f, uri, hedef, zaman)

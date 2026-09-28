@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.zip.ZipInputStream
@@ -223,7 +222,7 @@ object KeepAktarma {
             val yollar = n.gorseller.mapNotNull { kaydedilen[ekAnahtari(it)] }
                 .map { "$onek${Gorseller.EKLER}/${Uri.encode(it, "")}" }
             val uri = depo.notOlustur(metinOlustur(n, yollar), klasor) ?: continue
-            if (n.degistirilme > 0) tarihiKoru(context, uri, n.degistirilme)
+            depo.tarihiKoru(uri, n.degistirilme)
             // sabitDegistir aç/kapa yapar; aynı adreste eski bir kayıt kalmışsa notu çözerdi.
             if (n.sabit && uri.toString() !in Prefs.sabitler(context)) {
                 Prefs.sabitDegistir(context, uri.toString())
@@ -240,17 +239,6 @@ object KeepAktarma {
             atlananEk = yeniler.sumOf { it.atlananEk },
             keepBulundu = true
         )
-    }
-
-    /**
-     * Keep'teki tarih korunur; yoksa bütün notlar "az önce" görünür ve sıralama
-     * anlamını yitirirdi. Uygulama deposunda dosyanın kendi tarihi değişir,
-     * seçilen klasörde (SAF) tarih değiştirilemediği için ayrıca saklanır.
-     */
-    private fun tarihiKoru(context: Context, uri: Uri, zaman: Long) {
-        val yol = if (uri.scheme == "file") uri.path else null
-        if (yol != null && File(yol).setLastModified(zaman)) return
-        Prefs.zamanDamgasiKaydet(context, uri.toString(), zaman)
     }
 
     private fun zipGez(context: Context, kaynak: Uri, isle: (String, InputStream) -> Unit): Boolean =

@@ -65,8 +65,8 @@
     <string name="disa_aktar">Zip olarak dışa aktar</string>
     <string name="ice_aktar">Zip\'ten içe aktar</string>
     <string name="yedek_alindi">Yedek kaydedildi</string>
-    <string name="yedek_yuklendi">%d not içe aktarıldı</string>
     <string name="yedek_hata">İşlem tamamlanamadı</string>
+    <string name="yedek_yarim">Yedeğin bir kısmı okunamadı</string>
     <string name="klasor_uygulama">Uygulama deposu</string>
     <string name="gizlilik_ozet">Bu uygulama internete bağlanmaz. Notlarının hepsi cihazında kalır.</string>
 
@@ -245,6 +245,9 @@
     <string name="keep_aktariliyor">Keep\'ten aktarılıyor… bu biraz sürebilir.</string>
     <string name="keep_bulunamadi">Bu dosyada Keep notu yok. Takeout zip\'ini seçtiğinden emin ol.</string>
     <string name="keep_arsiv_klasoru">Arşiv</string>
+    <plurals name="yedek_yuklendi">
+        <item quantity="other">%d not geri yüklendi</item>
+    </plurals>
     <plurals name="keep_not_sayisi">
         <item quantity="other">Keep\'ten %d not aktarıldı</item>
     </plurals>

@@ -65,8 +65,8 @@
     <string name="disa_aktar">Export as zip</string>
     <string name="ice_aktar">Import from zip</string>
     <string name="yedek_alindi">Backup saved</string>
-    <string name="yedek_yuklendi">%d notes imported</string>
     <string name="yedek_hata">Couldn\'t finish that</string>
+    <string name="yedek_yarim">Part of the backup couldn\'t be read</string>
     <string name="klasor_uygulama">App storage</string>
     <string name="gizlilik_ozet">This app never connects to the internet. All your notes stay on your device.</string>
 
@@ -245,6 +245,10 @@
     <string name="keep_aktariliyor">Importing from Keep… this can take a minute.</string>
     <string name="keep_bulunamadi">No Keep notes in this file. Make sure you picked the Takeout zip.</string>
     <string name="keep_arsiv_klasoru">Archive</string>
+    <plurals name="yedek_yuklendi">
+        <item quantity="one">%d note restored</item>
+        <item quantity="other">%d notes restored</item>
+    </plurals>
     <plurals name="keep_not_sayisi">
         <item quantity="one">%d note imported from Keep</item>
         <item quantity="other">%d notes imported from Keep</item>
