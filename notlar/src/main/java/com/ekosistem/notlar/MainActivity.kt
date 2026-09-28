@@ -306,10 +306,13 @@ class MainActivity : AppCompatActivity() {
             sira >= 0 -> {
                 val eski = liste[sira]
                 val (baslik, ozet) = NotDeposu.onizlemeCikar(d.metin, eski.ad)
+                val (gorev, biten) = NotDeposu.gorevSayaci(d.metin)
                 liste[sira] = eski.copy(
                     baslik = baslik,
                     ozet = if (eski.kilitli) "" else ozet,
-                    degistirilme = d.zaman
+                    degistirilme = d.zaman,
+                    gorev = if (eski.kilitli) 0 else gorev,
+                    biten = if (eski.kilitli) 0 else biten
                 )
             }
             else -> {
@@ -317,8 +320,12 @@ class MainActivity : AppCompatActivity() {
                 if (seciliKlasor != null && seciliKlasor != d.klasor) return
                 val ad = Uri.decode(d.uri.lastPathSegment ?: "").substringAfterLast('/')
                 val (baslik, ozet) = NotDeposu.onizlemeCikar(d.metin, ad)
+                val (gorev, biten) = NotDeposu.gorevSayaci(d.metin)
                 liste.add(
-                    Not(d.uri, ad, baslik, ozet, d.zaman, sabit = false, klasor = d.klasor)
+                    Not(
+                        d.uri, ad, baslik, ozet, d.zaman, sabit = false, klasor = d.klasor,
+                        gorev = gorev, biten = biten
+                    )
                 )
             }
         }
@@ -660,6 +667,7 @@ class MainActivity : AppCompatActivity() {
                  * kapatılırsa turuncu klasör ikonu notun üstünde kalıyordu.
                  */
                 liste.post { adapter.notifyItemChanged(konum) }
+                liste.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                 if (yon == ItemTouchHelper.LEFT) silmeyiYap(listOf(not)) else tasiDialog(listOf(not))
             }
 

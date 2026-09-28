@@ -22,7 +22,10 @@ data class Not(
     val sabit: Boolean,
     val klasor: String? = null,
     val eslesme: String? = null,
-    val kilitli: Boolean = false
+    val kilitli: Boolean = false,
+    /** Onay kutusu sayısı ve işaretli olanlar; kartta "3/7" rozeti. */
+    val gorev: Int = 0,
+    val biten: Int = 0
 )
 
 /** Editörden listeye iletilen değişiklik (bkz. [NotDeposu.sonDuzenleme]). */
@@ -254,7 +257,9 @@ class NotDeposu(private val context: Context) {
                 degistirilme = if (korunan > 0) korunan else k.degistirilme,
                 sabit = sabitler.contains(adres),
                 klasor = g.klasor,
-                kilitli = kilitli
+                kilitli = kilitli,
+                gorev = if (kilitli) 0 else k.gorev,
+                biten = if (kilitli) 0 else k.biten
             )
         }
         return sirala(notlar)
@@ -393,7 +398,8 @@ class NotDeposu(private val context: Context) {
         if (mevcut != null && (!icerikGerekli || mevcut.icerik != null)) return mevcut
         val icerik = okuKesin(g.uri, ONIZLEME_SINIRI) ?: return mevcut
         val (baslik, ozet) = onizlemeCikar(icerik, g.ad)
-        val yeni = ListeOnbellegi.Kayit(g.degistirilme, g.boyut, baslik, ozet, icerik)
+        val (gorev, biten) = gorevSayaci(icerik)
+        val yeni = ListeOnbellegi.Kayit(g.degistirilme, g.boyut, baslik, ozet, icerik, gorev, biten)
         ONBELLEK.koy(adres, yeni)
         return yeni
     }
@@ -462,7 +468,9 @@ class NotDeposu(private val context: Context) {
             sabit = sabitler.contains(adres),
             klasor = klasor,
             eslesme = if (kilitli) null else eslesme,
-            kilitli = kilitli
+            kilitli = kilitli,
+            gorev = if (kilitli) 0 else kayit.gorev,
+            biten = if (kilitli) 0 else kayit.biten
         )
     }
 
@@ -981,12 +989,26 @@ class NotDeposu(private val context: Context) {
             return ad.take(BASLIK_UZUNLUGU) to ozet.take(OZET_UZUNLUGU).toString()
         }
 
+        /** Notun onay kutusu sayısı ve işaretli olanlar (ilk 8 KB'a bakılır). */
+        fun gorevSayaci(icerik: String): Pair<Int, Int> {
+            var gorev = 0
+            var biten = 0
+            for (satir in icerik.lineSequence()) {
+                val m = MarkdownBicimci.ONAY.find(satir) ?: continue
+                gorev++
+                if (!m.groupValues[2].equals(" ", true)) biten++
+            }
+            return gorev to biten
+        }
+
         /** Kart önizlemesi için satırdaki Markdown işaretlerini söker. */
         fun mdTemizle(satir: String): String =
             satir.trim()
                 // Görsel bağlantısı önizlemede ham metin olarak görünmesin.
                 .replace(MarkdownBicimci.GORSEL, "")
                 .replace(MarkdownBicimci.GORSEL_WIKI, "")
+                // [metin](adres) kartta yalnızca metin olarak görünsün.
+                .replace(MarkdownBicimci.MD_BAGLANTI) { it.groupValues[1] }
                 .trimStart('#', '>', ' ')
                 .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
                 .replace(ISARETLER, "")

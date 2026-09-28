@@ -475,6 +475,8 @@ class EditorActivity : AppCompatActivity() {
             val isaretIndeksi = satirBasi + girinti + 3
             val isaretli = !eslesme.groupValues[2].equals(" ", true)
             s.replace(isaretIndeksi, isaretIndeksi + 1, if (isaretli) " " else "x")
+            // İşaretlemenin hissedilmesi için hafif bir titreşim (sistem ayarına uyar).
+            metinAlani.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             true
         }
     }

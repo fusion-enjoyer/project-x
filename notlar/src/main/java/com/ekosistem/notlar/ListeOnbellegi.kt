@@ -35,7 +35,10 @@ class ListeOnbellegi {
         val baslik: String,
         val ozet: String,
         /** İlk [NotDeposu.ONIZLEME_SINIRI] bayt; diskten gelen kayıtta null. */
-        @Volatile var icerik: String? = null
+        @Volatile var icerik: String? = null,
+        /** Onay kutusu sayısı ve işaretli olanlar (kart rozeti "3/7"). */
+        val gorev: Int = 0,
+        val biten: Int = 0
     )
 
     /** Ana listedeki bir notun, önizleme dışında kalan bilgisi. */
@@ -72,7 +75,8 @@ class ListeOnbellegi {
     fun koy(adres: String, kayit: Kayit) {
         val eski = kayitlar.put(adres, kayit)
         if (eski == null || eski.degistirilme != kayit.degistirilme || eski.boyut != kayit.boyut ||
-            eski.baslik != kayit.baslik || eski.ozet != kayit.ozet
+            eski.baslik != kayit.baslik || eski.ozet != kayit.ozet ||
+            eski.gorev != kayit.gorev || eski.biten != kayit.biten
         ) kirli = true
     }
 
@@ -101,9 +105,10 @@ class ListeOnbellegi {
     // --- Disk ---
 
     /*
-     * Dosya biçimi (sürüm 3):
+     * Dosya biçimi (sürüm 4):
      *   sürüm, ortak önek, kayıt sayısı,
      *   her kayıt: adres (önekten sonrası), tarih, boyut, başlık, özet,
+     *              görev sayısı, biten görev,
      *              ana listede mi, [ad, klasör var mı, klasör]
      * Seçilen klasörde her adres ~130 karakterlik aynı başlangıçla gelir;
      * önek bir kez yazılır, adres de iki kez yazılmaz. 1.000 notta dosya
@@ -124,6 +129,8 @@ class ListeOnbellegi {
                 d.writeLong(k.boyut)
                 d.writeUTF(k.baslik)
                 d.writeUTF(k.ozet)
+                d.writeShort(k.gorev.coerceAtMost(Short.MAX_VALUE.toInt()))
+                d.writeShort(k.biten.coerceAtMost(Short.MAX_VALUE.toInt()))
                 val g = ana[adres]
                 d.writeBoolean(g != null)
                 if (g != null) {
@@ -150,7 +157,10 @@ class ListeOnbellegi {
                 val ana = HashMap<String, AnaGirdi>(sayi * 2)
                 repeat(sayi) {
                     val adres = onek + d.readUTF()
-                    val kayit = Kayit(d.readLong(), d.readLong(), d.readUTF(), d.readUTF())
+                    val kayit = Kayit(
+                        d.readLong(), d.readLong(), d.readUTF(), d.readUTF(),
+                        gorev = d.readShort().toInt(), biten = d.readShort().toInt()
+                    )
                     if (d.readBoolean()) {
                         val ad = d.readUTF()
                         val klasorVar = d.readBoolean()
@@ -180,7 +190,7 @@ class ListeOnbellegi {
     }
 
     companion object {
-        /** 3: ortak önek, ana liste kayıtla birlikte. Eski dosya yok sayılır, yeniden kurulur. */
-        private const val SURUM = 3
+        /** 4: görev sayıları. Eski dosya yok sayılır, liste bir kez yeniden kurulur. */
+        private const val SURUM = 4
     }
 }

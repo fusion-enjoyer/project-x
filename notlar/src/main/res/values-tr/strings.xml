@@ -273,4 +273,5 @@
     <string name="kopyalandi">Kopyalandı</string>
     <string name="not_bagla">Not bağla</string>
     <string name="tarih_ekle">Tarih ekle</string>
+    <string name="pin_bekle">Çok fazla deneme. %d sn sonra tekrar dene</string>
 </resources>

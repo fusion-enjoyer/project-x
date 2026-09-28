@@ -47,6 +47,36 @@ object Kilit {
         oturumAcik = true
     }
 
+    // --- Deneme sınırı ---
+
+    /**
+     * 4 haneli PIN'in 10.000 olasılığı var; sınırsız denemede telefonu eline
+     * alan biri birkaç dakikada açardı. Her 5 yanlışta bekleme başlar: 30 sn,
+     * sonra 1, 2, 4... dakika (en fazla 15). Uygulamayı kapatıp açmak sayacı
+     * sıfırlamaz. Doğru PIN sayacı temizler.
+     */
+    fun beklemeKalan(c: Context): Long =
+        (Prefs.pinBeklemeBitis(c) - System.currentTimeMillis()).coerceAtLeast(0L)
+
+    fun yanlisPin(c: Context) {
+        val sayi = Prefs.pinHataSayisi(c) + 1
+        Prefs.pinHataSayisiKaydet(c, sayi)
+        if (sayi % DENEME_SINIRI == 0) {
+            val seri = sayi / DENEME_SINIRI
+            val sure = (ILK_BEKLEME shl (seri - 1).coerceAtMost(10)).coerceAtMost(EN_UZUN_BEKLEME)
+            Prefs.pinBeklemeBitisKaydet(c, System.currentTimeMillis() + sure)
+        }
+    }
+
+    fun dogruPin(c: Context) {
+        if (Prefs.pinHataSayisi(c) != 0) Prefs.pinHataSayisiKaydet(c, 0)
+        if (Prefs.pinBeklemeBitis(c) != 0L) Prefs.pinBeklemeBitisKaydet(c, 0L)
+    }
+
+    private const val DENEME_SINIRI = 5
+    private const val ILK_BEKLEME = 30_000L
+    private const val EN_UZUN_BEKLEME = 15 * 60_000L
+
     fun dogrula(c: Context, pin: String): Boolean {
         val kayitli = Prefs.pinOzeti(c) ?: return true
         val tuz = Prefs.pinTuzu(c) ?: return false

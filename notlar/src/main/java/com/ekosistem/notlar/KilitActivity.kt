@@ -60,6 +60,8 @@ class KilitActivity : AppCompatActivity() {
         tuslariKur()
         noktalariGuncelle()
         if (acmaKipi && Kilit.parmakIziAcik(this)) parmakIziniKur()
+        // Önceki denemelerden kalan bekleme varsa ekran açılır açılmaz görünsün.
+        if (kip != KIP_KUR && Kilit.beklemeKalan(this) > 0) beklemeyiGoster()
     }
 
     override fun onDestroy() {
@@ -126,6 +128,11 @@ class KilitActivity : AppCompatActivity() {
     }
 
     private fun tusaBasildi(tus: String) {
+        // Yanlış denemeler sınırı aştıysa bekleme bitene kadar tuşlar çalışmaz.
+        if (kip != KIP_KUR && Kilit.beklemeKalan(this) > 0) {
+            beklemeyiGoster()
+            return
+        }
         if (tus == "⌫") {
             if (girilen.isNotEmpty()) girilen.deleteCharAt(girilen.length - 1)
         } else if (girilen.length < PIN_UZUNLUK) {
@@ -174,7 +181,7 @@ class KilitActivity : AppCompatActivity() {
                 }
             }
             KIP_KALDIR -> {
-                if (Kilit.dogrula(this, pin)) {
+                if (Kilit.dogrula(this, pin).also { if (it) Kilit.dogruPin(this) else Kilit.yanlisPin(this) }) {
                     Kilit.pinKaldir(this)
                     setResult(RESULT_OK)
                     finish()
@@ -183,7 +190,7 @@ class KilitActivity : AppCompatActivity() {
                 }
             }
             else -> {
-                if (Kilit.dogrula(this, pin)) {
+                if (Kilit.dogrula(this, pin).also { if (it) Kilit.dogruPin(this) else Kilit.yanlisPin(this) }) {
                     acildi()
                 } else {
                     hata(R.string.pin_yanlis)
@@ -193,6 +200,7 @@ class KilitActivity : AppCompatActivity() {
     }
 
     private fun acildi() {
+        Kilit.dogruPin(this)
         if (kip == KIP_AC) Kilit.oturumAcik = true
         setResult(RESULT_OK)
         finish()
@@ -220,7 +228,28 @@ class KilitActivity : AppCompatActivity() {
             .goster()
     }
 
+    /** Kalan bekleme süresini saniye saniye gösterir; bitince normale döner. */
+    private fun beklemeyiGoster() {
+        val kalan = Kilit.beklemeKalan(this)
+        aciklama.removeCallbacks(beklemeSayaci)
+        if (kalan <= 0) {
+            aciklama.setText(if (kip == KIP_NOT) R.string.kilitli_not_ozet else R.string.pin_4_hane)
+            aciklama.setTextColor(ContextCompat.getColor(this, R.color.metin_ikincil))
+            return
+        }
+        aciklama.text = getString(R.string.pin_bekle, ((kalan + 999) / 1000).toInt())
+        aciklama.setTextColor(0xFFE24B4A.toInt())
+        aciklama.postDelayed(beklemeSayaci, 1000)
+    }
+
+    private val beklemeSayaci = Runnable { beklemeyiGoster() }
+
     private fun hata(mesaj: Int) {
+        if (kip != KIP_KUR && Kilit.beklemeKalan(this) > 0) {
+            noktalariGuncelle()
+            beklemeyiGoster()
+            return
+        }
         aciklama.setText(mesaj)
         aciklama.setTextColor(0xFFE24B4A.toInt())
         noktalariGuncelle()

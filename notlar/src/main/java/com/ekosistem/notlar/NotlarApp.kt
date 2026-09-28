@@ -3,6 +3,7 @@ package com.ekosistem.notlar
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 
@@ -47,7 +48,14 @@ class NotlarApp : Application() {
             if (activity is KilitActivity) kilitIstendi = false
         }
 
-        override fun onActivityCreated(activity: Activity, durum: Bundle?) {}
+        override fun onActivityCreated(activity: Activity, durum: Bundle?) {
+            // Kilit kuruluysa son uygulamalar ekranında notların önizlemesi
+            // görünmesin (Android 13+). Eski sürümlerde "ekran görüntüsünü
+            // engelle" ayarı bunu da kapsar.
+            if (Build.VERSION.SDK_INT >= 33 && Kilit.kurulu(this@NotlarApp)) {
+                activity.setRecentsScreenshotEnabled(false)
+            }
+        }
         override fun onActivityResumed(activity: Activity) {}
         override fun onActivityPaused(activity: Activity) {}
         override fun onActivitySaveInstanceState(activity: Activity, durum: Bundle) {}

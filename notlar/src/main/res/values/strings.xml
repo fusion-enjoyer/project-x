@@ -277,4 +277,5 @@
     <string name="kopyalandi">Copied</string>
     <string name="not_bagla">Link a note</string>
     <string name="tarih_ekle">Insert date</string>
+    <string name="pin_bekle">Too many attempts. Try again in %d s</string>
 </resources>

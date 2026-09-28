@@ -58,8 +58,34 @@ class ListeHiziTest {
     }
 
     @Test
+    fun ozetteBaglantininYalnizcaMetniGorunur() {
+        val (_, ozet) = NotDeposu.onizlemeCikar("Başlık\noku: [Markdown rehberi](https://commonmark.org/help/)", "a.md")
+        assertEquals("oku: Markdown rehberi", ozet)
+    }
+
+    @Test
     fun baslik80KarakterdeKesilir() {
         assertEquals(80, NotDeposu.onizlemeCikar("a".repeat(200), "x.md").first.length)
+    }
+
+    @Test
+    fun gorevlerSayilir() {
+        val icerik = "Liste\n- [ ] süt\n  - [x] ekmek\n- [X] yumurta\n- sade madde\nmetin - [ ] ortada"
+        assertEquals(3 to 2, NotDeposu.gorevSayaci(icerik))
+        assertEquals(0 to 0, NotDeposu.gorevSayaci("görev yok"))
+    }
+
+    @Test
+    fun gorevSayilariDiskeYazilir() {
+        val dosya = File(klasor.root, "onbellek")
+        val o = ListeOnbellegi()
+        o.koy("a", ListeOnbellegi.Kayit(1, 2, "B", "Ö", null, gorev = 7, biten = 3))
+        o.diskeYaz(dosya)
+        val yeni = ListeOnbellegi()
+        yeni.disktenOku(dosya)
+        val k = yeni.al("a", 1, 2)!!
+        assertEquals(7, k.gorev)
+        assertEquals(3, k.biten)
     }
 
     // --- Önbellek ---

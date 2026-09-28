@@ -3,6 +3,7 @@ package com.ekosistem.notlar
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.text.SpannableString
+import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.format.DateUtils
 import android.text.style.ForegroundColorSpan
@@ -68,9 +69,18 @@ class NotAdapter(
         val zaman = if (not.degistirilme > 0) {
             DateUtils.getRelativeTimeSpanString(not.degistirilme).toString()
         } else ""
-        t.tarih.text = if (not.klasor != null) {
-            if (zaman.isBlank()) not.klasor else "$zaman · ${not.klasor}"
-        } else zaman
+        val parcalar = listOfNotNull(zaman.takeIf { it.isNotBlank() }, not.klasor)
+        val tarihMetni = SpannableStringBuilder(parcalar.joinToString(" · "))
+        if (not.gorev > 0) {
+            // Görev rozeti: "✓ 3/7"; hepsi bittiyse vurgu renginde.
+            if (tarihMetni.isNotEmpty()) tarihMetni.append(" · ")
+            val bas = tarihMetni.length
+            tarihMetni.append("✓ ${not.biten}/${not.gorev}")
+            if (not.biten == not.gorev && vurgu != 0) {
+                tarihMetni.setSpan(ForegroundColorSpan(vurgu), bas, tarihMetni.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+        t.tarih.text = tarihMetni
 
         t.sabit.visibility = if (not.sabit) View.VISIBLE else View.GONE
         if (vurgu != 0) t.sabit.imageTintList = ColorStateList.valueOf(vurgu)

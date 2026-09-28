@@ -120,6 +120,18 @@ object Prefs {
         d.apply()
     }
 
+    fun pinHataSayisi(c: Context): Int = sp(c).getInt("pin_hata", 0)
+
+    fun pinHataSayisiKaydet(c: Context, sayi: Int) {
+        sp(c).edit().putInt("pin_hata", sayi).apply()
+    }
+
+    fun pinBeklemeBitis(c: Context): Long = sp(c).getLong("pin_bekleme", 0L)
+
+    fun pinBeklemeBitisKaydet(c: Context, zaman: Long) {
+        sp(c).edit().putLong("pin_bekleme", zaman).apply()
+    }
+
     fun kilitliNotlar(c: Context): Set<String> =
         sp(c).getStringSet("kilitli_notlar", emptySet()) ?: emptySet()
 
