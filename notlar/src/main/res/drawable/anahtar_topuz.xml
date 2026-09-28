@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Beyaz yuvarlak topuz; rayın içinde 3 dp boşlukla durur. Boyut ilk
+     katmanın <size>'ında: katman width/height'i Android 6'dan önce yok. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <size android:width="30dp" android:height="30dp" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <item android:bottom="3dp" android:left="3dp" android:right="3dp" android:top="3dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+</layer-list>

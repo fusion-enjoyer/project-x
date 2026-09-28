@@ -38,7 +38,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var adapter: NotAdapter
-    private lateinit var bosDurum: TextView
+    private lateinit var bosDurum: View
+    private lateinit var arama: EditText
+    private lateinit var aramaGostergesi: View
+    private lateinit var aramaTemizle: View
     private lateinit var klasorSatiri: LinearLayout
     private lateinit var liste: RecyclerView
 
@@ -63,12 +66,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
-        if (Prefs.ekranGizle(this)) {
-            window.setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                android.view.WindowManager.LayoutParams.FLAG_SECURE
-            )
-        }
         // Kilit ekranını NotlarApp yaşam döngüsü açar (arka plandan dönüşte de).
         setContentView(R.layout.activity_main)
         depo = NotDeposu(this)
@@ -76,6 +73,10 @@ class MainActivity : AppCompatActivity() {
         vurguUzeri = Renkler.vurguUzeri(this)
 
         bosDurum = findViewById(R.id.bosDurum)
+        arama = findViewById(R.id.arama)
+        aramaGostergesi = findViewById(R.id.aramaGostergesi)
+        aramaTemizle = findViewById(R.id.aramaTemizle)
+        aramaTemizle.setOnClickListener { arama.setText("") }
         klasorSatiri = findViewById(R.id.klasorSatiri)
         baslikCubugu = findViewById(R.id.baslikCubugu)
         secimCubugu = findViewById(R.id.secimCubugu)
@@ -111,30 +112,141 @@ class MainActivity : AppCompatActivity() {
         intent?.getStringExtra("etiket")?.let { etiket ->
             seciliEtiket = etiket
         }
+        // Tema değişince ya da ekran dönünce seçili klasör "Tümü"ne dönüyordu.
+        savedInstanceState?.let { durum ->
+            seciliKlasor = durum.getString(DURUM_KLASOR)
+            durum.getString(DURUM_ETIKET)?.let { seciliEtiket = it }
+        }
         onbellektenGoster()
         if (savedInstanceState == null) kisayoluIsle(intent)
 
-        findViewById<EditText>(R.id.arama).setOnFocusChangeListener { _, odakta ->
+        arama.setOnFocusChangeListener { _, odakta ->
             if (odakta && !aramaHazirlandi && !listeIsci.isShutdown) {
                 aramaHazirlandi = true
                 listeIsci.execute { runCatching { depo.aramaIcinHazirla() } }
             }
         }
-        findViewById<EditText>(R.id.arama).addTextChangedListener(object : TextWatcher {
+        arama.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 // Boş kutu "arama yok" demek; ekran geri yüklenirken gelen boş
                 // değişiklik de açılışta listeyi ikinci kez yüklüyordu.
                 val yeni = s?.toString()?.takeIf { it.isNotBlank() }
-                if (yeni == sorgu) return
+                if (yeni == sorgu) {
+                    aramaYuvasiGuncelle()
+                    return
+                }
                 sorgu = yeni
                 adapter.sorgu = sorgu
                 // Her harfte bütün notları taramak yerine yazma durunca bir kez ara.
                 liste.removeCallbacks(aramaGecikmeli)
                 liste.postDelayed(aramaGecikmeli, ARAMA_GECIKMESI)
+                // Hızlı biten aramada gösterge hiç görünmesin, yanıp sönmesin.
+                aramaSuruyor = true
+                liste.removeCallbacks(gostergeyiAc)
+                liste.postDelayed(gostergeyiAc, ARAMA_GECIKMESI + GOSTERGE_GECIKMESI)
+                aramaYuvasiGuncelle()
             }
         })
+    }
+
+    /**
+     * Büyük klasörde ilk arama birkaç saniye sürebiliyor; bu sırada eski liste
+     * olduğu gibi kaldığı için arama çalışmıyor sanılıyordu. Arama sürerken eski
+     * sonuçlar soluklaşır ve kutuda "Aranıyor…" yazar; bitince "temizle" gelir.
+     * Dönen gösterge denendi: her karede yeniden çizim, emülatörde aramayı
+     * 1,9 sn'den 14,5 sn'ye çıkardı. Eski telefonlarda da bedava değil.
+     */
+    private var aramaSuruyor = false
+    private var gostergeAcik = false
+    private val gostergeyiAc = Runnable {
+        if (!aramaSuruyor) return@Runnable
+        gostergeAcik = true
+        aramaYuvasiGuncelle()
+    }
+
+    private fun aramaBitti() {
+        aramaSuruyor = false
+        gostergeAcik = false
+        liste.removeCallbacks(gostergeyiAc)
+        aramaYuvasiGuncelle()
+    }
+
+    private fun aramaYuvasiGuncelle() {
+        aramaGostergesi.visibility = if (gostergeAcik) View.VISIBLE else View.GONE
+        val saydamlik = if (gostergeAcik) ESKI_SONUC_SAYDAMLIGI else 1f
+        liste.alpha = saydamlik
+        bosDurum.alpha = saydamlik
+        // Yazılan metin sağdaki yazının ya da düğmenin altına kaymasın.
+        val sag = ((if (gostergeAcik) 104 else 48) * resources.displayMetrics.density).toInt()
+        if (arama.paddingRight != sag) {
+            arama.setPadding(arama.paddingLeft, arama.paddingTop, sag, arama.paddingBottom)
+        }
+        aramaTemizle.visibility =
+            if (!gostergeAcik && arama.text.isNotEmpty()) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Liste boşken nedeni söylenir: hiç not yok, klasör boş, arama ya da etiket
+     * eşleşmedi. Önceden hepsinde aynı gri cümle vardı; boş bir klasörde bile
+     * "henüz not yok" yazıyordu.
+     */
+    private fun bosDurumGuncelle(bos: Boolean) {
+        if (!bos) {
+            bosDurum.visibility = View.GONE
+            return
+        }
+        val s = sorgu
+        val k = seciliKlasor
+        val e = seciliEtiket
+        var eylem: Pair<String, () -> Unit>? = null
+        val (ikon, baslik, aciklama) = when {
+            e != null -> Triple(
+                R.drawable.ic_etiket,
+                getString(R.string.bos_etiket_baslik, e),
+                getString(R.string.bos_etiket_aciklama, e)
+            )
+            s != null && k != null -> {
+                eylem = getString(R.string.tum_notlarda_ara) to {
+                    seciliKlasor = null
+                    yenile()
+                }
+                Triple(
+                    R.drawable.ic_ara,
+                    getString(R.string.bos_arama_baslik, s),
+                    getString(R.string.bos_arama_klasorde, klasorGorunenAdi(k))
+                )
+            }
+            s != null -> {
+                eylem = getString(R.string.aramayi_temizle) to { arama.setText("") }
+                Triple(
+                    R.drawable.ic_ara,
+                    getString(R.string.bos_arama_baslik, s),
+                    getString(R.string.bos_arama_aciklama)
+                )
+            }
+            k != null -> Triple(
+                R.drawable.ic_klasor,
+                getString(R.string.bos_klasor_baslik),
+                getString(R.string.bos_klasor_aciklama)
+            )
+            else -> Triple(
+                R.drawable.ic_duzenle,
+                getString(R.string.bos_baslik),
+                getString(R.string.bos_aciklama)
+            )
+        }
+        BosDurum.goster(bosDurum, ikon, baslik, aciklama, eylem)
+    }
+
+    private fun klasorGorunenAdi(ad: String): String =
+        if (ad == Sablonlar.KLASOR) getString(R.string.sablonlar) else ad
+
+    override fun onSaveInstanceState(durum: Bundle) {
+        super.onSaveInstanceState(durum)
+        durum.putString(DURUM_KLASOR, seciliKlasor)
+        durum.putString(DURUM_ETIKET, seciliEtiket)
     }
 
     override fun onNewIntent(yeni: Intent) {
@@ -193,6 +305,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.navGunluk).setOnClickListener { bugununNotu() }
         findViewById<ImageButton>(R.id.navSablon).setOnClickListener { sablonSec() }
         findViewById<ImageButton>(R.id.navMenu).setOnClickListener { menuGoster() }
+        ipucuVer(
+            findViewById(R.id.navAra),
+            findViewById(R.id.navGunluk),
+            yeni,
+            findViewById(R.id.navSablon),
+            findViewById(R.id.navMenu)
+        )
     }
 
     /**
@@ -202,18 +321,21 @@ class MainActivity : AppCompatActivity() {
      */
     private fun klavyedeCubuguGizle() {
         val cubuk = findViewById<View>(R.id.gezinmeCubugu)
+        val sis = findViewById<View>(R.id.altSis)
         val kok = window.decorView
         val alan = Rect()
         kok.viewTreeObserver.addOnGlobalLayoutListener {
             kok.getWindowVisibleDisplayFrame(alan)
             val klavyeAcik = kok.height - alan.bottom > kok.height * KLAVYE_ORANI
             val hedef = if (klavyeAcik) View.GONE else View.VISIBLE
-            if (cubuk.visibility != hedef) cubuk.visibility = hedef
+            if (cubuk.visibility != hedef) {
+                cubuk.visibility = hedef
+                sis.visibility = hedef
+            }
         }
     }
 
     private fun aramaOdakla() {
-        val arama = findViewById<EditText>(R.id.arama)
         arama.requestFocus()
         val yonetici = getSystemService(INPUT_METHOD_SERVICE)
             as? android.view.inputmethod.InputMethodManager
@@ -330,7 +452,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         adapter.guncelle(depo.sirala(liste))
-        bosDurum.visibility = if (liste.isEmpty()) View.VISIBLE else View.GONE
+        bosDurumGuncelle(liste.isEmpty())
         if (BuildConfig.DEBUG) {
             Log.d("NotlarHiz", "düzenleme kartta: dönüşten ${SystemClock.elapsedRealtime() - donusZamani} ms")
         }
@@ -375,6 +497,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 if (nesil != listeNesli.get()) return@runOnUiThread
                 if (aktifSorgu != sorgu || aktifKlasor != seciliKlasor) return@runOnUiThread
+                aramaBitti()
                 if (!gercekListeGeldi) acilisOlcumu("gerçek liste", notlar.size)
                 if (BuildConfig.DEBUG) {
                     Log.d("NotlarHiz", "tam liste ekranda: dönüşten ${SystemClock.elapsedRealtime() - donusZamani} ms")
@@ -386,14 +509,7 @@ class MainActivity : AppCompatActivity() {
                 adapter.secililer = secililer.toSet()
                 adapter.guncelle(notlar)
                 klasorCubuguGuncelle(klasorler)
-                if (notlar.isEmpty()) {
-                    bosDurum.setText(
-                        if (sorgu.isNullOrBlank()) R.string.bos_durum else R.string.bos_arama
-                    )
-                    bosDurum.visibility = View.VISIBLE
-                } else {
-                    bosDurum.visibility = View.GONE
-                }
+                bosDurumGuncelle(notlar.isEmpty())
             }
         }
     }
@@ -527,7 +643,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun klasorSilOnayi(ad: String) {
         AltSayfa(this)
-            .baslik(getString(R.string.klasoru_sil_ozet))
+            .mesaj(getString(R.string.klasoru_sil_ozet))
             .madde(R.drawable.ic_sil, getString(R.string.klasoru_sil), tehlikeli = true) {
                 NotDeposu.yazici.execute {
                     val sonuc = depo.klasorSil(ad)
@@ -573,6 +689,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.secimTasi).setOnClickListener { tasiDialog(secilenNotlar()) }
         findViewById<ImageButton>(R.id.secimPaylas).setOnClickListener { secilileriPaylas() }
         findViewById<ImageButton>(R.id.secimSil).setOnClickListener { silmeyiYap(secilenNotlar()) }
+        ipucuVer(
+            findViewById(R.id.secimKapat),
+            findViewById(R.id.secimSabitle),
+            findViewById(R.id.secimTasi),
+            findViewById(R.id.secimPaylas),
+            findViewById(R.id.secimSil)
+        )
     }
 
     private fun secimBaslat(not: Not) {
@@ -946,6 +1069,10 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         const val SERIT_SURESI = 5000L
         const val ARAMA_GECIKMESI = 200L
+        const val GOSTERGE_GECIKMESI = 250L
+        const val ESKI_SONUC_SAYDAMLIGI = 0.4f
+        const val DURUM_KLASOR = "secili_klasor"
+        const val DURUM_ETIKET = "secili_etiket"
 
         const val KISAYOL_YENI = "com.ekosistem.notlar.YENI_NOT"
         const val KISAYOL_GUNLUK = "com.ekosistem.notlar.GUNLUK"

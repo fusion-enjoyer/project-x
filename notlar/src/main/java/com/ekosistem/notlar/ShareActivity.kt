@@ -74,7 +74,7 @@ class ShareActivity : AppCompatActivity() {
         }
         val ad = dosyaAdi(adres)
         AltSayfa(this)
-            .baslik(getString(R.string.dosya_notlara_kopyala_soru, ad))
+            .mesaj(getString(R.string.dosya_notlara_kopyala_soru, ad))
             .madde(R.drawable.ic_arti_koyu, getString(R.string.dosya_kopyala_ac)) {
                 islemde = true
                 val uygulama = applicationContext

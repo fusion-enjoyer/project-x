@@ -2,11 +2,15 @@
 <resources>
     <!-- Tasarım dili v0.2 — saf siyah gece -->
     <color name="zemin">#000000</color>
+    <!-- Zeminin saydam hali: geçiş gölgeleri için -->
+    <color name="zemin_saydam">#00000000</color>
     <color name="kart">#1C1B18</color>
     <color name="metin">#F2EFE9</color>
     <color name="metin_ikincil">#8B867D</color>
     <color name="ayrac">#2B2A26</color>
     <color name="vurgu">#E8930C</color>
+    <!-- Kapalı anahtar rayı: kart zemininde seçilebilsin -->
+    <color name="anahtar_kapali">#3A3934</color>
     <color name="pill_metin">#000000</color>
     <color name="vurgu_0">#E8930C</color>
     <color name="vurgu_1">#F97316</color>

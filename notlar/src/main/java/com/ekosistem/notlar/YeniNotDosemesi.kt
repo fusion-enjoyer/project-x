@@ -1,6 +1,7 @@
 package com.ekosistem.notlar
 
 import android.annotation.TargetApi
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -38,7 +39,9 @@ class YeniNotDosemesi : TileService() {
             )
             startActivityAndCollapse(bekleyen)
         } else {
+            // Lint sürüm kontrolünü görmüyor; bu dal yalnız Android 13 ve öncesi.
             @Suppress("DEPRECATION")
+            @SuppressLint("StartActivityAndCollapseDeprecated")
             startActivityAndCollapse(niyet)
         }
     }

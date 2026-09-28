@@ -45,15 +45,12 @@
             android:paddingTop="16dp"
             android:paddingBottom="24dp" />
 
-        <TextView
+        <include
             android:id="@+id/bosDurum"
-            android:layout_width="wrap_content"
+            layout="@layout/bos_durum"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/cop_bos"
-            android:textColor="@color/metin_ikincil"
-            android:textSize="15sp"
-            android:visibility="gone" />
+            android:layout_gravity="center" />
     </FrameLayout>
 
 </LinearLayout>

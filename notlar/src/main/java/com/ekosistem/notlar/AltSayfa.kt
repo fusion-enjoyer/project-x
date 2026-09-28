@@ -32,6 +32,7 @@ class AltSayfa(private val activity: Activity) {
 
     private val maddeler = mutableListOf<Madde>()
     private var basligi: String? = null
+    private var mesaji: String? = null
     private var girdiIpucu: String? = null
     private var girdiBaslangic: String = ""
     private var girdiEylem: ((String) -> Unit)? = null
@@ -53,8 +54,18 @@ class AltSayfa(private val activity: Activity) {
         return this
     }
 
+    /** Menünün üstündeki küçük gri etiket (not adı, "Sıralama" gibi). */
     fun baslik(metin: String): AltSayfa {
         basligi = metin
+        return this
+    }
+
+    /**
+     * Sayfanın asıl söylediği cümle: sonuç, soru ya da açıklama. Başlık
+     * gibi küçük ve gri değil, ana metin boyunda okunur.
+     */
+    fun mesaj(metin: String): AltSayfa {
+        mesaji = metin
         return this
     }
 
@@ -113,6 +124,16 @@ class AltSayfa(private val activity: Activity) {
             tv.textSize = 13f
             tv.setTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
             tv.setPadding((24 * y).toInt(), (4 * y).toInt(), (24 * y).toInt(), (8 * y).toInt())
+            kok.addView(tv)
+        }
+
+        mesaji?.let { metin ->
+            val tv = TextView(activity)
+            tv.text = metin
+            tv.textSize = 16f
+            tv.setLineSpacing(4 * y, 1f)
+            tv.setTextColor(ContextCompat.getColor(activity, R.color.metin))
+            tv.setPadding((24 * y).toInt(), (4 * y).toInt(), (24 * y).toInt(), (14 * y).toInt())
             kok.addView(tv)
         }
 

@@ -101,24 +101,53 @@
             </LinearLayout>
         </FrameLayout>
 
-        <EditText
-            android:id="@+id/arama"
-            android:importantForAutofill="no"
+        <!-- Arama kutusunun sağında: arama sürerken "Aranıyor…", bitince "temizle". -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_arama_pill"
-            android:drawableStart="@drawable/ic_ara"
-            android:drawablePadding="10dp"
-            android:hint="@string/ara"
-            android:imeOptions="actionSearch"
-            android:inputType="text"
-            android:maxLines="1"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:textColor="@color/metin"
-            android:textColorHint="@color/metin_ikincil"
-            android:textSize="15sp" />
+            android:layout_marginTop="12dp">
+
+            <EditText
+                android:id="@+id/arama"
+                android:importantForAutofill="no"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_arama_pill"
+                android:drawableStart="@drawable/ic_ara"
+                android:drawablePadding="10dp"
+                android:hint="@string/ara"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingLeft="16dp"
+                android:paddingRight="48dp"
+                android:textColor="@color/metin"
+                android:textColorHint="@color/metin_ikincil"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/aramaGostergesi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="18dp"
+                android:text="@string/araniyor"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/aramaTemizle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end|center_vertical"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/aramayi_temizle"
+                android:padding="14dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_kapat"
+                android:visibility="gone" />
+        </FrameLayout>
     </LinearLayout>
 
     <!-- Çipler kenardan başlar ama kaydırırken kenarın altına kayar. -->
@@ -142,6 +171,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:clipToPadding="false"
         android:paddingLeft="20dp"
         android:paddingRight="20dp">
 
@@ -153,17 +183,29 @@
             android:paddingTop="16dp"
             android:paddingBottom="88dp" />
 
-        <TextView
+        <!-- Yüzen çubuğun kapladığı yer kadar yukarıda ortalanır. -->
+        <include
             android:id="@+id/bosDurum"
-            android:layout_width="wrap_content"
+            layout="@layout/bos_durum"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:gravity="center"
-            android:lineSpacingExtra="4dp"
-            android:text="@string/bos_durum"
-            android:textColor="@color/metin_ikincil"
-            android:textSize="15sp"
-            android:visibility="gone" />
+            android:layout_marginBottom="64dp" />
+
+        <!--
+          Yüzen çubuğun arkasında zeminden saydama geçiş: altından kayan kart
+          metni çubuğun yanlarında ve altında yarım görünmesin. Dokunmayı almaz.
+          Çerçevenin yan boşluklarını da kaplasın diye negatif kenar payı var.
+        -->
+        <View
+            android:id="@+id/altSis"
+            android:layout_width="match_parent"
+            android:layout_height="104dp"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="-20dp"
+            android:layout_marginRight="-20dp"
+            android:background="@drawable/bg_alt_sis"
+            android:importantForAccessibility="no" />
 
         <LinearLayout
             android:id="@+id/bildirimSeridi"

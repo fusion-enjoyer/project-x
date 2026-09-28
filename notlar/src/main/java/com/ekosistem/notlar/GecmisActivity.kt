@@ -51,12 +51,6 @@ class GecmisActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
-        if (Prefs.ekranGizle(this)) {
-            window.setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                android.view.WindowManager.LayoutParams.FLAG_SECURE
-            )
-        }
         setContentView(R.layout.activity_gecmis)
         depo = NotDeposu(this)
 

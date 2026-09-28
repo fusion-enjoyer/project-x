@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDelegate
 
 class NotlarApp : Application() {
@@ -55,10 +56,25 @@ class NotlarApp : Application() {
             if (Build.VERSION.SDK_INT >= 33 && Kilit.kurulu(this@NotlarApp)) {
                 activity.setRecentsScreenshotEnabled(false)
             }
+            ekranGizlemeyiUygula(activity)
         }
-        override fun onActivityResumed(activity: Activity) {}
+
+        // Ayar değişince arkadaki ekranlar da öne döndüklerinde uyar.
+        override fun onActivityResumed(activity: Activity) = ekranGizlemeyiUygula(activity)
         override fun onActivityPaused(activity: Activity) {}
         override fun onActivitySaveInstanceState(activity: Activity, durum: Bundle) {}
+    }
+}
+
+/**
+ * "Ekran görüntüsünü engelle" her ekrana buradan uygulanır. Önceden ekranlar
+ * bunu tek tek yapıyordu; Görevler, Çöp kutusu ve Ayarlar unutulmuştu.
+ */
+fun ekranGizlemeyiUygula(activity: Activity) {
+    if (Prefs.ekranGizle(activity)) {
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    } else {
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 }
 

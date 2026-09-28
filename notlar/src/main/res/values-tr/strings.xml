@@ -4,7 +4,18 @@
     <string name="ara">Ara</string>
     <string name="yeni_not">Yeni not</string>
     <string name="bos_durum">Henüz not yok.\nAlttaki düğmeyle ilk notunu oluştur.</string>
-    <string name="bos_arama">Aramanla eşleşen not bulunamadı.</string>
+    <string name="bos_baslik">Henüz not yok</string>
+    <string name="bos_aciklama">İlk notunu yazmak için alttaki + düğmesine dokun.</string>
+    <string name="bos_klasor_baslik">Bu klasör boş</string>
+    <string name="bos_klasor_aciklama">Bu klasör açıkken yazdığın notlar buraya kaydedilir.</string>
+    <string name="bos_arama_baslik">“%1$s” bulunamadı</string>
+    <string name="bos_arama_aciklama">Başka bir kelime dene.</string>
+    <string name="bos_arama_klasorde">Yalnızca “%1$s” klasöründe arandı.</string>
+    <string name="bos_etiket_baslik">#%1$s etiketli not yok</string>
+    <string name="bos_etiket_aciklama">Bir nota #%1$s yazınca burada görünür.</string>
+    <string name="tum_notlarda_ara">Tüm notlarda ara</string>
+    <string name="aramayi_temizle">Aramayı temizle</string>
+    <string name="araniyor">Aranıyor…</string>
     <string name="klasor_sec">Not klasörünü seç</string>
     <string name="cop_kutusu">Çöp kutusu</string>
     <string name="tema">Tema</string>
@@ -16,7 +27,8 @@
     <string name="kalici_sil">Kalıcı olarak sil</string>
     <string name="not_kaydedildi">Not kaydedildi</string>
     <string name="cope_tasindi">Çöp kutusuna taşındı</string>
-    <string name="cop_bos">Çöp kutusu boş.</string>
+    <string name="cop_bos">Çöp kutusu boş</string>
+    <string name="cop_bos_aciklama">Sildiğin notlar buraya gelir; istersen geri alabilirsin.</string>
     <string name="tema_sistem">Sistemle aynı</string>
     <string name="tema_acik">Açık</string>
     <string name="tema_siyah">Saf siyah</string>
@@ -99,7 +111,8 @@
 
     <!-- Görevler -->
     <string name="gorevler">Görevler</string>
-    <string name="gorev_yok">Açık görev yok.\nNotlarına onay kutusu ekleyerek başla.</string>
+    <string name="gorev_yok">Açık görev yok</string>
+    <string name="gorev_yok_aciklama">Bir nota onay kutusu ekleyince maddeler burada toplanır.</string>
     <string name="tamamlananlari_goster">Tamamlananları göster</string>
 
     <!-- Widget -->
@@ -133,8 +146,7 @@
     <string name="kilit_kapali">Kapalı</string>
     <string name="guvenlik">Güvenlik</string>
     <string name="ekran_gizle">Ekran görüntüsünü engelle</string>
-    <string name="acik">Açık</string>
-    <string name="kapali">Kapalı</string>
+    <string name="ekran_gizle_ozet">Kaydı ve son uygulamalar önizlemesini de gizler</string>
     <string name="nota_kilit">Bu notu kilitle</string>
     <string name="kilidi_kaldir">Not kilidini kaldır</string>
     <string name="not_kilitlendi">Not kilitlendi</string>
@@ -246,18 +258,23 @@
     <string name="keep_bulunamadi">Bu dosyada Keep notu yok. Takeout zip\'ini seçtiğinden emin ol.</string>
     <string name="keep_arsiv_klasoru">Arşiv</string>
     <plurals name="yedek_yuklendi">
+        <item quantity="one">%d not geri yüklendi</item>
         <item quantity="other">%d not geri yüklendi</item>
     </plurals>
     <plurals name="keep_not_sayisi">
+        <item quantity="one">Keep\'ten %d not aktarıldı</item>
         <item quantity="other">Keep\'ten %d not aktarıldı</item>
     </plurals>
     <plurals name="keep_gorsel_sayisi">
+        <item quantity="one">%d fotoğraf kopyalandı</item>
         <item quantity="other">%d fotoğraf kopyalandı</item>
     </plurals>
     <plurals name="keep_zaten_vardi">
+        <item quantity="one">%d not daha önce aktarılmıştı, atlandı</item>
         <item quantity="other">%d not daha önce aktarılmıştı, atlandı</item>
     </plurals>
     <plurals name="keep_ek_atlandi">
+        <item quantity="one">%d ses kaydı aktarılamıyor</item>
         <item quantity="other">%d ses kaydı aktarılamıyor</item>
     </plurals>
     <string name="kisayol_yeni">Yeni not</string>

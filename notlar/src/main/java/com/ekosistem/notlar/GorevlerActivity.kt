@@ -20,7 +20,7 @@ class GorevlerActivity : AppCompatActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var adapter: GorevAdapter
-    private lateinit var bosDurum: TextView
+    private lateinit var bosDurum: View
     private var tamamlananlar = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,7 +64,16 @@ class GorevlerActivity : AppCompatActivity() {
             }
             runOnUiThread {
                 adapter.guncelle(gorevler)
-                bosDurum.visibility = if (gorevler.isEmpty()) View.VISIBLE else View.GONE
+                if (gorevler.isEmpty()) {
+                    BosDurum.goster(
+                        bosDurum,
+                        R.drawable.ic_bicim_onay,
+                        getString(R.string.gorev_yok),
+                        getString(R.string.gorev_yok_aciklama)
+                    )
+                } else {
+                    bosDurum.visibility = View.GONE
+                }
             }
         }.start()
     }

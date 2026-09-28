@@ -82,12 +82,6 @@ class EditorActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
-        if (Prefs.ekranGizle(this)) {
-            window.setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                android.view.WindowManager.LayoutParams.FLAG_SECURE
-            )
-        }
         setContentView(R.layout.activity_editor)
         depo = NotDeposu(this)
         taslaklar = Taslaklar(this)
@@ -144,6 +138,7 @@ class EditorActivity : AppCompatActivity() {
 
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { menuGoster() }
+        ipucuVer(findViewById(R.id.btnGeri), findViewById(R.id.btnEditorMenu), btnOkuma)
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
         dugmeleriGuncelle()
     }
@@ -220,7 +215,7 @@ class EditorActivity : AppCompatActivity() {
     private fun taslakOner(adres: Uri, metin: String) {
         taslakYanitBekliyor = true
         AltSayfa(this)
-            .baslik(getString(R.string.taslak_bulundu))
+            .mesaj(getString(R.string.taslak_bulundu))
             .madde(R.drawable.ic_geri_al, getString(R.string.taslak_geri_yukle)) {
                 taslakYanitBekliyor = false
                 val s = metinAlani.text ?: return@madde
@@ -650,6 +645,7 @@ class EditorActivity : AppCompatActivity() {
             dugme.setImageResource(arac.ikon)
             dugme.imageTintList = ColorStateList.valueOf(renk)
             dugme.contentDescription = getString(arac.etiket)
+            ipucuVer(dugme)
             dugme.setBackgroundResource(android.R.color.transparent)
             dugme.setOnClickListener { arac.eylem() }
             bicimCubugu.addView(
@@ -1086,6 +1082,7 @@ class EditorActivity : AppCompatActivity() {
         btnOkuma.contentDescription = getString(
             if (okumaModu) R.string.duzenleme_gorunumu else R.string.okuma_gorunumu
         )
+        ipucuVer(btnOkuma)
         bicimlendir()
     }
 
@@ -1418,7 +1415,7 @@ class EditorActivity : AppCompatActivity() {
         }
         // Kilidin ne yaptığı önce anlatılır: not şifrelenmez, sadece gizlenir.
         AltSayfa(this)
-            .baslik(getString(R.string.not_kilit_ozet))
+            .mesaj(getString(R.string.not_kilit_ozet))
             .madde(R.drawable.ic_kilit, getString(R.string.nota_kilit)) {
                 Kilit.notKilidiDegistir(this, adres)
                 Toast.makeText(this, R.string.not_kilitlendi, Toast.LENGTH_SHORT).show()

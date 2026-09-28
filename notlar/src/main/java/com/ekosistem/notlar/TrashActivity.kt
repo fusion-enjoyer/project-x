@@ -12,7 +12,7 @@ class TrashActivity : AppCompatActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var adapter: NotAdapter
-    private lateinit var bosDurum: TextView
+    private lateinit var bosDurum: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
@@ -50,7 +50,16 @@ class TrashActivity : AppCompatActivity() {
             }
             runOnUiThread {
                 adapter.guncelle(notlar)
-                bosDurum.visibility = if (notlar.isEmpty()) View.VISIBLE else View.GONE
+                if (notlar.isEmpty()) {
+                    BosDurum.goster(
+                        bosDurum,
+                        R.drawable.ic_cop,
+                        getString(R.string.cop_bos),
+                        getString(R.string.cop_bos_aciklama)
+                    )
+                } else {
+                    bosDurum.visibility = View.GONE
+                }
             }
         }.start()
     }

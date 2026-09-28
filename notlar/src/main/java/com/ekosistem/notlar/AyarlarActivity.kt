@@ -16,6 +16,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
+import androidx.core.view.AccessibilityDelegateCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.documentfile.provider.DocumentFile
 
 class AyarlarActivity : AppCompatActivity() {
@@ -66,21 +71,21 @@ class AyarlarActivity : AppCompatActivity() {
         )
         satirKur(
             findViewById(R.id.satirDisaAktar),
-            R.drawable.ic_ayar_yedek,
+            R.drawable.ic_ayar_disa,
             YESIL,
             getString(R.string.disa_aktar),
             null
         )
         satirKur(
             findViewById(R.id.satirIceAktar),
-            R.drawable.ic_ayar_yedek,
+            R.drawable.ic_ayar_ice,
             YESIL,
             getString(R.string.ice_aktar),
             null
         )
         satirKur(
             findViewById(R.id.satirKeep),
-            R.drawable.ic_ayar_yedek,
+            R.drawable.ic_ayar_ice,
             YESIL,
             getString(R.string.keep_aktar),
             getString(R.string.keep_aktar_ozet)
@@ -98,8 +103,12 @@ class AyarlarActivity : AppCompatActivity() {
             R.drawable.ic_ayar_kilit,
             KIRMIZI,
             getString(R.string.ekran_gizle),
-            if (Prefs.ekranGizle(this)) getString(R.string.acik) else getString(R.string.kapali)
+            getString(R.string.ekran_gizle_ozet)
         )
+        anahtarKur(findViewById(R.id.satirEkranGizle), Prefs.ekranGizle(this)) { acik ->
+            Prefs.ekranGizleKaydet(this, acik)
+            ekranGizlemeyiUygula(this)
+        }
 
         val surum = findViewById<View>(R.id.satirSurum)
         satirKur(
@@ -119,10 +128,6 @@ class AyarlarActivity : AppCompatActivity() {
         satirKlasor.setOnClickListener { klasorSec() }
         satirSiralama.setOnClickListener { siralamaSec() }
         satirKilit.setOnClickListener { kilitAyari() }
-        findViewById<View>(R.id.satirEkranGizle).setOnClickListener {
-            Prefs.ekranGizleKaydet(this, !Prefs.ekranGizle(this))
-            recreate()
-        }
         findViewById<View>(R.id.satirDisaAktar).setOnClickListener { disaAktarmayiBaslat() }
         findViewById<View>(R.id.satirIceAktar).setOnClickListener { iceAktarmayiBaslat() }
         findViewById<View>(R.id.satirKeep).setOnClickListener { keepAciklamasi() }
@@ -140,6 +145,39 @@ class AyarlarActivity : AppCompatActivity() {
             ozetGorunum.visibility = View.VISIBLE
             ozetGorunum.text = ozet
         }
+    }
+
+    /**
+     * Aç/kapa ayarı: ok yerine anahtar, satırın tamamına dokunmak onu çevirir.
+     * Önceden "Kapalı" yazan oklu satırdı; dokununca ekran yeniden kuruluyordu.
+     */
+    private fun anahtarKur(satir: View, acik: Boolean, degisti: (Boolean) -> Unit) {
+        val anahtar = satir.findViewById<SwitchCompat>(R.id.ayarAnahtar)
+        satir.findViewById<View>(R.id.ayarChevron).visibility = View.GONE
+        anahtar.visibility = View.VISIBLE
+        anahtar.isChecked = acik
+        val durumlar = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        anahtar.trackTintList = ColorStateList(
+            durumlar,
+            intArrayOf(Renkler.vurgu(this), ContextCompat.getColor(this, R.color.anahtar_kapali))
+        )
+        anahtar.thumbTintList = ColorStateList.valueOf(Color.WHITE)
+        satir.setOnClickListener {
+            anahtar.toggle()
+            degisti(anahtar.isChecked)
+        }
+        // Ekran okuyucu satırı bir anahtar olarak okusun ("açık/kapalı").
+        ViewCompat.setAccessibilityDelegate(satir, object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(
+                host: View,
+                info: AccessibilityNodeInfoCompat
+            ) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.className = android.widget.Switch::class.java.name
+                info.isCheckable = true
+                info.isChecked = anahtar.isChecked
+            }
+        })
     }
 
     private fun ozetGuncelle(satir: View, ozet: String) {
@@ -413,8 +451,8 @@ class AyarlarActivity : AppCompatActivity() {
     /** Kullanıcı Takeout'u bilmeyebilir: önce nereden ne indireceğini anlat. */
     private fun keepAciklamasi() {
         AltSayfa(this)
-            .baslik(getString(R.string.keep_aciklama))
-            .madde(R.drawable.ic_ayar_yedek, getString(R.string.keep_zip_sec)) { keepZipSec() }
+            .mesaj(getString(R.string.keep_aciklama))
+            .madde(R.drawable.ic_ayar_ice, getString(R.string.keep_zip_sec)) { keepZipSec() }
             .goster()
     }
 
@@ -527,7 +565,7 @@ class AyarlarActivity : AppCompatActivity() {
             Toast.makeText(applicationContext, mesaj, Toast.LENGTH_LONG).show()
         } else {
             AltSayfa(this)
-                .baslik(mesaj)
+                .mesaj(mesaj)
                 .madde(R.drawable.ic_onay_isaret, getString(R.string.kapat)) {}
                 .goster()
         }

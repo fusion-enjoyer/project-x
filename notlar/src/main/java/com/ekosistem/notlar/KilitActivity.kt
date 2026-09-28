@@ -33,12 +33,6 @@ class KilitActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
-        if (Prefs.ekranGizle(this)) {
-            window.setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                android.view.WindowManager.LayoutParams.FLAG_SECURE
-            )
-        }
         setContentView(R.layout.activity_kilit)
         kip = intent.getIntExtra("kip", KIP_AC)
 
@@ -214,7 +208,7 @@ class KilitActivity : AppCompatActivity() {
             return
         }
         AltSayfa(this)
-            .baslik(getString(R.string.parmak_izi_soru))
+            .mesaj(getString(R.string.parmak_izi_soru))
             .madde(R.drawable.ic_kilit, getString(R.string.parmak_izi_kullan)) {
                 Prefs.parmakIziKaydet(this, true)
             }

@@ -4,7 +4,18 @@
     <string name="ara">Search</string>
     <string name="yeni_not">New note</string>
     <string name="bos_durum">No notes yet.\nTap the button below to write your first one.</string>
-    <string name="bos_arama">No notes match your search.</string>
+    <string name="bos_baslik">No notes yet</string>
+    <string name="bos_aciklama">Tap + below to write your first one.</string>
+    <string name="bos_klasor_baslik">This folder is empty</string>
+    <string name="bos_klasor_aciklama">Notes you write while it\'s open are saved here.</string>
+    <string name="bos_arama_baslik">Nothing found for “%1$s”</string>
+    <string name="bos_arama_aciklama">Try a different word.</string>
+    <string name="bos_arama_klasorde">Only the “%1$s” folder was searched.</string>
+    <string name="bos_etiket_baslik">No notes tagged #%1$s</string>
+    <string name="bos_etiket_aciklama">Write #%1$s in a note and it shows up here.</string>
+    <string name="tum_notlarda_ara">Search all notes</string>
+    <string name="aramayi_temizle">Clear search</string>
+    <string name="araniyor">Searching…</string>
     <string name="klasor_sec">Notes folder</string>
     <string name="cop_kutusu">Trash</string>
     <string name="tema">Theme</string>
@@ -16,7 +27,8 @@
     <string name="kalici_sil">Delete permanently</string>
     <string name="not_kaydedildi">Note saved</string>
     <string name="cope_tasindi">Moved to trash</string>
-    <string name="cop_bos">Trash is empty.</string>
+    <string name="cop_bos">Trash is empty</string>
+    <string name="cop_bos_aciklama">Notes you delete land here, and you can bring them back.</string>
     <string name="tema_sistem">Follow system</string>
     <string name="tema_acik">Light</string>
     <string name="tema_siyah">Pure black</string>
@@ -99,7 +111,8 @@
 
     <!-- Tasks -->
     <string name="gorevler">Tasks</string>
-    <string name="gorev_yok">No open tasks.\nAdd a checkbox to a note to get started.</string>
+    <string name="gorev_yok">No open tasks</string>
+    <string name="gorev_yok_aciklama">Add a checkbox to any note and its items gather here.</string>
     <string name="tamamlananlari_goster">Show completed</string>
 
     <!-- Widgets -->
@@ -133,8 +146,7 @@
     <string name="kilit_kapali">Off</string>
     <string name="guvenlik">Security</string>
     <string name="ekran_gizle">Block screenshots</string>
-    <string name="acik">On</string>
-    <string name="kapali">Off</string>
+    <string name="ekran_gizle_ozet">Also hides recordings and the recent apps preview</string>
     <string name="nota_kilit">Lock this note</string>
     <string name="kilidi_kaldir">Unlock this note</string>
     <string name="not_kilitlendi">Note locked</string>
