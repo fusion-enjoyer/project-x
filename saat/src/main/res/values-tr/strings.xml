@@ -146,4 +146,6 @@
     <string name="birim_sa">sa</string>
     <string name="birim_dk">dk</string>
     <string name="birim_sn">sn</string>
+    <string name="bitis_saati">Bitiş %1$s</string>
+    <string name="n_zamanlayici">%1$d zamanlayıcı</string>
 </resources>

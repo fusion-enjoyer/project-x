@@ -152,4 +152,6 @@
     <string name="birim_sa">h</string>
     <string name="birim_dk">m</string>
     <string name="birim_sn">s</string>
+    <string name="bitis_saati">Ends at %1$s</string>
+    <string name="n_zamanlayici">%1$d timers</string>
 </resources>

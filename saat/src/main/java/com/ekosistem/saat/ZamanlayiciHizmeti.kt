@@ -49,6 +49,7 @@ class ZamanlayiciHizmeti : Service() {
             return
         }
         calanlar.add(id)
+        CalisanBildirim.guncelle(this)
         if (sesi == null) {
             sesi = AlarmSesi(this).also {
                 it.baslat(Alarm(id = -1, saat = 0, dakika = 0, kademeliSn = 0, titresim = true))

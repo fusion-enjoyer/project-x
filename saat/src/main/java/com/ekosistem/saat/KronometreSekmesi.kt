@@ -39,11 +39,13 @@ class KronometreSekmesi(private val activity: Activity) {
             val k = Depo.kronometre(activity)
             val simdi = SystemClock.elapsedRealtime()
             Depo.kronometreKaydet(activity, if (k.calisiyor) k.durdur(simdi) else k.basla(simdi))
+            CalisanBildirim.guncelle(activity)
             yenile()
         }
         sol.setOnClickListener {
             val k = Depo.kronometre(activity)
             Depo.kronometreKaydet(activity, if (k.calisiyor) k.tur(SystemClock.elapsedRealtime()) else k.sifirla())
+            CalisanBildirim.guncelle(activity)
             yenile()
         }
     }

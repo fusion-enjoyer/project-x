@@ -36,6 +36,7 @@ object ZamanlayiciKurucu {
                 yonetici.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, an, niyet)
             }
         }
+        CalisanBildirim.guncelle(context)
     }
 
     fun iptal(context: Context, id: Int) {
