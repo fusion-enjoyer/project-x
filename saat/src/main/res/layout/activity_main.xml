@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kökte fitsSystemWindows varsa ona yatay padding verilmez (Notlar'dan ders);
+     kenar payı alt kapsayıcıda. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="20dp"
+            android:paddingTop="28dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/baslik"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/alarm"
+                android:textColor="@color/metin"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnAyarlar"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/ayarlar"
+                android:src="@drawable/ic_ayarlar"
+                app:tint="@color/metin" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/altBaslik"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:textColor="@color/metin_ikincil"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:id="@+id/uyariSeridi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/bg_uyari"
+            android:gravity="center_vertical"
+            android:minHeight="48dp"
+            android:orientation="horizontal"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_unlem"
+                app:tint="@color/tehlike" />
+
+            <TextView
+                android:id="@+id/uyariMetin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:textColor="@color/uyari_metin"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/duzelt"
+                android:textColor="@color/tehlike"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false">
+
+            <ScrollView
+                android:id="@+id/kaydirici"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingLeft="20dp"
+                android:paddingTop="16dp"
+                android:paddingRight="20dp"
+                android:paddingBottom="104dp">
+
+                <LinearLayout
+                    android:id="@+id/alarmListesi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
+
+            <include
+                android:id="@+id/bosDurum"
+                layout="@layout/bos_durum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="64dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="104dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/bg_alt_sis"
+                android:importantForAccessibility="no" />
+
+            <!-- Yüzen alt çubuk: dört sekme ve sağında vurgulu "yeni" düğmesi. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_gravity="bottom"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/sekmeler"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_arac_cubugu"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="6dp" />
+
+                <ImageButton
+                    android:id="@+id/btnYeni"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_marginLeft="10dp"
+                    android:background="@drawable/bg_nav_orta"
+                    android:contentDescription="@string/yeni_alarm"
+                    android:src="@drawable/ic_arti" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

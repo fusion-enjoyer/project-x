@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tasarım dili v0.2 — saf siyah gece -->
+    <color name="zemin">#000000</color>
+    <color name="zemin_saydam">#00000000</color>
+    <color name="kart">#1C1B18</color>
+    <color name="metin">#F2EFE9</color>
+    <color name="metin_ikincil">#8B867D</color>
+    <color name="ayrac">#2B2A26</color>
+    <color name="anahtar_kapali">#3A3934</color>
+    <color name="vurgu">#B4B2A9</color>
+    <color name="tehlike">#E24B4A</color>
+    <color name="tamam">#1D9E75</color>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tasarım dili v0.2 — açık tema, bütün uygulamalarda ortak nötrler -->
+    <color name="zemin">#FFFFFF</color>
+    <color name="zemin_saydam">#00FFFFFF</color>
+    <color name="kart">#F5F4F2</color>
+    <color name="metin">#171614</color>
+    <color name="metin_ikincil">#8A867E</color>
+    <color name="ayrac">#ECEAE6</color>
+    <color name="anahtar_kapali">#D9D6D0</color>
+    <!-- Uygulama kendi values/colors.xml'inde ezer -->
+    <color name="vurgu">#5F5E5A</color>
+    <color name="tehlike">#A32D2D</color>
+    <color name="tamam">#0F6E56</color>
+</resources>

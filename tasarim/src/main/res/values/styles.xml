@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Uygulamalar bu temadan türer, yalnız vurgu rengini değiştirir. -->
+    <style name="Theme.Ekosistem" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/zemin</item>
+        <item name="android:statusBarColor">@color/zemin</item>
+        <item name="android:navigationBarColor">@color/zemin</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">@bool/acik_tema</item>
+        <item name="android:textColorPrimary">@color/metin</item>
+        <item name="android:textColorSecondary">@color/metin_ikincil</item>
+        <item name="colorAccent">@color/vurgu</item>
+        <item name="colorControlActivated">@color/vurgu</item>
+        <item name="android:textCursorDrawable">@null</item>
+        <item name="colorBackgroundFloating">@color/kart</item>
+    </style>
+
+    <style name="AltSayfaTemasi" parent="Theme.AppCompat.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.45</item>
+        <item name="android:windowAnimationStyle">@style/AltSayfaAnimasyon</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/zemin</item>
+    </style>
+
+    <style name="AltSayfaAnimasyon">
+        <item name="android:windowEnterAnimation">@anim/alt_sayfa_gir</item>
+        <item name="android:windowExitAnimation">@anim/alt_sayfa_cik</item>
+    </style>
+
+    <style name="BolumBasligi">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:textColor">@color/metin_ikincil</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="AyarAyraci">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0.5dp</item>
+        <item name="android:layout_marginLeft">56dp</item>
+        <item name="android:background">@color/ayrac</item>
+    </style>
+
+    <style name="AyarKutusu">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_kart</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+</resources>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="14dp"
+    android:paddingTop="13dp"
+    android:paddingRight="14dp"
+    android:paddingBottom="13dp">
+
+    <ImageView
+        android:id="@+id/ayarIkon"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:background="@drawable/bg_rozet"
+        android:importantForAccessibility="no"
+        android:padding="6dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/ayarBaslik"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/metin"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/ayarOzet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/metin_ikincil"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Aç/kapa ayarlarında ok yerine görünür; satırın tamamı dokunulabilir. -->
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/ayarAnahtar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@null"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:thumb="@drawable/anahtar_topuz"
+        android:visibility="gone"
+        app:track="@drawable/anahtar_ray" />
+
+    <ImageView
+        android:id="@+id/ayarChevron"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_chevron" />
+
+</LinearLayout>

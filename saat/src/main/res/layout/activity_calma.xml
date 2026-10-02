@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Alarm çalıyor: temadan bağımsız hep karanlık (gece gözü yormasın). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:fitsSystemWindows="true"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingBottom="40dp">
+
+        <TextView
+            android:id="@+id/calmaTarih"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#8B867D"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/calmaSaat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:includeFontPadding="false"
+            android:letterSpacing="-0.04"
+            android:textColor="#F2EFE9"
+            android:textSize="96sp" />
+
+        <TextView
+            android:id="@+id/calmaEtiket"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_calma_hap"
+            android:paddingLeft="16dp"
+            android:paddingTop="6dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="6dp"
+            android:textColor="#F2EFE9"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/calmaErteleSatiri"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/calmaAzalt"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_calma_daire"
+            android:contentDescription="@string/ertelemeyi_azalt"
+            android:src="@drawable/ic_eksi" />
+
+        <TextView
+            android:id="@+id/calmaErtele"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_calma_hap"
+            android:gravity="center"
+            android:textColor="#F2EFE9"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/calmaArtir"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_calma_daire"
+            android:contentDescription="@string/ertelemeyi_artir"
+            android:src="@drawable/ic_arti_beyaz" />
+    </LinearLayout>
+
+    <com.ekosistem.saat.KaydirmaDugmesi
+        android:id="@+id/calmaKapat"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginRight="24dp" />
+
+    <TextView
+        android:id="@+id/calmaAlt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="40dp"
+        android:gravity="center"
+        android:textColor="#8B867D"
+        android:textSize="13sp" />
+</LinearLayout>

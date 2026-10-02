@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ortak boş durum: ikon kartı, kısa başlık, açıklama, gerekirse tek eylem (BosDurum.kt). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bosDurum"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp"
+    android:visibility="gone">
+
+    <ImageView
+        android:id="@+id/bosIkon"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_bos_ikon"
+        android:importantForAccessibility="no"
+        android:padding="18dp" />
+
+    <TextView
+        android:id="@+id/bosBaslik"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:textColor="@color/metin"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/bosAciklama"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/bosEylem"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_pill_buton"
+        android:gravity="center"
+        android:paddingLeft="22dp"
+        android:paddingRight="22dp"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</LinearLayout>

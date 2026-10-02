@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Clock</string>
+    <string name="alarm">Alarm</string>
+    <string name="dunya_saati">World clock</string>
+    <string name="zamanlayici">Timer</string>
+    <string name="kronometre">Stopwatch</string>
+    <string name="yeni_alarm">New alarm</string>
+    <string name="ayarlar">Settings</string>
+
+    <!-- Liste -->
+    <string name="sonraki_alarm">Next alarm %1$s · %2$s</string>
+    <string name="sonraki_alarm_vurgu">in %1$s</string>
+    <string name="acik_alarm_yok">No alarms on</string>
+    <string name="bos_alarm_baslik">No alarms yet</string>
+    <string name="bos_alarm_aciklama">Tap + to set your first alarm.</string>
+    <string name="alarm_ekle">Add alarm</string>
+    <string name="sirada_baslik">Coming in the next version</string>
+    <string name="sirada_aciklama">Alarms come first; this tab is on its way.</string>
+    <string name="bugun">Today</string>
+    <string name="yarin">Tomorrow</string>
+    <string name="bir_kez">once</string>
+    <string name="her_gun">Every day</string>
+    <string name="hafta_ici">Weekdays</string>
+    <string name="hafta_sonu">Weekends</string>
+    <string name="atlanacak">Skipping %1$s</string>
+    <string name="ertelendi_rozet">Snoozed · %1$s</string>
+    <string name="calacak">Rings in %1$s</string>
+    <string name="kalan_gun">%1$dd %2$dh</string>
+    <string name="kalan_saat">%1$dh %2$dmin</string>
+    <string name="kalan_dakika">%1$d min</string>
+    <string name="bir_sonrakini_atla">Skip next</string>
+    <string name="atlamayi_geri_al">Don\'t skip</string>
+    <string name="cogalt">Duplicate</string>
+    <string name="sil">Delete</string>
+    <string name="alarm_silinsin_mi">Delete this alarm?</string>
+    <string name="alarm_silindi">Alarm deleted</string>
+
+    <!-- Düzenleme -->
+    <string name="alarmi_duzenle">Edit alarm</string>
+    <string name="vazgec">Cancel</string>
+    <string name="kaydet">Save</string>
+    <string name="tekrar">Repeat</string>
+    <string name="tarih_sec">Pick date</string>
+    <string name="bu_tarihi_sec">Use this date</string>
+    <string name="tarihi_kaldir">Remove date</string>
+    <string name="etiket">Label</string>
+    <string name="etiket_ipucu">e.g. Work</string>
+    <string name="tamam">OK</string>
+    <string name="ses">Sound</string>
+    <string name="ses_varsayilan">Default alarm sound</string>
+    <string name="ses_yerlesik">Clock\'s own chime</string>
+    <string name="ses_dosya_sec">Pick an audio file…</string>
+    <string name="ses_dosya">Audio file</string>
+    <string name="yavas_yukselme">Gentle rise</string>
+    <string name="yukselme_yok">Full volume at once</string>
+    <string name="yukselme_sn">%1$d sec</string>
+    <string name="yukselme_dk">%1$d min</string>
+    <string name="titresim">Vibration</string>
+    <string name="erteleme">Snooze</string>
+    <string name="erteleme_ozet">%1$d min · at most %2$d times</string>
+    <string name="erteleme_ozet_sinirsiz">%1$d min · no limit</string>
+    <string name="erteleme_suresi">Snooze length</string>
+    <string name="erteleme_siniri">How many times?</string>
+    <string name="kez">%1$d times</string>
+    <string name="sinirsiz">No limit</string>
+    <string name="dakika_n">%1$d min</string>
+    <string name="atla_aciklama">%1$s won\'t ring, then it carries on</string>
+    <string name="atlandi_aciklama">%1$s is skipped · tap to undo</string>
+
+    <!-- Çalma -->
+    <string name="ertele_dk">Snooze · %1$d min</string>
+    <string name="kapat_eylem">Dismiss</string>
+    <string name="kapatmak_icin_kaydir">Slide to dismiss</string>
+    <string name="ertelemeyi_azalt">Shorter snooze</string>
+    <string name="ertelemeyi_artir">Longer snooze</string>
+    <string name="ses_tusu_erteler">Volume key: snooze</string>
+    <string name="ses_tusu_kapatir">Volume key: dismiss</string>
+    <string name="erteleme_hakki_yok">No snoozes left</string>
+    <plurals name="erteleme_hakki">
+        <item quantity="one">%d snooze left</item>
+        <item quantity="other">%d snoozes left</item>
+    </plurals>
+
+    <!-- Bildirimler -->
+    <string name="kanal_calma">Ringing alarm</string>
+    <string name="kanal_yaklasan">Upcoming alarm</string>
+    <string name="kanal_kacirilan">Missed alarm</string>
+    <string name="yaklasan_metin">Upcoming alarm</string>
+    <string name="bu_sefer_calmasin">Skip this one</string>
+    <string name="ertelendi_metin">Snoozed until %1$s</string>
+    <string name="simdi_kapat">Dismiss now</string>
+    <string name="kacirilan_baslik">Missed alarm: %1$s</string>
+    <string name="kacirilan_metin">Should have rung %1$s at %2$s</string>
+
+    <!-- Kontrol -->
+    <string name="kontrol_baslik">So your alarm always rings</string>
+    <string name="kontrol_tamam">Everything is set.</string>
+    <string name="kontrol_eksik">A few phone settings affect alarms. Tap a red one to fix it.</string>
+    <string name="kontrol_uyari">Alarms may not ring: %1$s</string>
+    <string name="duzelt">Fix</string>
+    <string name="k_bildirim">Notifications</string>
+    <string name="k_bildirim_ozet">The alarm screen opens through a notification</string>
+    <string name="k_tam_ekran">Show over lock screen</string>
+    <string name="k_tam_ekran_ozet">The alarm fills the screen while the phone is locked</string>
+    <string name="k_tam_zamanli">Alarms &amp; reminders</string>
+    <string name="k_tam_zamanli_ozet">Lets the alarm ring at the exact minute</string>
+    <string name="k_pil">Battery restriction</string>
+    <string name="k_pil_tamam">Not restricted</string>
+    <string name="pil_genel">Settings › Apps › Clock › Battery › Unrestricted</string>
+    <string name="pil_xiaomi">Xiaomi: App info › Battery saver › No restrictions, and turn on Autostart</string>
+    <string name="pil_huawei">Huawei: Battery › App launch › Clock › Manage manually, all on</string>
+    <string name="pil_samsung">Samsung: Battery › Background usage limits › add Clock to Never sleeping apps</string>
+    <string name="pil_oppo">Battery › Clock › Allow background activity</string>
+    <string name="pil_vivo">vivo: Battery › High background power use › allow Clock</string>
+
+    <!-- Ayarlar -->
+    <string name="gorunum">Appearance</string>
+    <string name="tema">Theme</string>
+    <string name="tema_sistem">Follow system</string>
+    <string name="tema_acik">Light</string>
+    <string name="tema_siyah">Pure black</string>
+    <string name="ses_tuslari">Volume keys while ringing</string>
+    <string name="ses_tusu_ertele">Snooze</string>
+    <string name="ses_tusu_kapat">Dismiss</string>
+    <string name="ses_tusu_hicbiri">Do nothing</string>
+    <string name="yaklasan_bildirim">Upcoming alarm notice</string>
+    <string name="yaklasan_kapali">Off</string>
+    <string name="yaklasan_once">%1$s before</string>
+    <string name="saat_n">%1$d h</string>
+    <string name="susma">Silence after</string>
+    <string name="susma_ozet">%1$d min if nobody dismisses it</string>
+    <string name="guvenilirlik">Reliability</string>
+    <string name="alarmi_dene">Test an alarm</string>
+    <string name="alarmi_dene_ozet">Rings in 10 seconds; lock the phone to see it</string>
+    <string name="deneme_kuruldu">Test alarm in 10 seconds</string>
+    <string name="deneme">Test</string>
+    <string name="hakkinda">About</string>
+    <string name="surum">Version</string>
+    <string name="izin_yok_rozet">No internet permission</string>
+    <string name="izin_yok_aciklama">This app never connects to the internet. Your alarms stay on your device.</string>
+</resources>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingTop="8dp"
+        android:paddingRight="20dp">
+
+        <ImageButton
+            android:id="@+id/btnGeri"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/vazgec"
+            android:src="@drawable/ic_geri"
+            app:tint="@color/metin" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="@string/ayarlar"
+            android:textColor="@color/metin"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingBottom="32dp">
+
+            <TextView style="@style/BolumBasligi" android:text="@string/gorunum" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirTema" layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <TextView style="@style/BolumBasligi" android:text="@string/alarm" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirSesTusu" layout="@layout/item_ayar" />
+                <View style="@style/AyarAyraci" />
+                <include android:id="@+id/satirYaklasan" layout="@layout/item_ayar" />
+                <View style="@style/AyarAyraci" />
+                <include android:id="@+id/satirSusma" layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <TextView style="@style/BolumBasligi" android:text="@string/guvenilirlik" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirKontrol" layout="@layout/item_ayar" />
+                <View style="@style/AyarAyraci" />
+                <include android:id="@+id/satirDene" layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <TextView style="@style/BolumBasligi" android:text="@string/hakkinda" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirSurum" layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp"
+                android:text="@string/izin_yok_aciklama"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

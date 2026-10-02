@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingTop="8dp"
+            android:paddingRight="12dp">
+
+            <ImageButton
+                android:id="@+id/btnVazgec"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/vazgec"
+                android:src="@drawable/ic_kapat"
+                app:tint="@color/metin" />
+
+            <TextView
+                android:id="@+id/duzenleBaslik"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnSil"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/sil"
+                android:src="@drawable/ic_sil"
+                app:tint="@color/tehlike" />
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="96dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <com.ekosistem.saat.SayiTekerlegi
+                        android:id="@+id/tekSaat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="2dp"
+                        android:layout_marginRight="2dp"
+                        android:importantForAccessibility="no"
+                        android:paddingBottom="8dp"
+                        android:text=":"
+                        android:textColor="@color/metin"
+                        android:textSize="56sp"
+                        android:textStyle="bold" />
+
+                    <com.ekosistem.saat.SayiTekerlegi
+                        android:id="@+id/tekDakika"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/duzenleKalan"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:textColor="@color/metin_ikincil"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/tekrar"
+                        android:textColor="@color/metin_ikincil"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/cipHaftaIci"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
+                        android:text="@string/hafta_ici"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/cipTarih"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginLeft="6dp"
+                        android:background="@drawable/bg_chip"
+                        android:drawablePadding="6dp"
+                        android:gravity="center"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
+                        android:text="@string/tarih_sec"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/gunDugmeleri"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal" />
+
+                <LinearLayout
+                    android:id="@+id/ayarKutusu"
+                    style="@style/AyarKutusu"
+                    android:layout_marginTop="16dp" />
+
+                <LinearLayout
+                    android:id="@+id/atlaKutusu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_kart"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
+                    android:paddingLeft="16dp"
+                    android:paddingTop="10dp"
+                    android:paddingRight="16dp"
+                    android:paddingBottom="10dp">
+
+                    <ImageView
+                        android:id="@+id/atlaIkon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_atla" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/atlaBaslik"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/metin"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/atlaAciklama"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/metin_ikincil"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="104dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_alt_sis"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/btnKaydet"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_pill_buton"
+        android:gravity="center"
+        android:text="@string/kaydet"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</FrameLayout>
