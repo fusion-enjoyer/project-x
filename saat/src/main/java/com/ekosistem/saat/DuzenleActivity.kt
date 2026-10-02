@@ -65,14 +65,34 @@ class DuzenleActivity : AppCompatActivity() {
 
         tekSaat = findViewById(R.id.tekSaat)
         tekDakika = findViewById(R.id.tekDakika)
-        tekSaat.adet = 24
-        tekDakika.adet = 60
         tekSaat.ekranOkuyucuAdi = getString(R.string.alarm)
         tekDakika.ekranOkuyucuAdi = getString(R.string.alarm)
-        tekSaat.ayarla(alarm.saat)
+        tekDakika.adet = 60
         tekDakika.ayarla(alarm.dakika)
-        tekSaat.degisti = { alarm = alarm.copy(saat = it, atla = 0); kalanYaz(); atlaYaz() }
         tekDakika.degisti = { alarm = alarm.copy(dakika = it, atla = 0); kalanYaz(); atlaYaz() }
+        if (android.text.format.DateFormat.is24HourFormat(this)) {
+            tekSaat.adet = 24
+            tekSaat.ayarla(alarm.saat)
+            tekSaat.degisti = { alarm = alarm.copy(saat = it, atla = 0); kalanYaz(); atlaYaz() }
+        } else {
+            // 12 saat: saat tekerleği 12, 1 … 11 gösterir; ÖÖ/ÖS ayrı tekerlek.
+            val tekOgle = findViewById<SayiTekerlegi>(R.id.tekOgle)
+            val ekler = java.text.DateFormatSymbols.getInstance().amPmStrings
+            tekOgle.visibility = View.VISIBLE
+            tekOgle.adet = 2
+            tekOgle.metin = { ekler[it] }
+            tekOgle.ekranOkuyucuAdi = getString(R.string.alarm)
+            tekSaat.adet = 12
+            tekSaat.metin = { if (it == 0) "12" else it.toString() }
+            tekSaat.ayarla(alarm.saat % 12)
+            tekOgle.ayarla(alarm.saat / 12)
+            val saatYaz = {
+                alarm = alarm.copy(saat = tekSaat.deger + 12 * tekOgle.deger, atla = 0)
+                kalanYaz(); atlaYaz()
+            }
+            tekSaat.degisti = { saatYaz() }
+            tekOgle.degisti = { saatYaz() }
+        }
 
         findViewById<View>(R.id.cipHaftaIci).setOnClickListener {
             alarm = alarm.copy(gunler = if (alarm.gunler == Alarm.HAFTA_ICI) 0 else Alarm.HAFTA_ICI, tarih = 0, atla = 0)

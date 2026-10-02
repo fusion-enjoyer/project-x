@@ -38,6 +38,14 @@ class SayiTekerlegi @JvmOverloads constructor(
     var degisti: ((Int) -> Unit)? = null
     var ekranOkuyucuAdi: String = ""
 
+    /** Değerin ekranda nasıl yazılacağı: varsayılan "06"; 12 saatte "6", "ÖÖ". */
+    var metin: (Int) -> String = { "%02d".format(it) }
+        set(f) {
+            field = f
+            requestLayout()
+            invalidate()
+        }
+
     private val d = resources.displayMetrics.density
     private val sp = resources.displayMetrics.scaledDensity
     private val satir = 64f * d
@@ -74,7 +82,8 @@ class SayiTekerlegi @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         boya.textSize = buyuk
-        val genislik = (boya.measureText("00") + 24 * d).toInt()
+        val enGenis = (0 until adet).maxOf { boya.measureText(metin(it)) }
+        val genislik = (enGenis + 24 * d).toInt()
         setMeasuredDimension(
             resolveSize(genislik, widthMeasureSpec),
             resolveSize((satir * 3).toInt(), heightMeasureSpec)
@@ -92,7 +101,7 @@ class SayiTekerlegi @JvmOverloads constructor(
             boya.isFakeBoldText = uzaklik < 0.3f
             val sayi = ((deger + i) % adet + adet) % adet
             val tabanY = y - (boya.descent() + boya.ascent()) / 2
-            canvas.drawText("%02d".format(sayi), width / 2f, tabanY, boya)
+            canvas.drawText(metin(sayi), width / 2f, tabanY, boya)
         }
     }
 
@@ -212,7 +221,7 @@ class SayiTekerlegi @JvmOverloads constructor(
     override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
         super.onInitializeAccessibilityNodeInfo(info)
         info.className = android.widget.NumberPicker::class.java.name
-        info.contentDescription = "$ekranOkuyucuAdi, ${"%02d".format(deger)}"
+        info.contentDescription = "$ekranOkuyucuAdi, ${metin(deger)}"
         info.isScrollable = true
         info.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
         info.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)

@@ -93,6 +93,14 @@
                         android:id="@+id/tekDakika"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
+
+                    <!-- Yalnız 12 saat biçimli telefonlarda görünür (ÖÖ/ÖS). -->
+                    <com.ekosistem.saat.SayiTekerlegi
+                        android:id="@+id/tekOgle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="8dp"
+                        android:visibility="gone" />
                 </LinearLayout>
 
                 <TextView
