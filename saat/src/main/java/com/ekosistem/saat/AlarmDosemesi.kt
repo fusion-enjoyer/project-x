@@ -21,8 +21,9 @@ class AlarmDosemesi : TileService() {
         super.onStartListening()
         val tile = qsTile ?: return
         val simdi = System.currentTimeMillis()
+        val tatil = Depo.tatilBitis(this)
         val sonraki = Depo.alarmlar(this).filter { it.id != MainActivity.DENEME_ID }
-            .mapNotNull { Zamanlama.sonrakiCalma(it, simdi, TimeZone.getDefault()) }.minOrNull()
+            .mapNotNull { Zamanlama.sonrakiCalma(it, simdi, TimeZone.getDefault(), tatil) }.minOrNull()
         tile.label = getString(R.string.dosemesi_adi)
         tile.state = if (sonraki != null) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         if (Build.VERSION.SDK_INT >= 29) {

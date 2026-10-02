@@ -161,4 +161,12 @@
     <string name="widget_aciklama">Saat, tarih, bir sonraki alarmın ve şehirlerin</string>
     <string name="dosemesi_adi">Saat</string>
     <string name="dosemesi_alarm_yok">Alarm yok</string>
+    <string name="tatil_modu">Tatil modu</string>
+    <string name="tatil_aciklama">Tekrarlayan alarmlar seçtiğin güne kadar susar, sonra kendiliğinden yeniden çalar. Tek seferlik alarmlar çalmaya devam eder.</string>
+    <string name="tatil_gun_sayisi">%d gün</string>
+    <string name="tatil_tarih_sec">Tarih seç…</string>
+    <string name="tatil_tarih_baslik">Alarmlar şu gün yeniden çalsın</string>
+    <string name="tatil_bitir">Tatil modunu bitir</string>
+    <string name="tatil_serit">Tatil modu · alarmlar %1$s günü yeniden çalar</string>
+    <string name="tatilde_rozet">Tatilde</string>
 </resources>

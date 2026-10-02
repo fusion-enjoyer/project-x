@@ -202,4 +202,52 @@ class ZamanlamaTest {
         val bozuk = """{"alarmlar":[{"id":1,"saat":7,"dakika":0},{"saat":"x"}]}"""
         assertEquals(1, Alarm.jsondanListe(bozuk).size)
     }
+
+    // --- Tatil modu ---
+
+    @Test
+    fun tatildeTekrarliAlarmTatilBitinceCalar() {
+        // Hafta içi 07:00. Cuma 2 Ekim 21:00'de 7 gün tatil → bitiş 9 Ekim 00:00 (cuma).
+        val alarm = Alarm(1, 7, 0, gunler = Alarm.HAFTA_ICI)
+        val simdi = an(istanbul, 2026, 10, 2, 21)
+        val bitis = Zamanlama.tatilBitisi(simdi, 7, istanbul)
+        assertEquals("2026-10-09 00:00", yerel(bitis, istanbul))
+        assertEquals("2026-10-09 07:00", yerel(Zamanlama.sonrakiCalma(alarm, simdi, istanbul, bitis)!!, istanbul))
+        // Tatil yokken ertesi hafta içi gün (pazartesi)
+        assertEquals("2026-10-05 07:00", yerel(Zamanlama.sonrakiCalma(alarm, simdi, istanbul)!!, istanbul))
+    }
+
+    @Test
+    fun tatilBitisGunuAlarmSaatiGelmemisseOGunCalar() {
+        val alarm = Alarm(1, 0, 0, gunler = Alarm.HER_GUN)
+        val simdi = an(istanbul, 2026, 10, 2, 21)
+        val bitis = Zamanlama.tatilBitisi(simdi, 3, istanbul)
+        // 00:00 alarmı tam bitiş anında: tatil bittiği gün çalmalı, bir gün sonraya kaymamalı.
+        assertEquals("2026-10-05 00:00", yerel(Zamanlama.sonrakiCalma(alarm, simdi, istanbul, bitis)!!, istanbul))
+    }
+
+    @Test
+    fun tatilTekSeferlikAlarmiSusturmaz() {
+        val tek = Alarm(1, 6, 30)
+        val simdi = an(istanbul, 2026, 10, 2, 22)
+        val bitis = Zamanlama.tatilBitisi(simdi, 14, istanbul)
+        assertEquals("2026-10-03 06:30", yerel(Zamanlama.sonrakiCalma(tek, simdi, istanbul, bitis)!!, istanbul))
+        assertFalse(Zamanlama.tatilde(tek, simdi, bitis))
+    }
+
+    @Test
+    fun tatilGecinceNormalDoner() {
+        val alarm = Alarm(1, 7, 0, gunler = Alarm.HER_GUN)
+        val bitis = an(istanbul, 2026, 10, 9, 0)
+        val sonra = an(istanbul, 2026, 10, 9, 8)
+        assertFalse(Zamanlama.tatilde(alarm, sonra, bitis))
+        assertEquals("2026-10-10 07:00", yerel(Zamanlama.sonrakiCalma(alarm, sonra, istanbul, bitis)!!, istanbul))
+    }
+
+    @Test
+    fun tatildeKapaliAlarmYineKapali() {
+        val alarm = Alarm(1, 7, 0, gunler = Alarm.HER_GUN, acik = false)
+        val simdi = an(istanbul, 2026, 10, 2, 21)
+        assertNull(Zamanlama.sonrakiCalma(alarm, simdi, istanbul, Zamanlama.tatilBitisi(simdi, 7, istanbul)))
+    }
 }

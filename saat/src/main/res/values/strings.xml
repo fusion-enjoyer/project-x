@@ -167,4 +167,12 @@
     <string name="widget_aciklama">Time, date, your next alarm and cities</string>
     <string name="dosemesi_adi">Saat</string>
     <string name="dosemesi_alarm_yok">No alarm</string>
+    <string name="tatil_modu">Holiday mode</string>
+    <string name="tatil_aciklama">Repeating alarms stay quiet until the day you pick, then ring again by themselves. One-time alarms still ring.</string>
+    <string name="tatil_gun_sayisi">%d days</string>
+    <string name="tatil_tarih_sec">Pick a date…</string>
+    <string name="tatil_tarih_baslik">Alarms ring again on</string>
+    <string name="tatil_bitir">End holiday mode</string>
+    <string name="tatil_serit">Holiday mode · alarms ring again on %1$s</string>
+    <string name="tatilde_rozet">On holiday</string>
 </resources>

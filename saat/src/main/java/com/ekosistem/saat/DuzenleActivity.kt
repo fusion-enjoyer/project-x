@@ -131,7 +131,9 @@ class DuzenleActivity : AppCompatActivity() {
     private fun kalanYaz() {
         val tv = findViewById<TextView>(R.id.duzenleKalan)
         val simdi = System.currentTimeMillis()
-        val an = Zamanlama.sonrakiOlagan(alarm.copy(acik = true), simdi, TimeZone.getDefault())
+        val an = Zamanlama.sonrakiCalma(
+            alarm.copy(acik = true, ertelemeZamani = 0), simdi, TimeZone.getDefault(), Depo.tatilBitis(this)
+        )
         if (an == null) {
             tv.text = ""
             return

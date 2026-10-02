@@ -26,7 +26,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
+import android.widget.DatePicker
 import com.ekosistem.tasarim.AltSayfa
+import java.util.Calendar
 import com.ekosistem.tasarim.BosDurum
 import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.ipucuVer
@@ -82,7 +84,9 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, AyarlarActivity::class.java))
         }
         findViewById<View>(R.id.uyariSeridi).setOnClickListener { Kontrol.sayfaGoster(this) }
-        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar))
+        findViewById<View>(R.id.btnTatil).setOnClickListener { tatilSayfasi() }
+        findViewById<View>(R.id.tatilSeridi).setOnClickListener { tatilSayfasi() }
+        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnTatil))
         sekmeleriKur()
     }
 
@@ -119,6 +123,7 @@ class MainActivity : AppCompatActivity() {
         val alarmlar = Depo.alarmlar(this).filter { it.id != DENEME_ID }
         ustBilgiyiYaz(alarmlar)
         uyariyiYaz()
+        tatilSeridiniYaz()
         bosDurum.translationY = 0f
         kronometre.goster(sekme == SEKME_KRONOMETRE)
         zamanlayici.goster(sekme == SEKME_ZAMANLAYICI)
@@ -170,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         val simdi = System.currentTimeMillis()
         val tz = TimeZone.getDefault()
         val sonraki = alarmlar.filter { it.id != DENEME_ID }
-            .mapNotNull { Zamanlama.sonrakiCalma(it, simdi, tz) }.minOrNull()
+            .mapNotNull { Zamanlama.sonrakiCalma(it, simdi, tz, Depo.tatilBitis(this)) }.minOrNull()
         if (sonraki == null) {
             alt.setText(R.string.acik_alarm_yok)
             return
@@ -187,6 +192,55 @@ class MainActivity : AppCompatActivity() {
             metin.setSpan(StyleSpan(android.graphics.Typeface.BOLD), bas, bas + vurguMetni.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         alt.text = metin
+    }
+
+    private fun tatilSeridiniYaz() {
+        val serit = findViewById<TextView>(R.id.tatilSeridi)
+        val bitis = Depo.tatilBitis(this)
+        if (sekme != SEKME_ALARM || bitis <= System.currentTimeMillis()) {
+            serit.visibility = View.GONE
+            return
+        }
+        serit.visibility = View.VISIBLE
+        serit.text = getString(R.string.tatil_serit, Metinler.tarih(Zamanlama.gunAnahtari(bitis, TimeZone.getDefault())))
+    }
+
+    /** Tatil modu: tekrarlı alarmlar seçilen güne kadar durur, sonra kendiliğinden sürer. */
+    private fun tatilSayfasi() {
+        val simdi = System.currentTimeMillis()
+        val tz = TimeZone.getDefault()
+        val sayfa = AltSayfa(this).baslik(getString(R.string.tatil_modu)).mesaj(getString(R.string.tatil_aciklama))
+        for (gun in listOf(3, 7, 14)) {
+            sayfa.madde(R.drawable.ic_takvim, getString(R.string.tatil_gun_sayisi, gun)) {
+                tatilKur(Zamanlama.tatilBitisi(simdi, gun, tz))
+            }
+        }
+        sayfa.madde(R.drawable.ic_takvim, getString(R.string.tatil_tarih_sec)) { tatilTarihSec() }
+        if (Depo.tatilVar(this, simdi)) {
+            sayfa.madde(TR.drawable.ic_kapat, getString(R.string.tatil_bitir), tehlikeli = true) { tatilKur(0) }
+        }
+        sayfa.goster()
+    }
+
+    private fun tatilTarihSec() {
+        val secici = DatePicker(this)
+        val yarin = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, 1) }
+        secici.init(yarin.get(Calendar.YEAR), yarin.get(Calendar.MONTH), yarin.get(Calendar.DAY_OF_MONTH), null)
+        secici.minDate = System.currentTimeMillis() - 1000
+        AltSayfa(this).baslik(getString(R.string.tatil_tarih_baslik)).icerik(secici)
+            .madde(TR.drawable.ic_onay_isaret, getString(R.string.bu_tarihi_sec)) {
+                val an = Zamanlama.gununAni(
+                    secici.year * 10000 + (secici.month + 1) * 100 + secici.dayOfMonth, 0, 0, TimeZone.getDefault()
+                )
+                tatilKur(an)
+            }
+            .goster()
+    }
+
+    private fun tatilKur(bitis: Long) {
+        Depo.tatilBitisKaydet(this, bitis)
+        AlarmKurucu.hepsiniKur(this)
+        yenile()
     }
 
     private fun uyariyiYaz() {
@@ -240,6 +294,10 @@ class MainActivity : AppCompatActivity() {
 
         val rozet = v.findViewById<TextView>(R.id.alarmRozet)
         when {
+            Zamanlama.tatilde(alarm, simdi, Depo.tatilBitis(this)) -> {
+                rozet.visibility = View.VISIBLE
+                rozet.text = getString(R.string.tatilde_rozet)
+            }
             acik && alarm.ertelemeZamani > simdi -> {
                 rozet.visibility = View.VISIBLE
                 rozet.text = getString(R.string.ertelendi_rozet, Metinler.saat(this, alarm.ertelemeZamani))
@@ -440,7 +498,7 @@ class MainActivity : AppCompatActivity() {
 
         /** "8 sa 12 dk sonra çalacak" — Google Saat'teki gibi kurulunca söylenir. */
         fun calacakDiye(activity: android.app.Activity, alarm: Alarm?) {
-            val an = alarm?.let { Zamanlama.sonrakiCalma(it, System.currentTimeMillis(), TimeZone.getDefault()) } ?: return
+            val an = alarm?.let { Zamanlama.sonrakiCalma(it, System.currentTimeMillis(), TimeZone.getDefault(), Depo.tatilBitis(activity)) } ?: return
             Toast.makeText(
                 activity,
                 activity.getString(R.string.calacak, Metinler.kalan(activity, an - System.currentTimeMillis())),

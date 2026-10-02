@@ -39,8 +39,9 @@ class SaatWidget : AppWidgetProvider() {
             if (kimlikler.isEmpty()) return
             val g = RemoteViews(context.packageName, R.layout.widget_saat)
             val simdi = System.currentTimeMillis()
+            val tatil = Depo.tatilBitis(context)
             val sonraki = Depo.alarmlar(context).filter { it.id != MainActivity.DENEME_ID }
-                .mapNotNull { Zamanlama.sonrakiCalma(it, simdi, TimeZone.getDefault()) }.minOrNull()
+                .mapNotNull { Zamanlama.sonrakiCalma(it, simdi, TimeZone.getDefault(), tatil) }.minOrNull()
             if (sonraki == null) {
                 g.setViewVisibility(R.id.widgetAlarm, View.GONE)
             } else {

@@ -114,6 +114,11 @@ object Depo {
     fun sonSure(c: Context): String = ayarlar(c).getString("son_sure", "500") ?: "500"
     fun sonSureKaydet(c: Context, rakamlar: String) = ayarlar(c).edit().putString("son_sure", rakamlar).apply()
 
+    /** Tatil modunun bittiği an (ms); gelecekte değilse tatil yok. */
+    fun tatilBitis(c: Context): Long = ayarlar(c).getLong("tatil_bitis", 0)
+    fun tatilBitisKaydet(c: Context, an: Long) = ayarlar(c).edit().putLong("tatil_bitis", an).apply()
+    fun tatilVar(c: Context, simdi: Long = System.currentTimeMillis()): Boolean = tatilBitis(c) > simdi
+
     /** Bildirim izni bir kez istendi mi (Android 13+). */
     fun bildirimIstendi(c: Context): Boolean = ayarlar(c).getBoolean("bildirim_istendi", false)
     fun bildirimIstendiKaydet(c: Context) = ayarlar(c).edit().putBoolean("bildirim_istendi", true).apply()

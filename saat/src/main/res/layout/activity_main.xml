@@ -33,6 +33,17 @@
                 android:textStyle="bold" />
 
             <ImageButton
+                android:id="@+id/btnTatil"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginRight="8dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/tatil_modu"
+                android:src="@drawable/ic_tatil"
+                app:tint="@color/metin" />
+
+            <ImageButton
                 android:id="@+id/btnAyarlar"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
@@ -52,6 +63,27 @@
             android:paddingRight="20dp"
             android:textColor="@color/metin_ikincil"
             android:textSize="15sp" />
+
+        <!-- Tatil modu açıkken: ne zamana kadar sürdüğü, dokununca değiştir/bitir. -->
+        <TextView
+            android:id="@+id/tatilSeridi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/bg_kart"
+            android:drawableLeft="@drawable/ic_tatil_kucuk"
+            android:drawablePadding="10dp"
+            android:gravity="center_vertical"
+            android:minHeight="48dp"
+            android:paddingLeft="14dp"
+            android:paddingTop="10dp"
+            android:paddingRight="14dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/metin"
+            android:textSize="14sp"
+            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/uyariSeridi"

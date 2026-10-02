@@ -53,7 +53,7 @@ object AlarmKurucu {
             a = Zamanlama.calmaBitti(a)
         }
         if (Zamanlama.atlamaGecti(a, simdi, tz)) a = a.copy(atla = 0)
-        val sonraki = Zamanlama.sonrakiCalma(a, simdi, tz)
+        val sonraki = Zamanlama.sonrakiCalma(a, simdi, tz, Depo.tatilBitis(context))
         if (sonraki == null && a.acik) a = a.copy(acik = false, tarih = 0)
         return a.copy(kurulanZaman = sonraki ?: 0)
     }

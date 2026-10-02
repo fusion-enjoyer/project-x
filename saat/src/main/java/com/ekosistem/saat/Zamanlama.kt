@@ -56,13 +56,33 @@ object Zamanlama {
         return null
     }
 
-    /** Ertelenmişse erteleme anı, değilse olağan çalma. Kapalı alarm için null. */
-    fun sonrakiCalma(alarm: Alarm, simdi: Long, tz: TimeZone): Long? {
+    /**
+     * Ertelenmişse erteleme anı, değilse olağan çalma. Kapalı alarm için null.
+     *
+     * Tatil modu ([tatilBitis] gelecekteyse): tekrarlı alarm tatilin bittiği
+     * andan sonraki ilk uygun çalmaya kurulur; alarmın kendisine (açık/kapalı)
+     * dokunulmaz, tatil bitince kendiliğinden sürer. Tek seferlik alarm tatili
+     * saymaz: kullanıcı onu bilerek belirli bir an için kurmuştur.
+     */
+    fun sonrakiCalma(alarm: Alarm, simdi: Long, tz: TimeZone, tatilBitis: Long = 0): Long? {
         if (!alarm.acik) return null
+        if (tatilde(alarm, simdi, tatilBitis)) return sonrakiOlagan(alarm, tatilBitis - 1, tz)
         val olagan = sonrakiOlagan(alarm, simdi, tz)
         val erteleme = alarm.ertelemeZamani.takeIf { it > simdi }
         return listOfNotNull(olagan, erteleme).minOrNull()
     }
+
+    /** Bu alarm şu an tatil modu yüzünden duruyor mu? */
+    fun tatilde(alarm: Alarm, simdi: Long, tatilBitis: Long): Boolean =
+        alarm.acik && alarm.tekrarli && tatilBitis > simdi
+
+    /** Tatilin bitiş anı: bugünden [gun] gün sonrasının başı (00:00). */
+    fun tatilBitisi(simdi: Long, gun: Int, tz: TimeZone): Long =
+        takvim(simdi, tz).apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_MONTH, gun)
+        }.timeInMillis
 
     /**
      * "Bir sonrakini atla": şu an kurulu olan olağan çalmanın günü atlanır.
