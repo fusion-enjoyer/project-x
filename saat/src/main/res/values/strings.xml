@@ -15,8 +15,6 @@
     <string name="bos_alarm_baslik">No alarms yet</string>
     <string name="bos_alarm_aciklama">Tap + to set your first alarm.</string>
     <string name="alarm_ekle">Add alarm</string>
-    <string name="sirada_baslik">Coming in the next version</string>
-    <string name="sirada_aciklama">Alarms come first; this tab is on its way.</string>
     <string name="bugun">Today</string>
     <string name="yarin">Tomorrow</string>
     <string name="bir_kez">once</string>
@@ -154,4 +152,17 @@
     <string name="birim_sn">s</string>
     <string name="bitis_saati">Ends at %1$s</string>
     <string name="n_zamanlayici">%1$d timers</string>
+    <string name="dun">Yesterday</string>
+    <string name="ayni_saat">Same time</string>
+    <string name="fark_ileri">%1$s ahead</string>
+    <string name="fark_geri">%1$s behind</string>
+    <string name="fark_sa">%1$d h</string>
+    <string name="fark_sa_dk">%1$d h %2$d min</string>
+    <string name="fark_dk">%1$d min</string>
+    <string name="sehir_ara">Search city or country</string>
+    <string name="sehir_ekle">Add city</string>
+    <string name="bos_sehir_baslik">No cities yet</string>
+    <string name="bos_sehir_aciklama">Add a city to see its time at a glance.</string>
+    <string name="widget_adi">Clock and next alarm</string>
+    <string name="widget_aciklama">Time, date and your next alarm</string>
 </resources>

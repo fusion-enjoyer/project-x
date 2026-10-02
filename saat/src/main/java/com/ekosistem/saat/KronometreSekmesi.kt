@@ -38,7 +38,9 @@ class KronometreSekmesi(private val activity: Activity) {
         sag.setOnClickListener {
             val k = Depo.kronometre(activity)
             val simdi = SystemClock.elapsedRealtime()
-            Depo.kronometreKaydet(activity, if (k.calisiyor) k.durdur(simdi) else k.basla(simdi))
+            Depo.kronometreKaydet(
+                activity, if (k.calisiyor) k.durdur(simdi) else k.basla(simdi, System.currentTimeMillis())
+            )
             CalisanBildirim.guncelle(activity)
             yenile()
         }

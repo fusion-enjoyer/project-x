@@ -81,7 +81,10 @@ object Depo {
 
     // --- Kronometre ve zamanlayıcılar (küçük; ayarlarla aynı dosyada) ---
 
-    fun kronometre(c: Context): Kronometre = Kronometre.jsondan(ayarlar(c).getString("kronometre", null))
+    fun kronometre(c: Context): Kronometre =
+        Kronometre.jsondan(ayarlar(c).getString("kronometre", null)).yenidenBaslatmaSonrasi(
+            android.os.SystemClock.elapsedRealtime(), System.currentTimeMillis()
+        )
     fun kronometreKaydet(c: Context, k: Kronometre) = ayarlar(c).edit().putString("kronometre", k.json()).apply()
 
     fun zamanlayicilar(c: Context): List<Zamanlayici> =
@@ -97,6 +100,15 @@ object Depo {
             .let { l -> if (l.any { it.id == z.id }) l else l + z })
 
     fun zamanlayiciSil(c: Context, id: Int) = zamanlayicilariKaydet(c, zamanlayicilar(c).filter { it.id != id })
+
+    /** Dünya saatindeki şehirler (saat dilimi kimlikleri, eklenme sırasıyla). */
+    fun sehirler(c: Context): List<String> = runCatching {
+        val d = org.json.JSONArray(ayarlar(c).getString("sehirler", "[]"))
+        List(d.length()) { d.getString(it) }
+    }.getOrDefault(emptyList())
+
+    fun sehirleriKaydet(c: Context, liste: List<String>) =
+        ayarlar(c).edit().putString("sehirler", org.json.JSONArray(liste.distinct()).toString()).apply()
 
     /** Son girilen süre: yeni zamanlayıcı ekranı onunla açılır. */
     fun sonSure(c: Context): String = ayarlar(c).getString("son_sure", "500") ?: "500"

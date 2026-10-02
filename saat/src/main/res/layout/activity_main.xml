@@ -119,6 +119,8 @@
                     android:orientation="vertical" />
             </ScrollView>
 
+            <include layout="@layout/sekme_dunya" />
+
             <include layout="@layout/sekme_kronometre" />
 
             <include layout="@layout/sekme_zamanlayici" />

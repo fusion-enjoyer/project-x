@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ana ekran widget'ı: saat ve tarih TextClock (kendini günceller), altında
+     bir sonraki alarm. Uygulama yalnız alarmlar değişince günceller. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextClock
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:textColor="@color/metin"
+        android:textSize="52sp" />
+
+    <TextClock
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:format12Hour="EEEE, d MMMM"
+        android:format24Hour="EEEE, d MMMM"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/widgetAlarm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:drawableLeft="@drawable/ic_alarm_kucuk"
+        android:drawablePadding="6dp"
+        android:gravity="center_vertical"
+        android:textColor="@color/vurgu"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+</LinearLayout>

@@ -1,0 +1,61 @@
+package com.ekosistem.saat
+
+import android.app.Activity
+import android.content.Intent
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextClock
+import android.widget.TextView
+import com.ekosistem.tasarim.AltSayfa
+import com.ekosistem.tasarim.BosDurum
+
+/** Dünya saati sekmesi: yerel saat ve eklenen şehirler. */
+class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
+
+    private val kok: View = activity.findViewById(R.id.sekmeDunya)
+    private val liste: LinearLayout = activity.findViewById(R.id.dunyaListesi)
+
+    fun goster(evet: Boolean) {
+        kok.visibility = if (evet) View.VISIBLE else View.GONE
+        if (evet) yenile()
+    }
+
+    fun sehirEkle() = activity.startActivity(Intent(activity, SehirSecActivity::class.java))
+
+    fun yenile() {
+        val sehirler = Depo.sehirler(activity)
+        liste.removeAllViews()
+        if (sehirler.isEmpty()) {
+            BosDurum.goster(
+                bosDurum, R.drawable.ic_dunya,
+                activity.getString(R.string.bos_sehir_baslik), activity.getString(R.string.bos_sehir_aciklama),
+                activity.getString(R.string.sehir_ekle) to { sehirEkle() }
+            )
+            // Boş durum ortada dursun; yerel saat üstte kalsın.
+            bosDurum.translationY = activity.resources.displayMetrics.density * 70
+        } else {
+            bosDurum.visibility = View.GONE
+            bosDurum.translationY = 0f
+        }
+        val simdi = System.currentTimeMillis()
+        for (id in sehirler) {
+            val v = LayoutInflater.from(activity).inflate(R.layout.item_sehir, liste, false)
+            val ad = Sehirler.ad(id)
+            v.findViewById<TextView>(R.id.sehirAd).text = ad
+            v.findViewById<TextView>(R.id.sehirFark).text = Sehirler.farkMetni(activity, id, simdi)
+            v.findViewById<TextClock>(R.id.sehirSaat).timeZone = id
+            v.setOnLongClickListener {
+                AltSayfa(activity).baslik(ad)
+                    .madde(R.drawable.ic_sil, activity.getString(R.string.sil), tehlikeli = true) {
+                        Depo.sehirleriKaydet(activity, Depo.sehirler(activity) - id)
+                        SaatWidget.guncelle(activity)
+                        yenile()
+                    }
+                    .goster()
+                true
+            }
+            liste.addView(v)
+        }
+    }
+}

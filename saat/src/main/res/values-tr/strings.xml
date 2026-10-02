@@ -14,8 +14,6 @@
     <string name="bos_alarm_baslik">Henüz alarm yok</string>
     <string name="bos_alarm_aciklama">İlk alarmını kurmak için + düğmesine dokun.</string>
     <string name="alarm_ekle">Alarm ekle</string>
-    <string name="sirada_baslik">Sıradaki sürümde</string>
-    <string name="sirada_aciklama">Önce alarm geldi; bu sekme yolda.</string>
     <string name="bugun">Bugün</string>
     <string name="yarin">Yarın</string>
     <string name="bir_kez">bir kez</string>
@@ -148,4 +146,17 @@
     <string name="birim_sn">sn</string>
     <string name="bitis_saati">Bitiş %1$s</string>
     <string name="n_zamanlayici">%1$d zamanlayıcı</string>
+    <string name="dun">Dün</string>
+    <string name="ayni_saat">Aynı saat</string>
+    <string name="fark_ileri">%1$s ileride</string>
+    <string name="fark_geri">%1$s geride</string>
+    <string name="fark_sa">%1$d sa</string>
+    <string name="fark_sa_dk">%1$d sa %2$d dk</string>
+    <string name="fark_dk">%1$d dk</string>
+    <string name="sehir_ara">Şehir ya da ülke ara</string>
+    <string name="sehir_ekle">Şehir ekle</string>
+    <string name="bos_sehir_baslik">Henüz şehir yok</string>
+    <string name="bos_sehir_aciklama">Saatini bir bakışta görmek için şehir ekle.</string>
+    <string name="widget_adi">Saat ve sonraki alarm</string>
+    <string name="widget_aciklama">Saat, tarih ve bir sonraki alarmın</string>
 </resources>

@@ -31,6 +31,18 @@ class SayacTest {
     }
 
     @Test
+    fun yenidenBaslatmadanSonraSureKorunur() {
+        // 10:00:00'da başladı (açılıştan 500 sn sonra); telefon yeniden başladı,
+        // şimdi açılıştan 30 sn geçti ve duvar saati 10:05:00.
+        val duvar = 36_000_000L
+        val k = Kronometre(baslangic = 500_000, birikmis = 2_000, duvar = duvar)
+        val kurtarilan = k.yenidenBaslatmaSonrasi(simdi = 30_000, duvarSimdi = duvar + 300_000)
+        assertEquals(302_000L, kurtarilan.gecen(30_000))
+        // Yeniden başlatma yoksa dokunulmaz
+        assertEquals(k, k.yenidenBaslatmaSonrasi(simdi = 600_000, duvarSimdi = duvar + 100_000))
+    }
+
+    @Test
     fun kronometreBicimi() {
         assertEquals("00:00.0", Kronometre.bicim(0))
         assertEquals("01:02.3", Kronometre.bicim(62_345))
@@ -39,7 +51,7 @@ class SayacTest {
 
     @Test
     fun kronometreJson() {
-        val k = Kronometre(5, 1200, listOf(300, 900))
+        val k = Kronometre(5, 1200, listOf(300, 900), 77)
         assertEquals(k, Kronometre.jsondan(k.json()))
         assertEquals(Kronometre(), Kronometre.jsondan("bozuk"))
     }

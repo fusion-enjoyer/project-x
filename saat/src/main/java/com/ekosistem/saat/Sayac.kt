@@ -8,22 +8,40 @@ import org.json.JSONObject
  * (elapsedRealtime) ölçülür: kullanıcı sistem saatini değiştirse de kaymaz.
  */
 data class Kronometre(
-    /** Çalışıyorsa son başlatma anı (elapsedRealtime); duruyorsa 0. */
+    /**
+     * Çalışıyorsa son başlatma anı (elapsedRealtime); duruyorsa 0. Yeniden
+     * başlatmadan kurtarılınca açılıştan önceye, yani eksiye düşebilir.
+     */
     val baslangic: Long = 0,
     /** Önceki çalışmalardan biriken süre (ms). */
     val birikmis: Long = 0,
     /** Her turun bittiği andaki toplam süre (ms), sırayla. */
-    val turlar: List<Long> = emptyList()
+    val turlar: List<Long> = emptyList(),
+    /** Son başlatma anının duvar saati karşılığı; yeniden başlatmadan sonra kurtarmak için. */
+    val duvar: Long = 0
 ) {
-    val calisiyor: Boolean get() = baslangic > 0
+    val calisiyor: Boolean get() = baslangic != 0L
     val sifirda: Boolean get() = !calisiyor && birikmis == 0L && turlar.isEmpty()
 
     fun gecen(simdi: Long): Long = birikmis + if (calisiyor) (simdi - baslangic).coerceAtLeast(0) else 0
 
-    fun basla(simdi: Long): Kronometre = if (calisiyor) this else copy(baslangic = simdi)
+    fun basla(simdi: Long, duvarSimdi: Long = 0): Kronometre =
+        if (calisiyor) this else copy(baslangic = simdi, duvar = duvarSimdi)
+
+    /**
+     * Telefon yeniden başladıysa açılıştan beri geçen süre sıfırlanmıştır
+     * (kayıtlı başlangıç şimdiden büyük). Başlangıç duvar saatinden yeniden kurulur.
+     */
+    fun yenidenBaslatmaSonrasi(simdi: Long, duvarSimdi: Long): Kronometre {
+        if (!calisiyor || baslangic <= simdi) return this
+        if (duvar <= 0) return copy(baslangic = 0) // kurtarılamaz: biriken süreyle durur
+        val gecenDuvar = (duvarSimdi - duvar).coerceAtLeast(0)
+        val yeni = (simdi - gecenDuvar).let { if (it == 0L) -1L else it }
+        return copy(baslangic = yeni, duvar = duvarSimdi - gecenDuvar)
+    }
 
     fun durdur(simdi: Long): Kronometre =
-        if (!calisiyor) this else copy(baslangic = 0, birikmis = gecen(simdi))
+        if (!calisiyor) this else copy(baslangic = 0, birikmis = gecen(simdi), duvar = 0)
 
     fun tur(simdi: Long): Kronometre = if (!calisiyor) this else copy(turlar = turlar + gecen(simdi))
 
@@ -36,6 +54,7 @@ data class Kronometre(
         .put("baslangic", baslangic)
         .put("birikmis", birikmis)
         .put("turlar", JSONArray(turlar))
+        .put("duvar", duvar)
         .toString()
 
     companion object {
@@ -47,7 +66,8 @@ data class Kronometre(
                 Kronometre(
                     o.optLong("baslangic"),
                     o.optLong("birikmis"),
-                    List(dizi.length()) { dizi.getLong(it) }
+                    List(dizi.length()) { dizi.getLong(it) },
+                    o.optLong("duvar")
                 )
             }.getOrDefault(Kronometre())
         }

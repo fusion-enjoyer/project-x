@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private var sekme = SEKME_ALARM
     private lateinit var kronometre: KronometreSekmesi
     private lateinit var zamanlayici: ZamanlayiciSekmesi
+    private lateinit var dunya: DunyaSekmesi
     private val isleyici = Handler(Looper.getMainLooper())
     private val dakikalik = object : Runnable {
         override fun run() {
@@ -65,12 +66,16 @@ class MainActivity : AppCompatActivity() {
             ?: intent.getIntExtra(EK_SEKME, SEKME_ALARM)
         kronometre = KronometreSekmesi(this)
         zamanlayici = ZamanlayiciSekmesi(this)
+        dunya = DunyaSekmesi(this, bosDurum)
 
         findViewById<ImageButton>(R.id.btnYeni).apply {
             imageTintList = ColorStateList.valueOf(Tasarim.vurguUzeri(this@MainActivity))
             setOnClickListener {
-                if (sekme == SEKME_ZAMANLAYICI) zamanlayici.yeniDugmesi()
-                else startActivity(Intent(this@MainActivity, DuzenleActivity::class.java))
+                when (sekme) {
+                    SEKME_ZAMANLAYICI -> zamanlayici.yeniDugmesi()
+                    SEKME_DUNYA -> dunya.sehirEkle()
+                    else -> startActivity(Intent(this@MainActivity, DuzenleActivity::class.java))
+                }
             }
         }
         findViewById<View>(R.id.btnAyarlar).setOnClickListener {
@@ -114,23 +119,19 @@ class MainActivity : AppCompatActivity() {
         val alarmlar = Depo.alarmlar(this).filter { it.id != DENEME_ID }
         ustBilgiyiYaz(alarmlar)
         uyariyiYaz()
+        bosDurum.translationY = 0f
         kronometre.goster(sekme == SEKME_KRONOMETRE)
         zamanlayici.goster(sekme == SEKME_ZAMANLAYICI)
         if (sekme != SEKME_ALARM) {
             liste.removeAllViews()
             kaydirici.visibility = View.GONE
             findViewById<View>(R.id.btnYeni).visibility =
-                if (sekme == SEKME_ZAMANLAYICI) View.VISIBLE else View.GONE
-            if (sekme == SEKME_DUNYA) {
-                BosDurum.goster(
-                    bosDurum, R.drawable.ic_dunya,
-                    getString(R.string.sirada_baslik), getString(R.string.sirada_aciklama)
-                )
-            } else {
-                bosDurum.visibility = View.GONE
-            }
+                if (sekme == SEKME_KRONOMETRE) View.GONE else View.VISIBLE
+            if (sekme != SEKME_DUNYA) bosDurum.visibility = View.GONE
+            dunya.goster(sekme == SEKME_DUNYA)
             return
         }
+        dunya.goster(false)
         findViewById<View>(R.id.btnYeni).visibility = View.VISIBLE
         kaydirici.visibility = View.VISIBLE
         liste.removeAllViews()
