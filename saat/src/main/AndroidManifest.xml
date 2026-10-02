@@ -119,5 +119,17 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <!-- Bildirim panelinde "Alarm" döşemesi (Android 7+). -->
+        <service
+            android:name=".AlarmDosemesi"
+            android:exported="true"
+            android:icon="@drawable/ic_alarm"
+            android:label="@string/dosemesi_adi"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

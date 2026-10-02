@@ -1,40 +1,147 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ana ekran widget'ı: saat ve tarih TextClock (kendini günceller), altında
-     bir sonraki alarm. Uygulama yalnız alarmlar değişince günceller. -->
+<!-- Ana ekran widget'ı: solda saat ve tarih TextClock (kendini günceller),
+     altında bir sonraki alarm; sağda dünya saatindeki ilk üç şehir (varsa).
+     Uygulama yalnız alarmlar ve şehirler değişince günceller. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetKok"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_widget"
     android:gravity="center"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:padding="12dp">
 
-    <TextClock
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:includeFontPadding="false"
-        android:textColor="@color/metin"
-        android:textSize="52sp" />
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
 
-    <TextClock
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:format12Hour="EEEE, d MMMM"
-        android:format24Hour="EEEE, d MMMM"
-        android:textColor="@color/metin_ikincil"
-        android:textSize="14sp" />
+        <!-- 12 saatlik telefonda ÖÖ/ÖS yazılmaz: yanında şehir sütunu varken
+             "2:22 AM" iki satıra bölünüyordu. -->
+        <TextClock
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textColor="@color/metin"
+            android:textSize="52sp" />
 
-    <TextView
-        android:id="@+id/widgetAlarm"
+        <TextClock
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:format12Hour="EEEE, d MMMM"
+            android:format24Hour="EEEE, d MMMM"
+            android:textColor="@color/metin_ikincil"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/widgetAlarm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:drawableLeft="@drawable/ic_alarm_kucuk"
+            android:drawablePadding="6dp"
+            android:gravity="center_vertical"
+            android:textColor="@color/vurgu"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widgetSehirler"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:drawableLeft="@drawable/ic_alarm_kucuk"
-        android:drawablePadding="6dp"
-        android:gravity="center_vertical"
-        android:textColor="@color/vurgu"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:layout_marginLeft="12dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/widgetSehir1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/widgetSehirAd1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxWidth="96dp"
+                android:singleLine="true"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="12sp" />
+
+            <TextClock
+                android:id="@+id/widgetSehirSaat1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textColor="@color/metin"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widgetSehir2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/widgetSehirAd2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxWidth="96dp"
+                android:singleLine="true"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="12sp" />
+
+            <TextClock
+                android:id="@+id/widgetSehirSaat2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textColor="@color/metin"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widgetSehir3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/widgetSehirAd3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxWidth="96dp"
+                android:singleLine="true"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="12sp" />
+
+            <TextClock
+                android:id="@+id/widgetSehirSaat3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textColor="@color/metin"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

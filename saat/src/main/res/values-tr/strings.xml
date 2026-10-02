@@ -158,5 +158,7 @@
     <string name="bos_sehir_baslik">Henüz şehir yok</string>
     <string name="bos_sehir_aciklama">Saatini bir bakışta görmek için şehir ekle.</string>
     <string name="widget_adi">Saat ve sonraki alarm</string>
-    <string name="widget_aciklama">Saat, tarih ve bir sonraki alarmın</string>
+    <string name="widget_aciklama">Saat, tarih, bir sonraki alarmın ve şehirlerin</string>
+    <string name="dosemesi_adi">Saat</string>
+    <string name="dosemesi_alarm_yok">Alarm yok</string>
 </resources>

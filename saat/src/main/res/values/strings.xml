@@ -164,5 +164,7 @@
     <string name="bos_sehir_baslik">No cities yet</string>
     <string name="bos_sehir_aciklama">Add a city to see its time at a glance.</string>
     <string name="widget_adi">Clock and next alarm</string>
-    <string name="widget_aciklama">Time, date and your next alarm</string>
+    <string name="widget_aciklama">Time, date, your next alarm and cities</string>
+    <string name="dosemesi_adi">Saat</string>
+    <string name="dosemesi_alarm_yok">No alarm</string>
 </resources>
