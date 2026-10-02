@@ -30,6 +30,8 @@ object AlarmKurucu {
         // ikinci kez çalardı. Kapatılınca ya da ertelenince yeniden kurulur.
         for (a in yeni) if (a.id != CalmaHizmeti.calanId) kur(context, a, simdi, tz)
         if (yeni != eski) Depo.kaydet(context, yeni)
+        // Açılış, saat değişimi gibi olaylarda zamanlayıcılar da yeniden kurulsun.
+        ZamanlayiciKurucu.hepsiniKur(context)
     }
 
     /**

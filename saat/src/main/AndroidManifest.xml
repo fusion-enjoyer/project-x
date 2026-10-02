@@ -30,7 +30,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -60,6 +61,22 @@
 
         <service
             android:name=".CalmaHizmeti"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <activity
+            android:name=".ZamanDolduActivity"
+            android:directBootAware="true"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showOnLockScreen="true"
+            android:taskAffinity="com.ekosistem.saat.zaman"
+            android:theme="@style/Theme.Saat.Calma" />
+
+        <service
+            android:name=".ZamanlayiciHizmeti"
             android:directBootAware="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />

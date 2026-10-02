@@ -119,6 +119,10 @@
                     android:orientation="vertical" />
             </ScrollView>
 
+            <include layout="@layout/sekme_kronometre" />
+
+            <include layout="@layout/sekme_zamanlayici" />
+
             <include
                 android:id="@+id/bosDurum"
                 layout="@layout/bos_durum"

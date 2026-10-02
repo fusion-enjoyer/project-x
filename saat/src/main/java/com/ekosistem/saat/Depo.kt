@@ -79,6 +79,29 @@ object Depo {
     fun susmaDk(c: Context): Int = ayarlar(c).getInt("susma_dk", 10)
     fun susmaDkKaydet(c: Context, dk: Int) = ayarlar(c).edit().putInt("susma_dk", dk).apply()
 
+    // --- Kronometre ve zamanlayıcılar (küçük; ayarlarla aynı dosyada) ---
+
+    fun kronometre(c: Context): Kronometre = Kronometre.jsondan(ayarlar(c).getString("kronometre", null))
+    fun kronometreKaydet(c: Context, k: Kronometre) = ayarlar(c).edit().putString("kronometre", k.json()).apply()
+
+    fun zamanlayicilar(c: Context): List<Zamanlayici> =
+        Zamanlayici.jsondanListe(ayarlar(c).getString("zamanlayicilar", null))
+
+    fun zamanlayicilariKaydet(c: Context, liste: List<Zamanlayici>) =
+        ayarlar(c).edit().putString("zamanlayicilar", Zamanlayici.listedenJson(liste)).commit()
+
+    fun zamanlayici(c: Context, id: Int): Zamanlayici? = zamanlayicilar(c).firstOrNull { it.id == id }
+
+    fun zamanlayiciYaz(c: Context, z: Zamanlayici) =
+        zamanlayicilariKaydet(c, zamanlayicilar(c).map { if (it.id == z.id) z else it }
+            .let { l -> if (l.any { it.id == z.id }) l else l + z })
+
+    fun zamanlayiciSil(c: Context, id: Int) = zamanlayicilariKaydet(c, zamanlayicilar(c).filter { it.id != id })
+
+    /** Son girilen süre: yeni zamanlayıcı ekranı onunla açılır. */
+    fun sonSure(c: Context): String = ayarlar(c).getString("son_sure", "500") ?: "500"
+    fun sonSureKaydet(c: Context, rakamlar: String) = ayarlar(c).edit().putString("son_sure", rakamlar).apply()
+
     /** Bildirim izni bir kez istendi mi (Android 13+). */
     fun bildirimIstendi(c: Context): Boolean = ayarlar(c).getBoolean("bildirim_istendi", false)
     fun bildirimIstendiKaydet(c: Context) = ayarlar(c).edit().putBoolean("bildirim_istendi", true).apply()

@@ -139,4 +139,17 @@
     <string name="surum">Version</string>
     <string name="izin_yok_rozet">No internet permission</string>
     <string name="izin_yok_aciklama">This app never connects to the internet. Your alarms stay on your device.</string>
+    <string name="basla">Start</string>
+    <string name="durdur">Stop</string>
+    <string name="devam">Resume</string>
+    <string name="duraklat">Pause</string>
+    <string name="tur">Lap</string>
+    <string name="tur_n">Lap %1$d</string>
+    <string name="sifirla">Reset</string>
+    <string name="bir_dk_ekle">+1 min</string>
+    <string name="sure_doldu">Time\'s up</string>
+    <string name="durdurmak_icin_kaydir">Slide to stop</string>
+    <string name="birim_sa">h</string>
+    <string name="birim_dk">m</string>
+    <string name="birim_sn">s</string>
 </resources>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/bg_kart"
+    android:orientation="vertical"
+    android:paddingLeft="18dp"
+    android:paddingTop="14dp"
+    android:paddingRight="14dp"
+    android:paddingBottom="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/zKalan"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFeatureSettings="tnum"
+            android:includeFontPadding="false"
+            android:textColor="@color/metin"
+            android:textSize="44sp" />
+
+        <ImageButton
+            android:id="@+id/zSil"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/sil"
+            android:src="@drawable/ic_kapat" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/zToplam"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/zSifirla"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chip"
+            android:backgroundTint="@color/ayrac"
+            android:gravity="center"
+            android:text="@string/sifirla"
+            android:textColor="@color/metin"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/zEkle"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chip"
+            android:backgroundTint="@color/ayrac"
+            android:gravity="center"
+            android:text="@string/bir_dk_ekle"
+            android:textColor="@color/metin"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/zBaslat"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_pill_buton"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

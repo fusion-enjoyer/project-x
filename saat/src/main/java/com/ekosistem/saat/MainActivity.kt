@@ -44,6 +44,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var kaydirici: View
     private var vurgu = 0
     private var sekme = SEKME_ALARM
+    private lateinit var kronometre: KronometreSekmesi
+    private lateinit var zamanlayici: ZamanlayiciSekmesi
     private val isleyici = Handler(Looper.getMainLooper())
     private val dakikalik = object : Runnable {
         override fun run() {
@@ -59,11 +61,17 @@ class MainActivity : AppCompatActivity() {
         liste = findViewById(R.id.alarmListesi)
         bosDurum = findViewById(R.id.bosDurum)
         kaydirici = findViewById(R.id.kaydirici)
-        sekme = savedInstanceState?.getInt("sekme", SEKME_ALARM) ?: SEKME_ALARM
+        sekme = savedInstanceState?.getInt("sekme", SEKME_ALARM)
+            ?: intent.getIntExtra(EK_SEKME, SEKME_ALARM)
+        kronometre = KronometreSekmesi(this)
+        zamanlayici = ZamanlayiciSekmesi(this)
 
         findViewById<ImageButton>(R.id.btnYeni).apply {
             imageTintList = ColorStateList.valueOf(Tasarim.vurguUzeri(this@MainActivity))
-            setOnClickListener { startActivity(Intent(this@MainActivity, DuzenleActivity::class.java)) }
+            setOnClickListener {
+                if (sekme == SEKME_ZAMANLAYICI) zamanlayici.yeniDugmesi()
+                else startActivity(Intent(this@MainActivity, DuzenleActivity::class.java))
+            }
         }
         findViewById<View>(R.id.btnAyarlar).setOnClickListener {
             startActivity(Intent(this, AyarlarActivity::class.java))
@@ -90,22 +98,37 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         isleyici.removeCallbacks(dakikalik)
+        kronometre.durdur()
+        zamanlayici.durdur()
+    }
+
+    override fun onNewIntent(yeni: Intent) {
+        super.onNewIntent(yeni)
+        if (yeni.hasExtra(EK_SEKME)) {
+            sekme = yeni.getIntExtra(EK_SEKME, SEKME_ALARM)
+            sekmeleriKur()
+        }
     }
 
     private fun yenile() {
         val alarmlar = Depo.alarmlar(this).filter { it.id != DENEME_ID }
         ustBilgiyiYaz(alarmlar)
         uyariyiYaz()
+        kronometre.goster(sekme == SEKME_KRONOMETRE)
+        zamanlayici.goster(sekme == SEKME_ZAMANLAYICI)
         if (sekme != SEKME_ALARM) {
             liste.removeAllViews()
             kaydirici.visibility = View.GONE
-            findViewById<View>(R.id.btnYeni).visibility = View.GONE
-            val ikon = when (sekme) {
-                SEKME_DUNYA -> R.drawable.ic_dunya
-                SEKME_ZAMANLAYICI -> R.drawable.ic_zamanlayici
-                else -> R.drawable.ic_kronometre
+            findViewById<View>(R.id.btnYeni).visibility =
+                if (sekme == SEKME_ZAMANLAYICI) View.VISIBLE else View.GONE
+            if (sekme == SEKME_DUNYA) {
+                BosDurum.goster(
+                    bosDurum, R.drawable.ic_dunya,
+                    getString(R.string.sirada_baslik), getString(R.string.sirada_aciklama)
+                )
+            } else {
+                bosDurum.visibility = View.GONE
             }
-            BosDurum.goster(bosDurum, ikon, getString(R.string.sirada_baslik), getString(R.string.sirada_aciklama))
             return
         }
         findViewById<View>(R.id.btnYeni).visibility = View.VISIBLE
@@ -409,6 +432,7 @@ class MainActivity : AppCompatActivity() {
         const val SEKME_DUNYA = 1
         const val SEKME_ZAMANLAYICI = 2
         const val SEKME_KRONOMETRE = 3
+        const val EK_SEKME = "sekme"
 
         /** Ayarlar'daki "Alarmı dene"nin listede görünmeyen alarmı. */
         const val DENEME_ID = 0

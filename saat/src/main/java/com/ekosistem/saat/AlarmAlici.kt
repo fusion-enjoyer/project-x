@@ -19,6 +19,12 @@ class AlarmAlici : BroadcastReceiver() {
                     .putExtra(AlarmKurucu.EK_ID, id)
                 ContextCompat.startForegroundService(context, hizmet)
             }
+            ZamanlayiciKurucu.EYLEM_DOLDU -> ContextCompat.startForegroundService(
+                context,
+                Intent(context, ZamanlayiciHizmeti::class.java)
+                    .setAction(ZamanlayiciHizmeti.EYLEM_BASLA)
+                    .putExtra(AlarmKurucu.EK_ID, id)
+            )
             AlarmKurucu.EYLEM_YAKLASAN -> {
                 val alarm = Depo.alarm(context, id) ?: return
                 if (alarm.acik && alarm.kurulanZaman > System.currentTimeMillis()) {

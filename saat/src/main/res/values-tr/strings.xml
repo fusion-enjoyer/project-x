@@ -133,4 +133,17 @@
     <string name="surum">Sürüm</string>
     <string name="izin_yok_rozet">İnternet izni yok</string>
     <string name="izin_yok_aciklama">Bu uygulama internete hiç bağlanmaz. Alarmların cihazında kalır.</string>
+    <string name="basla">Başlat</string>
+    <string name="durdur">Durdur</string>
+    <string name="devam">Devam</string>
+    <string name="duraklat">Duraklat</string>
+    <string name="tur">Tur</string>
+    <string name="tur_n">Tur %1$d</string>
+    <string name="sifirla">Sıfırla</string>
+    <string name="bir_dk_ekle">+1 dk</string>
+    <string name="sure_doldu">Süre doldu</string>
+    <string name="durdurmak_icin_kaydir">Durdurmak için kaydır</string>
+    <string name="birim_sa">sa</string>
+    <string name="birim_dk">dk</string>
+    <string name="birim_sn">sn</string>
 </resources>
