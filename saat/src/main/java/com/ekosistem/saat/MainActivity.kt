@@ -124,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         ustBilgiyiYaz(alarmlar)
         uyariyiYaz()
         tatilSeridiniYaz()
+        findViewById<View>(R.id.btnTatil).visibility = if (sekme == SEKME_ALARM) View.VISIBLE else View.GONE
         bosDurum.translationY = 0f
         kronometre.goster(sekme == SEKME_KRONOMETRE)
         zamanlayici.goster(sekme == SEKME_ZAMANLAYICI)

@@ -26,12 +26,21 @@ object Tasarim {
     /** Vurgu zemini üzerine gelecek metin/ikon rengi (siyah ya da beyaz). */
     fun vurguUzeri(context: Context): Int = uzerindekiRenk(vurgu(context))
 
+    /**
+     * Zemin üzerine siyah mı beyaz mı yazılsın: WCAG kontrastı yüksek olan
+     * kazanır. (Eskiden parlaklık eşiği vardı; koyu turuncu #F97316 üzerine
+     * beyaz seçiliyor, kontrast 2,8:1 kalıyordu.)
+     */
     fun uzerindekiRenk(renk: Int): Int {
-        val r = (renk shr 16) and 0xFF
-        val g = (renk shr 8) and 0xFF
-        val b = renk and 0xFF
-        val parlaklik = (r * 299 + g * 587 + b * 114) / 1000
-        return if (parlaklik > 150) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
+        fun kanal(k: Int): Double {
+            val c = k / 255.0
+            return if (c <= 0.03928) c / 12.92 else Math.pow((c + 0.055) / 1.055, 2.4)
+        }
+        val l = 0.2126 * kanal((renk shr 16) and 0xFF) +
+            0.7152 * kanal((renk shr 8) and 0xFF) + 0.0722 * kanal(renk and 0xFF)
+        val beyazKontrast = 1.05 / (l + 0.05)
+        val siyahKontrast = (l + 0.05) / 0.05
+        return if (siyahKontrast > beyazKontrast) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
     }
 
     /** Vurgunun pastel tonu: seçili çip, ikon kartı zemini (%12). */

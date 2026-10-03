@@ -80,6 +80,7 @@ class DuzenleActivity : AppCompatActivity() {
             val ekler = java.text.DateFormatSymbols.getInstance().amPmStrings
             tekOgle.visibility = View.VISIBLE
             tekOgle.adet = 2
+            tekOgle.olcek = 0.7f
             tekOgle.metin = { ekler[it] }
             tekOgle.ekranOkuyucuAdi = getString(R.string.alarm)
             tekSaat.adet = 12
@@ -183,7 +184,7 @@ class DuzenleActivity : AppCompatActivity() {
                 text = harfler[g]
                 textSize = 14f
                 gravity = Gravity.CENTER
-                setBackgroundResource(R.drawable.bg_gun)
+                setBackgroundResource(R.drawable.bg_gun_hedef)
                 backgroundTintList = ColorStateList.valueOf(
                     if (secili) vurgu else ContextCompat.getColor(this@DuzenleActivity, TR.color.kart)
                 )
@@ -196,7 +197,7 @@ class DuzenleActivity : AppCompatActivity() {
                     tekrarYaz()
                 }
             }
-            val lp = LinearLayout.LayoutParams((42 * d).toInt(), (42 * d).toInt())
+            val lp = LinearLayout.LayoutParams((42 * d).toInt(), (48 * d).toInt())
             kutu.addView(tv, lp)
             if (g < 6) kutu.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
         }

@@ -46,11 +46,23 @@ class SayiTekerlegi @JvmOverloads constructor(
             invalidate()
         }
 
+    /** Tekerleğin genel boyutu; ÖÖ/ÖS tekerleği rakamlardan küçük tutulur. */
+    var olcek = 1f
+        set(deger) {
+            field = deger
+            requestLayout()
+            invalidate()
+        }
+
     private val d = resources.displayMetrics.density
-    private val sp = resources.displayMetrics.scaledDensity
-    private val satir = 64f * d
-    private val buyuk = 64f * sp
-    private val kucuk = 28f * sp
+
+    // Satır yüksekliği ve yazı birlikte ölçeklenir; yazı ölçeği %120'de durur,
+    // yoksa üç tekerlek ekrana sığmaz ve rakamlar komşularına biner.
+    private val yaziOlcegi get() = resources.configuration.fontScale.coerceIn(1f, 1.2f)
+    // Satır aralığı ortak: ÖÖ/ÖS komşuları rakam komşularıyla aynı hizada kalsın.
+    private val satir get() = 64f * d * yaziOlcegi
+    private val buyuk get() = 64f * d * yaziOlcegi * olcek
+    private val kucuk get() = 28f * d * yaziOlcegi * olcek
     private val anaRenk = ContextCompat.getColor(context, TR.color.metin)
     private val solukRenk = ContextCompat.getColor(context, TR.color.metin_ikincil)
     private val boya = Paint(Paint.ANTI_ALIAS_FLAG).apply {

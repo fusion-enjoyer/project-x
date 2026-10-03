@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Çip: görünüşü 32dp, dokunma alanı 48dp (dikeyde 8dp boş pay). -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetTop="8dp" android:insetBottom="8dp">
+    <shape android:shape="rectangle">
+        <solid android:color="@color/kart" />
+        <corners android:radius="16dp" />
+    </shape>
+</inset>

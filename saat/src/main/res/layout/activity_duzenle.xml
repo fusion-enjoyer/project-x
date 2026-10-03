@@ -22,8 +22,8 @@
 
             <ImageButton
                 android:id="@+id/btnVazgec"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="@drawable/bg_daire"
                 android:backgroundTint="@color/kart"
                 android:contentDescription="@string/vazgec"
@@ -42,8 +42,8 @@
 
             <ImageButton
                 android:id="@+id/btnSil"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="@drawable/bg_daire"
                 android:backgroundTint="@color/kart"
                 android:contentDescription="@string/sil"
@@ -131,8 +131,8 @@
                     <TextView
                         android:id="@+id/cipHaftaIci"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:background="@drawable/bg_chip"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_chip_hedef"
                         android:gravity="center"
                         android:paddingLeft="12dp"
                         android:paddingRight="12dp"
@@ -142,9 +142,9 @@
                     <TextView
                         android:id="@+id/cipTarih"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="48dp"
                         android:layout_marginLeft="6dp"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_chip_hedef"
                         android:drawablePadding="6dp"
                         android:gravity="center"
                         android:paddingLeft="12dp"
