@@ -34,7 +34,9 @@ data class Alarm(
     /** Ertelenmişse yeniden çalacağı an (ms); 0 = ertelenmedi. */
     val ertelemeZamani: Long = 0,
     /** Son kurulan çalma anı (ms); kaçırılan alarmı fark etmek için. */
-    val kurulanZaman: Long = 0
+    val kurulanZaman: Long = 0,
+    /** Kapatma görevi: [Gorev.YOK] … [Gorev.ZOR]. */
+    val gorev: Int = Gorev.YOK
 ) {
     val tekrarli: Boolean get() = gunler != 0
 
@@ -57,6 +59,7 @@ data class Alarm(
         .put("ertelemeSayisi", ertelemeSayisi)
         .put("ertelemeZamani", ertelemeZamani)
         .put("kurulanZaman", kurulanZaman)
+        .put("gorev", gorev)
 
     companion object {
         const val SES_YERLESIK = "yerlesik"
@@ -82,7 +85,8 @@ data class Alarm(
             ertelemeSiniri = o.optInt("ertelemeSiniri", 3),
             ertelemeSayisi = o.optInt("ertelemeSayisi", 0),
             ertelemeZamani = o.optLong("ertelemeZamani", 0),
-            kurulanZaman = o.optLong("kurulanZaman", 0)
+            kurulanZaman = o.optLong("kurulanZaman", 0),
+            gorev = o.optInt("gorev", Gorev.YOK).coerceIn(Gorev.YOK, Gorev.ZOR)
         )
 
         fun listedenJson(alarmlar: List<Alarm>): String {

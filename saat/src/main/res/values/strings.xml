@@ -175,4 +175,15 @@
     <string name="tatil_bitir">End holiday mode</string>
     <string name="tatil_serit">Holiday mode · alarms ring again on %1$s</string>
     <string name="tatilde_rozet">On holiday</string>
+    <string name="gorev">Dismiss task</string>
+    <string name="gorev_yok">None</string>
+    <string name="gorev_kolay">Easy · 1 sum</string>
+    <string name="gorev_orta">Medium · 2 products</string>
+    <string name="gorev_zor">Hard · 3 problems</string>
+    <string name="gorev_aciklama">To turn the alarm off you solve arithmetic first. Snooze still works, and the alarm falls silent on its own after the usual time.</string>
+    <string name="gorev_icin_kaydir">Swipe to start the task</string>
+    <string name="gorev_yanlis">Wrong, try again</string>
+    <string name="gorev_ilerleme">Problem %1$d of %2$d</string>
+    <string name="gorev_sil">Delete</string>
+    <string name="gorev_tamam">Check answer</string>
 </resources>

@@ -169,4 +169,15 @@
     <string name="tatil_bitir">Tatil modunu bitir</string>
     <string name="tatil_serit">Tatil modu · alarmlar %1$s günü yeniden çalar</string>
     <string name="tatilde_rozet">Tatilde</string>
+    <string name="gorev">Kapatma görevi</string>
+    <string name="gorev_yok">Yok</string>
+    <string name="gorev_kolay">Kolay · 1 toplama</string>
+    <string name="gorev_orta">Orta · 2 çarpma</string>
+    <string name="gorev_zor">Zor · 3 işlem</string>
+    <string name="gorev_aciklama">Alarmı kapatmak için önce işlem çözersin. Erteleme yine çalışır, alarm da her zamanki süre sonunda kendiliğinden susar.</string>
+    <string name="gorev_icin_kaydir">Görevi başlatmak için kaydır</string>
+    <string name="gorev_yanlis">Yanlış, tekrar dene</string>
+    <string name="gorev_ilerleme">%1$d. işlem / %2$d</string>
+    <string name="gorev_sil">Sil</string>
+    <string name="gorev_tamam">Cevabı kontrol et</string>
 </resources>

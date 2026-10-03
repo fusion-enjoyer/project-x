@@ -48,6 +48,18 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Kapatma görevi paneli: kaydırınca açılır, kodla doldurulur. -->
+    <LinearLayout
+        android:id="@+id/calmaGorev"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/calmaErteleSatiri"
         android:layout_width="match_parent"

@@ -6,12 +6,15 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.ipucuVer
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -26,6 +29,13 @@ class CalmaActivity : ComponentActivity() {
 
     private var id = -1
     private var ertelemeDk = 10
+    private var gorev = Gorev.YOK
+    private var sorular = emptyList<Gorev.Soru>()
+    private var soruNo = 0
+    private var girdi = ""
+    private lateinit var gorevSoru: TextView
+    private lateinit var gorevCevap: TextView
+    private lateinit var gorevIlerleme: TextView
     private val isleyici = Handler(Looper.getMainLooper())
     private val saatiGuncelle = object : Runnable {
         override fun run() {
@@ -46,6 +56,7 @@ class CalmaActivity : ComponentActivity() {
             return
         }
         ertelemeDk = alarm.ertelemeDk
+        gorev = alarm.gorev
 
         findViewById<TextView>(R.id.calmaEtiket).apply {
             text = alarm.etiket
@@ -60,14 +71,21 @@ class CalmaActivity : ComponentActivity() {
         ertelemeYaz()
 
         findViewById<KaydirmaDugmesi>(R.id.calmaKapat).apply {
-            ipucu = getString(R.string.kapatmak_icin_kaydir)
+            ipucu = getString(if (gorev > Gorev.YOK) R.string.gorev_icin_kaydir else R.string.kapatmak_icin_kaydir)
             kaydirildi = { kapat() }
         }
         altYaz(alarm, ertelenebilir)
+        if (gorev > Gorev.YOK && intent.getBooleanExtra(EK_GOREV, false)) gorevAc()
         // Uyurken yanlışlıkla geri tuşu ya da geri hareketi alarmı susturmasın.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {}
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (gorev > Gorev.YOK && intent.getBooleanExtra(EK_GOREV, false)) gorevAc()
     }
 
     override fun onResume() {
@@ -108,9 +126,107 @@ class CalmaActivity : ComponentActivity() {
         finish()
     }
 
+    /** Görevli alarmda kapatmak önce görev panelini açar; görev çözülünce [bitir]. */
     private fun kapat() {
+        if (gorev > Gorev.YOK) gorevAc() else bitir()
+    }
+
+    private fun bitir() {
         CalmaHizmeti.eylem(this, CalmaHizmeti.EYLEM_KAPAT)
         finish()
+    }
+
+    // --- Kapatma görevi ---
+
+    private fun gorevAc() {
+        val panel = findViewById<LinearLayout>(R.id.calmaGorev)
+        if (panel.visibility == View.VISIBLE) return
+        sorular = Gorev.sorular(gorev)
+        soruNo = 0
+        girdi = ""
+        // Tuş takımına yer: büyük saat küçülür, kaydırma düğmesi gider.
+        findViewById<View>(R.id.calmaTarih).visibility = View.GONE
+        findViewById<TextView>(R.id.calmaSaat).textSize = 44f
+        findViewById<View>(R.id.calmaKapat).visibility = View.GONE
+        panel.visibility = View.VISIBLE
+        panel.removeAllViews()
+        val d = resources.displayMetrics.density
+
+        gorevIlerleme = TextView(this).apply {
+            setTextColor(0xFF8B867D.toInt()); textSize = 13f
+        }
+        gorevSoru = TextView(this).apply {
+            setTextColor(0xFFF2EFE9.toInt()); textSize = 34f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        gorevCevap = TextView(this).apply {
+            setTextColor(0xFFF2EFE9.toInt()); textSize = 28f
+            gravity = Gravity.CENTER
+            setHintTextColor(0xFFE5736B.toInt())
+            setBackgroundResource(R.drawable.bg_calma_hap)
+        }
+        panel.addView(gorevIlerleme)
+        panel.addView(gorevSoru, LinearLayout.LayoutParams(-2, -2).apply { topMargin = (4 * d).toInt() })
+        panel.addView(gorevCevap, LinearLayout.LayoutParams(-1, (52 * d).toInt()).apply {
+            topMargin = (10 * d).toInt(); bottomMargin = (8 * d).toInt()
+        })
+        val tuslar = listOf(
+            listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"),
+            listOf("⌫", "0", "✓")
+        )
+        for (sira in tuslar) {
+            val satir = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            for (t in sira) {
+                val tus = TextView(this).apply {
+                    text = t
+                    gravity = Gravity.CENTER
+                    textSize = 24f
+                    setTextColor(if (t == "✓") 0xFFFFFFFF.toInt() else 0xFFF2EFE9.toInt())
+                    setBackgroundResource(R.drawable.bg_calma_hap)
+                    if (t == "✓") backgroundTintList = android.content.res.ColorStateList.valueOf(Tasarim.vurgu(this@CalmaActivity))
+                    contentDescription = when (t) {
+                        "⌫" -> getString(R.string.gorev_sil)
+                        "✓" -> getString(R.string.gorev_tamam)
+                        else -> t
+                    }
+                    setOnClickListener { gorevTus(t) }
+                }
+                satir.addView(tus, LinearLayout.LayoutParams(0, (50 * d).toInt(), 1f).apply {
+                    setMargins((4 * d).toInt(), (3 * d).toInt(), (4 * d).toInt(), (3 * d).toInt())
+                })
+            }
+            panel.addView(satir, LinearLayout.LayoutParams(-1, -2))
+        }
+        gorevYaz()
+    }
+
+    private fun gorevTus(t: String) {
+        when (t) {
+            "⌫" -> girdi = girdi.dropLast(1)
+            "✓" -> {
+                if (Gorev.dogruMu(sorular[soruNo], girdi)) {
+                    soruNo++
+                    girdi = ""
+                    if (soruNo >= sorular.size) {
+                        bitir()
+                        return
+                    }
+                } else {
+                    girdi = ""
+                    gorevCevap.hint = getString(R.string.gorev_yanlis)
+                    gorevCevap.performHapticFeedback(if (Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.REJECT else android.view.HapticFeedbackConstants.LONG_PRESS)
+                }
+            }
+            else -> if (girdi.length < 6) girdi += t
+        }
+        gorevYaz()
+    }
+
+    private fun gorevYaz() {
+        gorevIlerleme.text = getString(R.string.gorev_ilerleme, soruNo + 1, sorular.size)
+        gorevSoru.text = "${sorular[soruNo].metin} = ?"
+        gorevCevap.text = girdi
+        if (girdi.isNotEmpty()) gorevCevap.hint = ""
     }
 
     private fun sureDegistir(yon: Int) {
@@ -177,9 +293,13 @@ class CalmaActivity : ComponentActivity() {
         /** Erteleme süresi seçenekleri (dk); 60'a kadar (Samsung'da da öyle). */
         val SURELER = intArrayOf(1, 5, 10, 15, 20, 30, 45, 60)
 
-        fun niyet(context: Context, id: Int): Intent =
+        const val EK_GOREV = "gorev"
+
+        /** [gorev] doğruysa ekran doğrudan görev paneliyle açılır (bildirimdeki "Kapat"). */
+        fun niyet(context: Context, id: Int, gorev: Boolean = false): Intent =
             Intent(context, CalmaActivity::class.java)
                 .putExtra(AlarmKurucu.EK_ID, id)
+                .putExtra(EK_GOREV, gorev)
                 .addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION)
     }
 }

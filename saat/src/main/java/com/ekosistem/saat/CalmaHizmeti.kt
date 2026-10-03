@@ -211,7 +211,16 @@ class CalmaHizmeti : Service() {
                         hizmetNiyeti(context, EYLEM_ERTELE, 1)
                     )
                 }
-                b.addAction(0, context.getString(R.string.kapat_eylem), hizmetNiyeti(context, EYLEM_KAPAT, 2))
+                // Görevli alarm bildirimden görevsiz kapatılamaz: ekran görev paneliyle açılır.
+                val kapat = if (alarm.gorev > Gorev.YOK) {
+                    PendingIntent.getActivity(
+                        context, 3, CalmaActivity.niyet(context, alarm.id, gorev = true),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                } else {
+                    hizmetNiyeti(context, EYLEM_KAPAT, 2)
+                }
+                b.addAction(0, context.getString(R.string.kapat_eylem), kapat)
             }
             return b.build()
         }

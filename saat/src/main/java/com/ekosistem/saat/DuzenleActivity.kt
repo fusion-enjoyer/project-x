@@ -214,7 +214,8 @@ class DuzenleActivity : AppCompatActivity() {
             alarm = alarm.copy(titresim = !alarm.titresim)
             ayarlariYaz()
         }
-        satir(kutu, getString(R.string.erteleme), ertelemeOzeti(), ayracYok = true) { ertelemeSec() }
+        satir(kutu, getString(R.string.erteleme), ertelemeOzeti()) { ertelemeSec() }
+        satir(kutu, getString(R.string.gorev), gorevAdi(alarm.gorev), ayracYok = true) { gorevSec() }
     }
 
     private fun satir(
@@ -346,6 +347,25 @@ class DuzenleActivity : AppCompatActivity() {
         for (sn in intArrayOf(0, 15, 30, 60, 120)) {
             sayfa.madde(R.drawable.ic_alarm, yukselmeAdi(sn), secili = alarm.kademeliSn == sn) {
                 alarm = alarm.copy(kademeliSn = sn); ayarlariYaz()
+            }
+        }
+        sayfa.goster()
+    }
+
+    private fun gorevAdi(gorev: Int): String = getString(
+        when (gorev) {
+            Gorev.KOLAY -> R.string.gorev_kolay
+            Gorev.ORTA -> R.string.gorev_orta
+            Gorev.ZOR -> R.string.gorev_zor
+            else -> R.string.gorev_yok
+        }
+    )
+
+    private fun gorevSec() {
+        val sayfa = AltSayfa(this).baslik(getString(R.string.gorev)).mesaj(getString(R.string.gorev_aciklama))
+        for (g in Gorev.YOK..Gorev.ZOR) {
+            sayfa.madde(R.drawable.ic_alarm, gorevAdi(g), secili = alarm.gorev == g) {
+                alarm = alarm.copy(gorev = g); ayarlariYaz()
             }
         }
         sayfa.goster()
