@@ -32,7 +32,7 @@ object AlarmKurucu {
         if (yeni != eski) Depo.kaydet(context, yeni)
         // Açılış, saat değişimi gibi olaylarda zamanlayıcılar da yeniden kurulsun.
         ZamanlayiciKurucu.hepsiniKur(context)
-        SaatWidget.guncelle(context)
+        Widgetlar.hepsiniGuncelle(context)
     }
 
     /**

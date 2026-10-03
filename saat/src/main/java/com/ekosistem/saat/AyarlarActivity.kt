@@ -60,6 +60,18 @@ class AyarlarActivity : AppCompatActivity() {
         AyarSatiri.kur(dene, R.drawable.ic_ayar_alarm, notr, getString(R.string.alarmi_dene), getString(R.string.alarmi_dene_ozet))
         dene.setOnClickListener { alarmiDene() }
 
+        val saatModu = findViewById<View>(R.id.satirSaatModu)
+        AyarSatiri.kur(saatModu, R.drawable.ic_saat_modu, vurgu, getString(R.string.saat_modu), getString(R.string.saat_modu_ozet))
+        saatModu.setOnClickListener { startActivity(android.content.Intent(this, SaatModuActivity::class.java)) }
+
+        val koruyucu = findViewById<View>(R.id.satirEkranKoruyucu)
+        AyarSatiri.kur(koruyucu, R.drawable.ic_saat_modu, notr, getString(R.string.ekran_koruyucu), getString(R.string.ekran_koruyucu_ozet))
+        koruyucu.setOnClickListener {
+            // Telefonun ekran koruyucu ayarı; üreticiye göre yoksa genel ayarlara düşer.
+            runCatching { startActivity(android.content.Intent(android.provider.Settings.ACTION_DREAM_SETTINGS)) }
+                .onFailure { runCatching { startActivity(android.content.Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)) } }
+        }
+
         val surum = findViewById<View>(R.id.satirSurum)
         AyarSatiri.kur(
             surum, R.drawable.ic_ayar_bilgi, notr, getString(R.string.surum),

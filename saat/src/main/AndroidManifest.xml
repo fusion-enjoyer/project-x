@@ -47,6 +47,30 @@
             android:name=".AyarlarActivity"
             android:exported="false" />
 
+        <!-- Yatay saat modu (tam ekran, ekran açık kalır). -->
+        <activity
+            android:name=".SaatModuActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.Saat.Calma" />
+
+        <!-- Telefon ayarlarında Ekran koruyucu olarak seçilebilir. -->
+        <service
+            android:name=".SaatEkranKoruyucu"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/saat_modu"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.dream"
+                android:resource="@xml/ekran_koruyucu" />
+        </service>
+
         <!-- Alarm ekranı: kilit açılmadan da açılır, son uygulamalarda kalmaz,
              uygulamanın kendi görev yığınına karışmaz. -->
         <activity
@@ -97,6 +121,59 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_saat" />
         </receiver>
+
+
+        <receiver
+            android:name=".SaatKucukWidget"
+            android:exported="false"
+            android:label="@string/widget_kucuk_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_saat_kucuk" />
+        </receiver>
+
+        <receiver
+            android:name=".AlarmWidget"
+            android:exported="false"
+            android:label="@string/widget_alarm_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_alarm" />
+        </receiver>
+
+        <receiver
+            android:name=".DunyaWidget"
+            android:exported="false"
+            android:label="@string/widget_dunya_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_dunya" />
+        </receiver>
+
+        <receiver
+            android:name=".ZamanlayiciWidget"
+            android:exported="false"
+            android:label="@string/widget_zamanlayici_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_zamanlayici" />
+        </receiver>
+
+        <receiver
+            android:name=".HizliZamanlayiciAlici"
+            android:exported="false" />
 
         <receiver
             android:name=".AlarmAlici"

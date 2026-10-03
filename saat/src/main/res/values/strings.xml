@@ -207,4 +207,20 @@
     <string name="bos_klasor_aciklama">Add one here, or swipe an alarm right to move it in.</string>
     <string name="geri_al">Undo</string>
     <string name="sehir_silindi">%1$s removed</string>
+    <string name="saat_modu">Clock mode</string>
+    <string name="saat_modu_ozet">Full-screen landscape clock for your bedside</string>
+    <string name="saat_modu_ipucu">Tap: brightness · Back: exit</string>
+    <string name="ekran_koruyucu">Use as screen saver</string>
+    <string name="ekran_koruyucu_ozet">Pick Clock in your phone\'s screen saver settings</string>
+    <string name="sonraki_alarm_etiket">Next alarm</string>
+    <string name="alarm_yok_kisa">No alarm</string>
+    <string name="widget_kucuk_adi">Digital clock</string>
+    <string name="widget_kucuk_aciklama">A small clock with the day</string>
+    <string name="widget_alarm_adi">Next alarm</string>
+    <string name="widget_alarm_aciklama">Your next alarm at a glance</string>
+    <string name="widget_dunya_adi">World clocks</string>
+    <string name="widget_dunya_aciklama">Your first four cities</string>
+    <string name="widget_zamanlayici_adi">Quick timer</string>
+    <string name="widget_zamanlayici_aciklama">Start a timer with one tap</string>
+    <string name="zamanlayici_basladi">Timer started</string>
 </resources>

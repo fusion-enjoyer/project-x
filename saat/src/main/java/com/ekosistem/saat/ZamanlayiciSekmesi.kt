@@ -168,6 +168,7 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
             contentDescription = activity.getString(R.string.hazir_kaydet_aciklama)
             setOnClickListener {
                 Depo.hazirSurelerKaydet(activity, Depo.hazirSureler(activity) + yeniMs)
+                Widgetlar.hepsiniGuncelle(activity)
                 hazirlariYaz()
             }
         })
@@ -189,6 +190,7 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
             }
             .madde(R.drawable.ic_sil, activity.getString(R.string.sil), tehlikeli = true) {
                 Depo.hazirSurelerKaydet(activity, Depo.hazirSureler(activity) - ms)
+                Widgetlar.hepsiniGuncelle(activity)
                 hazirlariYaz()
             }
             .goster()

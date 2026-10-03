@@ -93,7 +93,7 @@ class SehirSecActivity : AppCompatActivity() {
         listeGorunumu.setOnItemClickListener { _, _, i, _ ->
             val s = satirlar[i] as? Satir.Kayit ?: return@setOnItemClickListener
             Depo.sehirleriKaydet(this, Depo.sehirler(this) + s.sehir.id)
-            SaatWidget.guncelle(this)
+            Widgetlar.hepsiniGuncelle(this)
             finish()
         }
 

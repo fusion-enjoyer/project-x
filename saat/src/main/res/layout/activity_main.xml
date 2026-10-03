@@ -33,6 +33,18 @@
                 android:textStyle="bold" />
 
             <ImageButton
+                android:id="@+id/btnSaatModu"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginRight="8dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/saat_modu"
+                android:src="@drawable/ic_saat_modu"
+                android:visibility="gone"
+                app:tint="@color/metin" />
+
+            <ImageButton
                 android:id="@+id/btnTatil"
                 android:layout_width="48dp"
                 android:layout_height="48dp"

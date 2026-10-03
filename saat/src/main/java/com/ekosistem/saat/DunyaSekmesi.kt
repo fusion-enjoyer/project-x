@@ -45,11 +45,11 @@ class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
     private fun sehriSil(id: String, ad: String) {
         val onceki = Depo.sehirler(activity)
         Depo.sehirleriKaydet(activity, onceki - id)
-        SaatWidget.guncelle(activity)
+        Widgetlar.hepsiniGuncelle(activity)
         yenile()
         GeriAl.goster(activity, activity.getString(R.string.sehir_silindi, ad)) {
             Depo.sehirleriKaydet(activity, onceki)
-            SaatWidget.guncelle(activity)
+            Widgetlar.hepsiniGuncelle(activity)
             yenile()
         }
     }

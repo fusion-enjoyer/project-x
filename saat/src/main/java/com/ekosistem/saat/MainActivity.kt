@@ -121,8 +121,11 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.uyariSeridi).setOnClickListener { Kontrol.sayfaGoster(this) }
         findViewById<View>(R.id.btnTatil).setOnClickListener { tatilSayfasi() }
+        findViewById<View>(R.id.btnSaatModu).setOnClickListener {
+            startActivity(Intent(this, SaatModuActivity::class.java))
+        }
         findViewById<View>(R.id.tatilSeridi).setOnClickListener { tatilSayfasi() }
-        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnTatil))
+        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnTatil), findViewById(R.id.btnSaatModu))
         onBackPressedDispatcher.addCallback(this, geriSekme)
         sekmeleriKur()
     }
@@ -202,6 +205,7 @@ class MainActivity : AppCompatActivity() {
         tatilSeridiniYaz()
         klasorSeridiniYaz()
         findViewById<View>(R.id.btnTatil).visibility = if (sekme == SEKME_ALARM) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.btnSaatModu).visibility = if (sekme == SEKME_DUNYA) View.VISIBLE else View.GONE
         bosDurum.translationY = 0f
         kronometre.goster(sekme == SEKME_KRONOMETRE)
         zamanlayici.goster(sekme == SEKME_ZAMANLAYICI)

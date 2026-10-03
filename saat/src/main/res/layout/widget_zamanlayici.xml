@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hızlı zamanlayıcı (4x1): ilk dört hazır süre; dokununca hemen başlar. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/widgetZ1"
+        android:text="1m"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_widget_cip"
+        android:gravity="center"
+        android:textColor="@color/metin"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widgetZ2"
+        android:text="3m"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_widget_cip"
+        android:gravity="center"
+        android:textColor="@color/metin"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widgetZ3"
+        android:text="5m"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_widget_cip"
+        android:gravity="center"
+        android:textColor="@color/metin"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widgetZ4"
+        android:text="10m"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_widget_cip"
+        android:gravity="center"
+        android:textColor="@color/metin"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+</LinearLayout>

@@ -201,4 +201,20 @@
     <string name="bos_klasor_aciklama">Buraya ekle ya da bir alarmı sağa kaydırıp taşı.</string>
     <string name="geri_al">Geri al</string>
     <string name="sehir_silindi">%1$s kaldırıldı</string>
+    <string name="saat_modu">Saat modu</string>
+    <string name="saat_modu_ozet">Başucu için tam ekran yatay saat</string>
+    <string name="saat_modu_ipucu">Dokun: parlaklık · Geri: çık</string>
+    <string name="ekran_koruyucu">Ekran koruyucu olarak kullan</string>
+    <string name="ekran_koruyucu_ozet">Telefonun ekran koruyucu ayarında Saat\'i seç</string>
+    <string name="sonraki_alarm_etiket">Sonraki alarm</string>
+    <string name="alarm_yok_kisa">Alarm yok</string>
+    <string name="widget_kucuk_adi">Dijital saat</string>
+    <string name="widget_kucuk_aciklama">Günü de gösteren küçük saat</string>
+    <string name="widget_alarm_adi">Sonraki alarm</string>
+    <string name="widget_alarm_aciklama">Sonraki alarmın bir bakışta</string>
+    <string name="widget_dunya_adi">Dünya saatleri</string>
+    <string name="widget_dunya_aciklama">İlk dört şehrin saati</string>
+    <string name="widget_zamanlayici_adi">Hızlı zamanlayıcı</string>
+    <string name="widget_zamanlayici_aciklama">Tek dokunuşla zamanlayıcı başlat</string>
+    <string name="zamanlayici_basladi">Zamanlayıcı başladı</string>
 </resources>

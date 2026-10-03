@@ -69,6 +69,13 @@
                 <include android:id="@+id/satirDene" layout="@layout/item_ayar" />
             </LinearLayout>
 
+            <TextView style="@style/BolumBasligi" android:text="@string/saat_modu" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirSaatModu" layout="@layout/item_ayar" />
+                <View style="@style/AyarAyraci" />
+                <include android:id="@+id/satirEkranKoruyucu" layout="@layout/item_ayar" />
+            </LinearLayout>
+
             <TextView style="@style/BolumBasligi" android:text="@string/hakkinda" />
             <LinearLayout style="@style/AyarKutusu">
                 <include android:id="@+id/satirSurum" layout="@layout/item_ayar" />
