@@ -38,6 +38,7 @@ object Zamanlama {
      * geçmiş alarm için null (kapatılmalı).
      */
     fun sonrakiOlagan(alarm: Alarm, simdi: Long, tz: TimeZone): Long? {
+        if (alarm.aralikli) return sonrakiAralikta(alarm, simdi, tz)
         if (!alarm.tekrarli && alarm.tarih != 0) {
             val an = gununAni(alarm.tarih, alarm.saat, alarm.dakika, tz)
             return if (an > simdi) an else null
@@ -52,6 +53,29 @@ object Zamanlama {
             if (anahtar == alarm.atla) continue
             val an = gununAni(anahtar, alarm.saat, alarm.dakika, tz)
             if (an > simdi) return an
+        }
+        return null
+    }
+
+    /**
+     * Tarih aralığı: başlangıç gününden bitiş gününe (dahil) her gün çalar;
+     * hafta günü seçiliyse yalnız o günler. Aralık bitince null (alarm kapanır).
+     */
+    private fun sonrakiAralikta(alarm: Alarm, simdi: Long, tz: TimeZone): Long? {
+        val bugun = gunAnahtari(simdi, tz)
+        val ilk = maxOf(bugun, alarm.tarih)
+        val gun = Calendar.getInstance(tz).apply {
+            clear()
+            set(ilk / 10000, (ilk / 100) % 100 - 1, ilk % 100, 12, 0, 0)
+        }
+        while (gunAnahtari(gun) <= alarm.tarihBitis) {
+            val anahtar = gunAnahtari(gun)
+            val uygun = (!alarm.tekrarli || alarm.gunAcik(haftaGunu(gun))) && anahtar != alarm.atla
+            if (uygun) {
+                val an = gununAni(anahtar, alarm.saat, alarm.dakika, tz)
+                if (an > simdi) return an
+            }
+            gun.add(Calendar.DAY_OF_MONTH, 1)
         }
         return null
     }
@@ -74,7 +98,7 @@ object Zamanlama {
 
     /** Bu alarm şu an tatil modu yüzünden duruyor mu? */
     fun tatilde(alarm: Alarm, simdi: Long, tatilBitis: Long): Boolean =
-        alarm.acik && alarm.tekrarli && tatilBitis > simdi
+        alarm.acik && alarm.tekrarli && !alarm.aralikli && tatilBitis > simdi
 
     /** Tatilin bitiş anı: bugünden [gun] gün sonrasının başı (00:00). */
     fun tatilBitisi(simdi: Long, gun: Int, tz: TimeZone): Long =
@@ -111,13 +135,18 @@ object Zamanlama {
      * Çalma bittiğinde (kapatıldı ya da kaçırıldı) alarmın yeni hali: tek
      * seferlik alarm kapanır, tekrarlı alarm sıradaki güne geçer.
      */
-    fun calmaBitti(alarm: Alarm): Alarm = alarm.copy(
-        acik = alarm.tekrarli,
-        ertelemeSayisi = 0,
-        ertelemeZamani = 0,
-        kurulanZaman = 0,
-        tarih = if (alarm.tekrarli) alarm.tarih else 0
-    )
+    fun calmaBitti(alarm: Alarm): Alarm {
+        // Aralıklı alarm aralık bitene kadar açık kalır; bitince kurulum onu kapatır.
+        val surer = alarm.tekrarli || alarm.aralikli
+        return alarm.copy(
+            acik = surer,
+            ertelemeSayisi = 0,
+            ertelemeZamani = 0,
+            kurulanZaman = 0,
+            tarih = if (surer) alarm.tarih else 0,
+            tarihBitis = if (surer) alarm.tarihBitis else 0
+        )
+    }
 
     /** Ertele: yeni çalma anı ve sayaç. Sınır dolduysa null. */
     fun ertele(alarm: Alarm, simdi: Long, dakika: Int = alarm.ertelemeDk): Alarm? {

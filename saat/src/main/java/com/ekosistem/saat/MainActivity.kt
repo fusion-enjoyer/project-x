@@ -329,15 +329,22 @@ class MainActivity : AppCompatActivity() {
         val ayrinti = v.findViewById<TextView>(R.id.alarmAyrinti)
         ayrinti.setTextColor(soluk)
         if (alarm.tekrarli) {
-            ayrinti.visibility = View.GONE
             gunCipleri(gunler, alarm, acik)
+            if (alarm.aralikli) {
+                // Süzgeçli aralık: gün çiplerinin altında tarih aralığı da yazılır.
+                ayrinti.visibility = View.VISIBLE
+                ayrinti.text = aralikMetni(alarm)
+            } else {
+                ayrinti.visibility = View.GONE
+            }
         } else {
             gunler.visibility = View.GONE
             ayrinti.text = if (alarm.tarih != 0) {
                 ayrinti.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_takvim, 0, 0, 0)
                 // compoundDrawableTintList Android 6'da geldi; uyumlu yol:
                 TextViewCompat.setCompoundDrawableTintList(ayrinti, ColorStateList.valueOf(soluk))
-                "${Metinler.tarih(alarm.tarih)} · ${getString(R.string.bir_kez)}"
+                if (alarm.aralikli) aralikMetni(alarm)
+                else "${Metinler.tarih(alarm.tarih)} · ${getString(R.string.bir_kez)}"
             } else {
                 val an = Zamanlama.sonrakiOlagan(alarm, simdi, TimeZone.getDefault())
                 val gun = an?.let { Metinler.gun(this, it, simdi) } ?: ""
@@ -381,6 +388,9 @@ class MainActivity : AppCompatActivity() {
         }
         return v
     }
+
+    private fun aralikMetni(alarm: Alarm): String =
+        "${Metinler.kisaTarih(alarm.tarih)} – ${Metinler.kisaTarih(alarm.tarihBitis)}"
 
     private fun gunCipleri(kutu: LinearLayout, alarm: Alarm, acik: Boolean) {
         kutu.visibility = View.VISIBLE

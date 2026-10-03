@@ -188,4 +188,11 @@
     <string name="gorev_tamam">Check answer</string>
     <string name="yerel_saat">Local time</string>
     <string name="yeni_zamanlayici">New timer</string>
+    <string name="hazir_kaydet">Save</string>
+    <string name="hazir_kaydet_aciklama">Save this time as a preset</string>
+    <string name="hazir_baslat">Start %1$s timer</string>
+    <string name="hazir_tus_takimina">Edit on keypad</string>
+    <string name="aralik_sec">Pick a date range…</string>
+    <string name="aralik_bitis">Last day (from %1$s)</string>
+    <string name="aralik_kullan">Use this range</string>
 </resources>

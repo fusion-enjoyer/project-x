@@ -182,4 +182,11 @@
     <string name="gorev_tamam">Cevabı kontrol et</string>
     <string name="yerel_saat">Yerel saat</string>
     <string name="yeni_zamanlayici">Yeni zamanlayıcı</string>
+    <string name="hazir_kaydet">Kaydet</string>
+    <string name="hazir_kaydet_aciklama">Bu süreyi hazır ayar olarak kaydet</string>
+    <string name="hazir_baslat">%1$s zamanlayıcıyı başlat</string>
+    <string name="hazir_tus_takimina">Tuş takımında düzenle</string>
+    <string name="aralik_sec">Tarih aralığı seç…</string>
+    <string name="aralik_bitis">Son gün (%1$s tarihinden itibaren)</string>
+    <string name="aralik_kullan">Bu aralığı kullan</string>
 </resources>

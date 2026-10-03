@@ -17,6 +17,8 @@ data class Alarm(
     val gunler: Int = 0,
     /** Tekrar yoksa belirli gün (yyyyAAgg); 0 = ilk uygun an (bugün ya da yarın). */
     val tarih: Int = 0,
+    /** Tarih aralığının son günü (yyyyAAgg, dahil); 0 = aralık yok, yalnız [tarih] günü. */
+    val tarihBitis: Int = 0,
     val etiket: String = "",
     val acik: Boolean = true,
     /** Atlanacak tek çalmanın günü (yyyyAAgg); 0 = yok. */
@@ -40,6 +42,9 @@ data class Alarm(
 ) {
     val tekrarli: Boolean get() = gunler != 0
 
+    /** Başlangıç ve bitiş günü olan alarm: aralıktaki her gün (ya da seçili günler) çalar. */
+    val aralikli: Boolean get() = tarih != 0 && tarihBitis != 0
+
     fun gunAcik(gun: Int): Boolean = gunler and (1 shl gun) != 0
 
     fun json(): JSONObject = JSONObject()
@@ -48,6 +53,7 @@ data class Alarm(
         .put("dakika", dakika)
         .put("gunler", gunler)
         .put("tarih", tarih)
+        .put("tarihBitis", tarihBitis)
         .put("etiket", etiket)
         .put("acik", acik)
         .put("atla", atla)
@@ -75,6 +81,7 @@ data class Alarm(
             dakika = o.getInt("dakika").coerceIn(0, 59),
             gunler = o.optInt("gunler", 0) and HER_GUN,
             tarih = o.optInt("tarih", 0),
+            tarihBitis = o.optInt("tarihBitis", 0),
             etiket = o.optString("etiket", ""),
             acik = o.optBoolean("acik", true),
             atla = o.optInt("atla", 0),

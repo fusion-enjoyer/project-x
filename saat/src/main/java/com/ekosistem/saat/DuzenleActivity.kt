@@ -96,7 +96,10 @@ class DuzenleActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.cipHaftaIci).setOnClickListener {
-            alarm = alarm.copy(gunler = if (alarm.gunler == Alarm.HAFTA_ICI) 0 else Alarm.HAFTA_ICI, tarih = 0, atla = 0)
+            alarm = alarm.copy(
+                gunler = if (alarm.gunler == Alarm.HAFTA_ICI) 0 else Alarm.HAFTA_ICI,
+                tarih = if (alarm.aralikli) alarm.tarih else 0, atla = 0
+            )
             tekrarYaz()
         }
         findViewById<View>(R.id.cipTarih).setOnClickListener { tarihSec() }
@@ -162,7 +165,11 @@ class DuzenleActivity : AppCompatActivity() {
         cip(findViewById(R.id.cipHaftaIci), alarm.gunler == Alarm.HAFTA_ICI)
         val tarihCipi = findViewById<TextView>(R.id.cipTarih)
         if (alarm.tarih != 0) {
-            tarihCipi.text = Metinler.kisaTarih(alarm.tarih)
+            tarihCipi.text = if (alarm.aralikli) {
+                "${Metinler.kisaTarih(alarm.tarih)} – ${Metinler.kisaTarih(alarm.tarihBitis)}"
+            } else {
+                Metinler.kisaTarih(alarm.tarih)
+            }
             tarihCipi.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_takvim, 0, 0, 0)
             TextViewCompat.setCompoundDrawableTintList(tarihCipi, ColorStateList.valueOf(vurgu))
         } else {
@@ -193,7 +200,10 @@ class DuzenleActivity : AppCompatActivity() {
                 contentDescription = tamAdlar[takvimSirasi[g]]
                 isSelected = secili
                 setOnClickListener {
-                    alarm = alarm.copy(gunler = alarm.gunler xor (1 shl g), tarih = 0, atla = 0)
+                    alarm = alarm.copy(
+                        gunler = alarm.gunler xor (1 shl g),
+                        tarih = if (alarm.aralikli) alarm.tarih else 0, atla = 0
+                    )
                     tekrarYaz()
                 }
             }
@@ -412,18 +422,53 @@ class DuzenleActivity : AppCompatActivity() {
         secici.init(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH), null)
         secici.minDate = System.currentTimeMillis() - 1000
         val sayfa = AltSayfa(this).baslik(getString(R.string.tarih_sec)).icerik(secici)
+        fun anahtar(p: DatePicker) = p.year * 10000 + (p.month + 1) * 100 + p.dayOfMonth
         sayfa.madde(TR.drawable.ic_onay_isaret, getString(R.string.bu_tarihi_sec)) {
-            val anahtar = secici.year * 10000 + (secici.month + 1) * 100 + secici.dayOfMonth
-            alarm = alarm.copy(tarih = anahtar, gunler = 0, atla = 0)
+            alarm = alarm.copy(tarih = anahtar(secici), tarihBitis = 0, gunler = 0, atla = 0)
             tekrarYaz()
         }
+        sayfa.madde(R.drawable.ic_takvim, getString(R.string.aralik_sec)) { bitisSec(anahtar(secici)) }
         if (alarm.tarih != 0) {
             sayfa.madde(TR.drawable.ic_kapat, getString(R.string.tarihi_kaldir)) {
-                alarm = alarm.copy(tarih = 0)
+                alarm = alarm.copy(tarih = 0, tarihBitis = 0)
                 tekrarYaz()
             }
         }
         sayfa.goster()
+    }
+
+    /** Aralığın ikinci adımı: bitiş günü. Başlangıçtan önceki günler seçilemez. */
+    private fun bitisSec(baslangic: Int) {
+        val secici = DatePicker(this)
+        val ilk = Calendar.getInstance().apply {
+            clear()
+            set(baslangic / 10000, (baslangic / 100) % 100 - 1, baslangic % 100)
+        }
+        val varsayilan = Calendar.getInstance().apply {
+            clear()
+            if (alarm.aralikli && alarm.tarihBitis > baslangic) {
+                set(alarm.tarihBitis / 10000, (alarm.tarihBitis / 100) % 100 - 1, alarm.tarihBitis % 100)
+            } else {
+                timeInMillis = ilk.timeInMillis
+                add(Calendar.DAY_OF_MONTH, 3)
+            }
+        }
+        secici.minDate = ilk.timeInMillis
+        secici.init(varsayilan.get(Calendar.YEAR), varsayilan.get(Calendar.MONTH), varsayilan.get(Calendar.DAY_OF_MONTH), null)
+        AltSayfa(this)
+            .baslik(getString(R.string.aralik_bitis, Metinler.kisaTarih(baslangic)))
+            .icerik(secici)
+            .madde(TR.drawable.ic_onay_isaret, getString(R.string.aralik_kullan)) {
+                val bitis = secici.year * 10000 + (secici.month + 1) * 100 + secici.dayOfMonth
+                alarm = if (bitis <= baslangic) {
+                    alarm.copy(tarih = baslangic, tarihBitis = 0, gunler = 0, atla = 0)
+                } else {
+                    // Gün seçimi varsa aralık içinde süzgeç olarak kalır.
+                    alarm.copy(tarih = baslangic, tarihBitis = bitis, atla = 0)
+                }
+                tekrarYaz()
+            }
+            .goster()
     }
 
     private fun silOnayi() {
@@ -453,7 +498,7 @@ class DuzenleActivity : AppCompatActivity() {
         if (kaydedilecek.tarih != 0 &&
             Zamanlama.sonrakiOlagan(kaydedilecek, simdi, TimeZone.getDefault()) == null
         ) {
-            kaydedilecek = kaydedilecek.copy(tarih = 0)
+            kaydedilecek = kaydedilecek.copy(tarih = 0, tarihBitis = 0)
         }
         Bildirimler.ertelemeyiKaldir(this, kaydedilecek.id)
         Depo.yaz(this, kaydedilecek)

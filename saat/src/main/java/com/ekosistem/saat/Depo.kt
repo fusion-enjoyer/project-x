@@ -110,6 +110,18 @@ object Depo {
     fun sehirleriKaydet(c: Context, liste: List<String>) =
         ayarlar(c).edit().putString("sehirler", org.json.JSONArray(liste.distinct()).toString()).apply()
 
+    /** Zamanlayıcı hazır ayarları (ms, gösterim sırasıyla); hiç değiştirilmediyse varsayılanlar. */
+    fun hazirSureler(c: Context): List<Long> = runCatching {
+        val m = ayarlar(c).getString("hazir_sureler", null) ?: return@runCatching VARSAYILAN_HAZIR
+        val d = org.json.JSONArray(m)
+        List(d.length()) { d.getLong(it) }
+    }.getOrDefault(VARSAYILAN_HAZIR)
+
+    fun hazirSurelerKaydet(c: Context, liste: List<Long>) =
+        ayarlar(c).edit().putString("hazir_sureler", org.json.JSONArray(liste.distinct()).toString()).apply()
+
+    private val VARSAYILAN_HAZIR = listOf(60_000L, 180_000L, 300_000L, 600_000L, 900_000L, 1_800_000L)
+
     /** Son girilen süre: yeni zamanlayıcı ekranı onunla açılır. */
     fun sonSure(c: Context): String = ayarlar(c).getString("son_sure", "500") ?: "500"
     fun sonSureKaydet(c: Context, rakamlar: String) = ayarlar(c).edit().putString("son_sure", rakamlar).apply()

@@ -153,6 +153,17 @@ data class Zamanlayici(
             return ((sa * 3600) + (dk * 60) + sn) * 1000
         }
 
+        /** Hazır ayar etiketi: "5m", "1h 30m", "45s" (birimler telefonun diline göre). */
+        fun kisa(ms: Long, sa: String, dk: String, sn: String): String {
+            val toplam = (ms / 1000).coerceAtLeast(0)
+            val parcalar = buildList {
+                if (toplam / 3600 > 0) add("${toplam / 3600}$sa")
+                if ((toplam / 60) % 60 > 0) add("${(toplam / 60) % 60}$dk")
+                if (toplam % 60 > 0) add("${toplam % 60}$sn")
+            }
+            return parcalar.ifEmpty { listOf("0$sn") }.joinToString(" ")
+        }
+
         /** Kalan süre: "4:59" ya da "1:04:59"; yukarı yuvarlanır (0'a gelince biter). */
         fun bicim(ms: Long): String {
             val sn = ((ms.coerceAtLeast(0) + 999) / 1000)

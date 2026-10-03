@@ -250,4 +250,45 @@ class ZamanlamaTest {
         val simdi = an(istanbul, 2026, 10, 2, 21)
         assertNull(Zamanlama.sonrakiCalma(alarm, simdi, istanbul, Zamanlama.tatilBitisi(simdi, 7, istanbul)))
     }
+
+    // --- Tarih aralığı ---
+
+    @Test
+    fun aralikIkiHaftaSonraDortGunCalar() {
+        val alarm = Alarm(1, 7, 0, tarih = 20261017, tarihBitis = 20261020)
+        val simdi = an(istanbul, 2026, 10, 3, 12)
+        assertEquals("2026-10-17 07:00", yerel(Zamanlama.sonrakiCalma(alarm, simdi, istanbul)!!, istanbul))
+        // Aralıkta her gün
+        assertEquals("2026-10-18 07:00", yerel(Zamanlama.sonrakiCalma(alarm, an(istanbul, 2026, 10, 17, 8), istanbul)!!, istanbul))
+        assertEquals("2026-10-20 07:00", yerel(Zamanlama.sonrakiCalma(alarm, an(istanbul, 2026, 10, 19, 8), istanbul)!!, istanbul))
+        // Aralık bitti
+        assertNull(Zamanlama.sonrakiCalma(alarm, an(istanbul, 2026, 10, 20, 8), istanbul))
+    }
+
+    @Test
+    fun aralikHaftaGunuSuzgeciKullanir() {
+        // 17 Ekim 2026 cumartesi. Yalnız hafta içi: 19 Pazartesi, 20 Salı.
+        val alarm = Alarm(1, 7, 0, gunler = Alarm.HAFTA_ICI, tarih = 20261017, tarihBitis = 20261020)
+        val simdi = an(istanbul, 2026, 10, 3, 12)
+        assertEquals("2026-10-19 07:00", yerel(Zamanlama.sonrakiCalma(alarm, simdi, istanbul)!!, istanbul))
+    }
+
+    @Test
+    fun aralikCalmaBitincedeAcikKalirTatilSusturmaz() {
+        val alarm = Alarm(1, 7, 0, tarih = 20261017, tarihBitis = 20261020)
+        val bitti = Zamanlama.calmaBitti(alarm)
+        assertTrue(bitti.acik)
+        assertEquals(20261020, bitti.tarihBitis)
+        val simdi = an(istanbul, 2026, 10, 3, 12)
+        assertFalse(Zamanlama.tatilde(alarm.copy(gunler = Alarm.HER_GUN), simdi, an(istanbul, 2026, 10, 9, 0)))
+        // Tek günlük, tekrarsız alarm eskisi gibi kapanır
+        assertFalse(Zamanlama.calmaBitti(Alarm(2, 7, 0, tarih = 20261017)).acik)
+    }
+
+    @Test
+    fun aralikJsonKaydiYuklenir() {
+        val a = Alarm(1, 7, 0, tarih = 20261017, tarihBitis = 20261020)
+        assertEquals(20261020, Alarm.jsondan(a.json()).tarihBitis)
+        assertEquals(0, Alarm.jsondan(Alarm(2, 7, 0).json().apply { remove("tarihBitis") }).tarihBitis)
+    }
 }

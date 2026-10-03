@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.ekosistem.tasarim.AltSayfa
 import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.ipucuVer
 
@@ -26,6 +27,7 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
     private val kaydirici: View = activity.findViewById(R.id.zamanKaydirici)
     private val gosterge: TextView = activity.findViewById(R.id.zamanGosterge)
     private val vurgu = Tasarim.vurgu(activity)
+    private val hazirKutu: LinearLayout = activity.findViewById(R.id.zamanHazirlar)
     private val isleyici = Handler(Looper.getMainLooper())
     private var rakamlar = ""
     private var girisAcik = false
@@ -111,6 +113,7 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
         parca(r.substring(2, 4), activity.getString(R.string.birim_dk))
         parca(r.substring(4, 6), activity.getString(R.string.birim_sn))
         gosterge.text = b.trimEnd()
+        hazirlariYaz()
         gosterge.contentDescription = Zamanlayici.bicim(Zamanlayici.rakamlardanMs(rakamlar))
         activity.findViewById<View>(R.id.zamanBaslat).apply {
             isEnabled = Zamanlayici.rakamlardanMs(rakamlar) > 0
@@ -122,11 +125,80 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
         val ms = Zamanlayici.rakamlardanMs(rakamlar)
         if (ms <= 0) return
         Depo.sonSureKaydet(activity, rakamlar)
+        baslatMs(ms)
+    }
+
+    private fun baslatMs(ms: Long) {
         val id = (Depo.zamanlayicilar(activity).maxOfOrNull { it.id } ?: 0) + 1
         Depo.zamanlayiciYaz(activity, Zamanlayici(id, ms).baslat(System.currentTimeMillis()))
         ZamanlayiciKurucu.hepsiniKur(activity)
         girisAcik = false
         yenile()
+    }
+
+    private fun kisa(ms: Long) = Zamanlayici.kisa(
+        ms, activity.getString(R.string.birim_sa), activity.getString(R.string.birim_dk), activity.getString(R.string.birim_sn)
+    )
+
+    /** Hazır ayar çipleri + sonda "mevcut süreyi kaydet" çipi. */
+    private fun hazirlariYaz() {
+        hazirKutu.removeAllViews()
+        val d = activity.resources.displayMetrics.density
+        fun cip(metin: String, renk: Int, kalin: Boolean): TextView = TextView(activity).apply {
+            text = metin
+            textSize = 15f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(renk)
+            if (kalin) setTypeface(null, android.graphics.Typeface.BOLD)
+            setBackgroundResource(R.drawable.bg_chip_hedef)
+            setPadding((16 * d).toInt(), 0, (16 * d).toInt(), 0)
+            minWidth = (56 * d).toInt()
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, (48 * d).toInt()).apply {
+                rightMargin = (8 * d).toInt()
+            }
+        }
+        val metin = androidx.core.content.ContextCompat.getColor(activity, com.ekosistem.tasarim.R.color.metin)
+        val hazirlar = Depo.hazirSureler(activity)
+        val yeniMs = Zamanlayici.rakamlardanMs(rakamlar)
+        val kaydedilebilir = yeniMs > 0 && yeniMs !in hazirlar
+        // Kaydet çipi başta: sağda ekran dışında kalırsa kimse bulamaz.
+        hazirKutu.addView(cip("＋ " + activity.getString(R.string.hazir_kaydet), vurgu, true).apply {
+            alpha = if (kaydedilebilir) 1f else 0.4f
+            isEnabled = kaydedilebilir
+            contentDescription = activity.getString(R.string.hazir_kaydet_aciklama)
+            setOnClickListener {
+                Depo.hazirSurelerKaydet(activity, Depo.hazirSureler(activity) + yeniMs)
+                hazirlariYaz()
+            }
+        })
+        for (ms in hazirlar) {
+            hazirKutu.addView(cip(kisa(ms), metin, false).apply {
+                contentDescription = activity.getString(R.string.hazir_baslat, kisa(ms))
+                setOnClickListener { baslatMs(ms) }
+                setOnLongClickListener { hazirSecenekleri(ms); true }
+            })
+        }
+    }
+
+    private fun hazirSecenekleri(ms: Long) {
+        AltSayfa(activity).baslik(kisa(ms))
+            .madde(R.drawable.ic_zamanlayici, activity.getString(R.string.basla)) { baslatMs(ms) }
+            .madde(R.drawable.ic_arti, activity.getString(R.string.hazir_tus_takimina)) {
+                rakamlar = kisaRakam(ms)
+                gostergeYaz()
+            }
+            .madde(R.drawable.ic_sil, activity.getString(R.string.sil), tehlikeli = true) {
+                Depo.hazirSurelerKaydet(activity, Depo.hazirSureler(activity) - ms)
+                hazirlariYaz()
+            }
+            .goster()
+    }
+
+    /** Süreyi tuş takımının sağdan dolan rakamlarına çevirir (90 sn → "130"). */
+    private fun kisaRakam(ms: Long): String {
+        val t = (ms / 1000)
+        val rakam = "%02d%02d%02d".format(t / 3600, (t / 60) % 60, t % 60).trimStart('0')
+        return rakam
     }
 
     fun yenile() {

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Şehir listesinde harf bölümü başlığı. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/secHarf"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="16dp"
+    android:paddingTop="18dp"
+    android:paddingBottom="4dp"
+    android:textColor="@color/vurgu"
+    android:textSize="14sp"
+    android:textStyle="bold" />

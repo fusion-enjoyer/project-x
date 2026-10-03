@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Şehir seç: üstte başlık, ortada harf bölümlü liste ve sağ kenarda harf
+     dizini, arama çubuğu altta (başparmakla ulaşılsın, klavyenin hemen üstünde). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/sehirKok"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/zemin"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <LinearLayout
@@ -15,7 +17,7 @@
         android:paddingLeft="12dp"
         android:paddingTop="8dp"
         android:paddingRight="20dp"
-        android:paddingBottom="8dp">
+        android:paddingBottom="4dp">
 
         <ImageButton
             android:id="@+id/btnGeri"
@@ -26,30 +28,76 @@
             android:src="@drawable/ic_geri"
             app:tint="@color/metin" />
 
-        <EditText
-            android:id="@+id/sehirAra"
+        <TextView
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:layout_weight="1"
+            android:text="@string/sehir_ekle"
+            android:textColor="@color/metin"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/sehirListesi"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:divider="@null"
+            android:paddingLeft="8dp"
+            android:paddingRight="32dp" />
+
+        <com.ekosistem.saat.HarfDizini
+            android:id="@+id/harfDizini"
+            android:layout_width="28dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Harf dizininde gezerken ortada büyük harf. -->
+        <TextView
+            android:id="@+id/harfBalonu"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_kart"
+            android:gravity="center"
+            android:textColor="@color/metin"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="16dp"
+        android:paddingTop="8dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="12dp">
+
+        <EditText
+            android:id="@+id/sehirAra"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
             android:background="@drawable/bg_arama_pill"
             android:hint="@string/sehir_ara"
             android:importantForAutofill="no"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
             android:textColor="@color/metin"
             android:textColorHint="@color/metin_ikincil"
-            android:textSize="15sp" />
+            android:textSize="16sp" />
     </LinearLayout>
-
-    <ListView
-        android:id="@+id/sehirListesi"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:divider="@null"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp" />
 </LinearLayout>
