@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Takvim'in vurgusu: koyu teal (tasarım dili, uygulama başına tek renk) -->
+    <color name="vurgu">#0F766E</color>
+    <color name="uyari_zemin">#FBEAE4</color>
+    <color name="uyari_metin">#7A2222</color>
+</resources>

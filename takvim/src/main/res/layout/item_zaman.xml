@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Düzenleme ekranında "Başlangıç / Bitiş": etiket + tarih hapı + saat hapı. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingLeft="16dp"
+    android:paddingTop="6dp"
+    android:paddingRight="12dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/zamanEtiket"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/metin"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/zamanTarih"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_chip_hedef"
+        android:backgroundTint="@color/zemin"
+        android:gravity="center"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:textColor="@color/metin"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/zamanSaat"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_chip_hedef"
+        android:backgroundTint="@color/zemin"
+        android:gravity="center"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:textColor="@color/metin"
+        android:textSize="15sp" />
+</LinearLayout>

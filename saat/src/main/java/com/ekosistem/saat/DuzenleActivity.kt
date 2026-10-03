@@ -19,6 +19,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
 import com.ekosistem.tasarim.AltSayfa
+import com.ekosistem.tasarim.SayiTekerlegi
 import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.ipucuVer
 import java.util.Calendar

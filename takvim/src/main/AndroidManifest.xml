@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- İnternet izni bilinçli olarak yok. -->
+
+    <!-- Etkinlikler telefonun takvim deposunda yaşar (DAVx5 gibi uygulamalar da oraya yazar). -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- Hatırlatıcı bildirimi (Android 13+). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Yeniden başlatınca ertelenmiş hatırlatıcıları kurmak için. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- "Ertele" tam zamanında çalsın: Android 12'de SCHEDULE_EXACT_ALARM, 13+ takvim uygulamalarına USE_EXACT_ALARM. -->
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <application
+        android:name=".TakvimApp"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Takvim">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Varsayılan takvim uygulaması olarak seçilebilsin. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.APP_CALENDAR" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- Saat widget'ları gibi "şu güne git" çağrıları. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:host="com.android.calendar"
+                    android:pathPrefix="/time"
+                    android:scheme="content" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".DetayActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.item/event" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".DuzenleActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Başka uygulamalardan "takvime ekle". -->
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.item/event" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.dir/event" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".AyarlarActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name=".HatirlaticiAlici"
+            android:exported="true">
+            <!-- Takvim deposu vakti gelen hatırlatıcıları bununla duyurur. Yayında MIME türü yok
+                 (emülatörde görüldü), yalnız content://com.android.calendar/<an> adresi var. -->
+            <intent-filter>
+                <action android:name="android.intent.action.EVENT_REMINDER" />
+                <data
+                    android:host="com.android.calendar"
+                    android:scheme="content" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="vurgu">#2DD4BF</color>
+    <color name="uyari_zemin">#2A1512</color>
+    <color name="uyari_metin">#F2B8AE</color>
+</resources>

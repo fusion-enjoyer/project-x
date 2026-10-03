@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kökte fitsSystemWindows varsa ona yatay padding verilmez (Notlar'dan ders);
+     kenar payı alt kapsayıcıda. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="20dp"
+            android:paddingTop="24dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/baslik"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/metin"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnBugun"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginRight="8dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/bugune_git"
+                android:gravity="center"
+                android:textColor="@color/vurgu"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnAyarlar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/ayarlar"
+                android:src="@drawable/ic_ayarlar"
+                app:tint="@color/metin" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="20dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/altBaslik"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="15sp" />
+
+            <ImageButton
+                android:id="@+id/btnOnceki"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/onceki"
+                android:src="@drawable/ic_geri"
+                app:tint="@color/metin" />
+
+            <ImageButton
+                android:id="@+id/btnSonraki"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/sonraki"
+                android:src="@drawable/ic_ileri"
+                app:tint="@color/metin" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/uyariSeridi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/bg_uyari"
+            android:gravity="center_vertical"
+            android:minHeight="48dp"
+            android:orientation="horizontal"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_unlem"
+                app:tint="@color/tehlike" />
+
+            <TextView
+                android:id="@+id/uyariMetin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:text="@string/bildirim_kapali"
+                android:textColor="@color/uyari_metin"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ac"
+                android:textColor="@color/tehlike"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/icerik"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false">
+
+            <!-- AY: gün adları, ızgara, seçili günün etkinlikleri -->
+            <ScrollView
+                android:id="@+id/icerikAy"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="104dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/ayGunAdlari"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp" />
+
+                    <com.ekosistem.takvim.AyIzgarasi
+                        android:id="@+id/ayIzgara"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:layout_marginRight="12dp" />
+
+                    <TextView
+                        android:id="@+id/ayGunBasligi"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:paddingLeft="20dp"
+                        android:paddingRight="20dp"
+                        android:textColor="@color/metin"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/ayListe"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingLeft="20dp"
+                        android:paddingTop="10dp"
+                        android:paddingRight="20dp" />
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- HAFTA / GÜN: başlık, tüm gün şeridi, saat ızgarası -->
+            <LinearLayout
+                android:id="@+id/icerikZaman"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.ekosistem.takvim.HaftaBasligi
+                    android:id="@+id/haftaBasligi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp" />
+
+                <com.ekosistem.takvim.TumGunSeridi
+                    android:id="@+id/tumGunSeridi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp" />
+
+                <ScrollView
+                    android:id="@+id/zamanKaydirici"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:clipToPadding="false">
+
+                    <com.ekosistem.takvim.ZamanIzgarasi
+                        android:id="@+id/zamanIzgara"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp" />
+                </ScrollView>
+            </LinearLayout>
+
+            <!-- GÜNDEM -->
+            <ScrollView
+                android:id="@+id/icerikGundem"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="104dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/gundemListe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="20dp"
+                    android:paddingTop="8dp"
+                    android:paddingRight="20dp" />
+            </ScrollView>
+
+            <include
+                android:id="@+id/bosDurum"
+                layout="@layout/bos_durum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="64dp" />
+
+            <View
+                android:id="@+id/altSis"
+                android:layout_width="match_parent"
+                android:layout_height="104dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/bg_alt_sis"
+                android:importantForAccessibility="no" />
+
+            <!-- Yüzen alt çubuk: dört görünüm ve sağında vurgulu "yeni" düğmesi. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_gravity="bottom"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/sekmeler"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_arac_cubugu"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="6dp" />
+
+                <ImageButton
+                    android:id="@+id/btnYeni"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_marginLeft="10dp"
+                    android:background="@drawable/bg_nav_orta"
+                    android:contentDescription="@string/yeni_etkinlik"
+                    android:src="@drawable/ic_arti" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

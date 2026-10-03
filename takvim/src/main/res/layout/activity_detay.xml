@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingTop="8dp"
+        android:paddingRight="12dp">
+
+        <ImageButton
+            android:id="@+id/btnGeri"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/geri"
+            android:src="@drawable/ic_geri"
+            app:tint="@color/metin" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/btnPaylas"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/paylas"
+            android:src="@drawable/ic_paylas"
+            app:tint="@color/metin" />
+
+        <ImageButton
+            android:id="@+id/btnSil"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/sil"
+            android:src="@drawable/ic_sil"
+            app:tint="@color/tehlike" />
+
+        <ImageButton
+            android:id="@+id/btnDuzenle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/duzenle"
+            android:src="@drawable/ic_duzenle"
+            app:tint="@color/metin" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingBottom="32dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="8dp">
+
+                <View
+                    android:id="@+id/detayRenk"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_nokta"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/detayBaslik"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:textColor="@color/metin"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/detayZaman"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="26dp"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/metin"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/detayAlt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="26dp"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/detayKutu"
+                style="@style/AyarKutusu"
+                android:layout_marginTop="22dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

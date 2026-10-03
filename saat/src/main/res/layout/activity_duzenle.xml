@@ -72,7 +72,7 @@
                     android:gravity="center"
                     android:orientation="horizontal">
 
-                    <com.ekosistem.saat.SayiTekerlegi
+                    <com.ekosistem.tasarim.SayiTekerlegi
                         android:id="@+id/tekSaat"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
@@ -89,13 +89,13 @@
                         android:textSize="56sp"
                         android:textStyle="bold" />
 
-                    <com.ekosistem.saat.SayiTekerlegi
+                    <com.ekosistem.tasarim.SayiTekerlegi
                         android:id="@+id/tekDakika"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
 
                     <!-- Yalnız 12 saat biçimli telefonlarda görünür (ÖÖ/ÖS). -->
-                    <com.ekosistem.saat.SayiTekerlegi
+                    <com.ekosistem.tasarim.SayiTekerlegi
                         android:id="@+id/tekOgle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

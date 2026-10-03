@@ -1,4 +1,4 @@
-package com.ekosistem.saat
+package com.ekosistem.tasarim
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -14,7 +14,6 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.OverScroller
 import androidx.core.content.ContextCompat
-import com.ekosistem.tasarim.R as TR
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -63,8 +62,8 @@ class SayiTekerlegi @JvmOverloads constructor(
     private val satir get() = 64f * d * yaziOlcegi
     private val buyuk get() = 64f * d * yaziOlcegi * olcek
     private val kucuk get() = 28f * d * yaziOlcegi * olcek
-    private val anaRenk = ContextCompat.getColor(context, TR.color.metin)
-    private val solukRenk = ContextCompat.getColor(context, TR.color.metin_ikincil)
+    private val anaRenk = ContextCompat.getColor(context, R.color.metin)
+    private val solukRenk = ContextCompat.getColor(context, R.color.metin_ikincil)
     private val boya = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
         isFakeBoldText = false

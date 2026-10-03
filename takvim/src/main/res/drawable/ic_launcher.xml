@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Geçici simge: vurgu renginde daire, beyaz takvim. Marka sonra. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#0F766E"
+        android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"/>
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="6"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M36,34h36a8,8 0,0 1,8 8v30a8,8 0,0 1,-8 8H36a8,8 0,0 1,-8 -8V42a8,8 0,0 1,8 -8zM28,52h52M42,26v14M66,26v14"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,66m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+</vector>

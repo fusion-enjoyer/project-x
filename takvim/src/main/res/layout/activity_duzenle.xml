@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingTop="8dp"
+        android:paddingRight="20dp">
+
+        <ImageButton
+            android:id="@+id/btnGeri"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/vazgec"
+            android:src="@drawable/ic_geri"
+            app:tint="@color/metin" />
+
+        <TextView
+            android:id="@+id/duzenleBaslik"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/metin"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnKaydet"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_pill_buton"
+            android:gravity="center"
+            android:paddingLeft="22dp"
+            android:paddingRight="22dp"
+            android:text="@string/kaydet"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/duzenleKaydirici"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingBottom="32dp">
+
+            <EditText
+                android:id="@+id/etBaslik"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:hint="@string/baslik_ipucu"
+                android:imeOptions="actionDone"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="3"
+                android:minHeight="56dp"
+                android:paddingLeft="4dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:textColor="@color/metin"
+                android:textColorHint="@color/metin_ikincil"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/kutuZaman"
+                style="@style/AyarKutusu"
+                android:layout_marginTop="8dp">
+
+                <include
+                    android:id="@+id/satirTumGun"
+                    layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirBaslangic"
+                    layout="@layout/item_zaman" />
+
+                <include
+                    android:id="@+id/satirBitis"
+                    layout="@layout/item_zaman" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirTekrar"
+                    layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/kutuDetay"
+                style="@style/AyarKutusu"
+                android:layout_marginTop="16dp">
+
+                <include
+                    android:id="@+id/satirTakvim"
+                    layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <LinearLayout
+                    android:id="@+id/hatirlaticiListesi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <include
+                    android:id="@+id/satirHatirlaticiEkle"
+                    layout="@layout/item_ayar" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/AyarKutusu"
+                android:layout_marginTop="16dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+
+                <EditText
+                    android:id="@+id/etKonum"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:drawableStart="@drawable/ic_konum"
+                    android:drawablePadding="14dp"
+                    android:drawableTint="@color/metin_ikincil"
+                    android:hint="@string/konum_ipucu"
+                    android:inputType="textCapSentences"
+                    android:minHeight="52dp"
+                    android:textColor="@color/metin"
+                    android:textColorHint="@color/metin_ikincil"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="@color/ayrac" />
+
+                <EditText
+                    android:id="@+id/etAciklama"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:drawableStart="@drawable/ic_not"
+                    android:drawablePadding="14dp"
+                    android:drawableTint="@color/metin_ikincil"
+                    android:gravity="top"
+                    android:hint="@string/aciklama_ipucu"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:minHeight="52dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="14dp"
+                    android:textColor="@color/metin"
+                    android:textColorHint="@color/metin_ikincil"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
