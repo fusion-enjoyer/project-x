@@ -33,8 +33,14 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
     private val tik = object : Runnable {
         override fun run() {
             kalanlariYaz()
-            if (gorunur && Depo.zamanlayicilar(activity).any { it.calisiyor }) {
-                isleyici.postDelayed(this, 1000 - System.currentTimeMillis() % 1000 + 10)
+            val simdi = System.currentTimeMillis()
+            val calisanlar = Depo.zamanlayicilar(activity).filter { it.calisiyor }
+            if (gorunur && calisanlar.isNotEmpty()) {
+                // Gösterilen saniye, kalan sürenin yukarı yuvarlanmışı: tam değiştiği
+                // anda çiz. (Duvar saati saniyesine hizalayınca ekran bir saniyeye
+                // kadar geç kalıyor, sayaç "yavaş" akıyormuş gibi görünüyordu.)
+                val sonraki = calisanlar.minOf { (it.kalan(simdi) - 1).coerceAtLeast(0) % 1000 + 1 }
+                isleyici.postDelayed(this, sonraki + 4)
             }
         }
     }
@@ -129,9 +135,37 @@ class ZamanlayiciSekmesi(private val activity: Activity) {
         giris.visibility = if (girisGoster) View.VISIBLE else View.GONE
         kaydirici.visibility = if (girisGoster) View.GONE else View.VISIBLE
         liste.removeAllViews()
-        if (!girisGoster) for (z in zamanlayicilar) liste.addView(kart(z))
+        if (!girisGoster) {
+            for (z in zamanlayicilar) liste.addView(kart(z))
+            liste.addView(yeniSatiri())
+        }
         isleyici.removeCallbacks(tik)
         isleyici.post(tik)
+    }
+
+    /** Listenin altında görünür "yeni zamanlayıcı": var olanları silmeden bir tane daha kurulur. */
+    private fun yeniSatiri(): View {
+        val d = activity.resources.displayMetrics.density
+        return TextView(activity).apply {
+            text = "＋  " + activity.getString(R.string.yeni_zamanlayici)
+            textSize = 15f
+            gravity = android.view.Gravity.CENTER
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(vurgu)
+            setBackgroundResource(com.ekosistem.tasarim.R.drawable.bg_kart)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (56 * d).toInt()
+            )
+            setOnClickListener { girisiAc() }
+        }
+    }
+
+    /** Geri tuşu: tuş takımı açıksa ve zamanlayıcılar varsa listeye döner. */
+    fun girisiKapat(): Boolean {
+        if (!girisAcik || Depo.zamanlayicilar(activity).isEmpty()) return false
+        girisAcik = false
+        yenile()
+        return true
     }
 
     private fun kart(z: Zamanlayici): View {

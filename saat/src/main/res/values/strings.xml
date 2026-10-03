@@ -186,4 +186,6 @@
     <string name="gorev_ilerleme">Problem %1$d of %2$d</string>
     <string name="gorev_sil">Delete</string>
     <string name="gorev_tamam">Check answer</string>
+    <string name="yerel_saat">Local time</string>
+    <string name="yeni_zamanlayici">New timer</string>
 </resources>

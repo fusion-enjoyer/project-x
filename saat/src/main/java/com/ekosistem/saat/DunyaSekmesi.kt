@@ -2,6 +2,7 @@ package com.ekosistem.saat
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
@@ -9,6 +10,11 @@ import android.widget.TextClock
 import android.widget.TextView
 import com.ekosistem.tasarim.AltSayfa
 import com.ekosistem.tasarim.BosDurum
+import com.ekosistem.tasarim.Tasarim
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /** Dünya saati sekmesi: yerel saat ve eklenen şehirler. */
 class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
@@ -19,6 +25,20 @@ class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
     fun goster(evet: Boolean) {
         kok.visibility = if (evet) View.VISIBLE else View.GONE
         if (evet) yenile()
+    }
+
+    /** Telefonun kendi saati: şehir kartlarıyla aynı satır, vurgu tonlu zeminde. */
+    private fun yerelSatir(): View {
+        val v = LayoutInflater.from(activity).inflate(R.layout.item_sehir, liste, false)
+        val tz = TimeZone.getDefault()
+        val ad = runCatching { Sehirler.ad(tz.id) }.getOrNull()?.takeIf { it.isNotBlank() && '/' !in it }
+            ?: activity.getString(R.string.yerel_saat)
+        val bicim = android.text.format.DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM")
+        val tarih = SimpleDateFormat(bicim, Locale.getDefault()).format(Date())
+        v.findViewById<TextView>(R.id.sehirAd).text = ad
+        v.findViewById<TextView>(R.id.sehirFark).text = "${activity.getString(R.string.yerel_saat)} · $tarih"
+        v.backgroundTintList = ColorStateList.valueOf(Tasarim.pastel(Tasarim.vurgu(activity)))
+        return v
     }
 
     fun sehirEkle() = activity.startActivity(Intent(activity, SehirSecActivity::class.java))
@@ -39,6 +59,7 @@ class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
             bosDurum.translationY = 0f
         }
         val simdi = System.currentTimeMillis()
+        liste.addView(yerelSatir())
         for (id in sehirler) {
             val v = LayoutInflater.from(activity).inflate(R.layout.item_sehir, liste, false)
             val ad = Sehirler.ad(id)

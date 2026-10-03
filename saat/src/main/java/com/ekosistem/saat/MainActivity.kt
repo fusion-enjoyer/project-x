@@ -13,7 +13,9 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
+import android.view.GestureDetector
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +24,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
@@ -50,6 +53,32 @@ class MainActivity : AppCompatActivity() {
     private lateinit var zamanlayici: ZamanlayiciSekmesi
     private lateinit var dunya: DunyaSekmesi
     private val isleyici = Handler(Looper.getMainLooper())
+
+    /** Sekmeler arası yatay kaydırma: sola kaydırınca sonraki sekme, sağa kaydırınca önceki. */
+    private val kaydirmaAlgilayici by lazy {
+        val d = resources.displayMetrics.density
+        GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
+                if (e1 == null) return false
+                val dx = e2.x - e1.x
+                val dy = e2.y - e1.y
+                // Belirgin ve yataya yakın bir hareket; dikey kaydırma listeyi bozmasın.
+                if (kotlin.math.abs(dx) < 80 * d || kotlin.math.abs(dx) < 2 * kotlin.math.abs(dy)) return false
+                if (kotlin.math.abs(vx) < 500 * d) return false
+                sekmeyeGec(sekme + if (dx < 0) 1 else -1, if (dx < 0) 1 else -1)
+                return true
+            }
+        })
+    }
+
+    /** Alarm dışındaki sekmede geri tuşu uygulamadan çıkarmaz, Alarm sekmesine döndürür. */
+    private val geriSekme = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            // Zamanlayıcıda tuş takımı açıksa önce listeye dön, sonra Alarm sekmesine.
+            if (sekme == SEKME_ZAMANLAYICI && zamanlayici.girisiKapat()) return
+            sekmeyeGec(SEKME_ALARM, -1)
+        }
+    }
     private val dakikalik = object : Runnable {
         override fun run() {
             ustBilgiyiYaz(Depo.alarmlar(this@MainActivity))
@@ -87,7 +116,30 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnTatil).setOnClickListener { tatilSayfasi() }
         findViewById<View>(R.id.tatilSeridi).setOnClickListener { tatilSayfasi() }
         ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnTatil))
+        onBackPressedDispatcher.addCallback(this, geriSekme)
         sekmeleriKur()
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        kaydirmaAlgilayici.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private fun sekmeyeGec(yeni: Int, yon: Int) {
+        if (yeni !in SEKME_ALARM..SEKME_KRONOMETRE || yeni == sekme) return
+        sekme = yeni
+        sekmeleriKur()
+        yenile()
+        // Hafif kayarak gelir (alt çubuk yerinde kalır): yön, sekmenin geldiği taraf.
+        val d = resources.displayMetrics.density
+        for (id in intArrayOf(R.id.kaydirici, R.id.sekmeDunya, R.id.sekmeKronometre, R.id.sekmeZamanlayici, R.id.bosDurum)) {
+            val v = findViewById<View>(id)
+            if (v.visibility != View.VISIBLE) continue
+            v.animate().cancel()
+            v.translationX = 36 * d * yon
+            v.alpha = 0.4f
+            v.animate().translationX(0f).alpha(1f).setDuration(180).start()
+        }
     }
 
     override fun onSaveInstanceState(durum: Bundle) {
@@ -412,6 +464,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sekmeleriKur() {
+        geriSekme.isEnabled = sekme != SEKME_ALARM
         val kutu = findViewById<LinearLayout>(R.id.sekmeler)
         kutu.removeAllViews()
         val d = resources.displayMetrics.density
@@ -434,13 +487,7 @@ class MainActivity : AppCompatActivity() {
                     setBackgroundResource(R.drawable.bg_sekme)
                     backgroundTintList = ColorStateList.valueOf(Tasarim.pastel(vurgu))
                 }
-                setOnClickListener {
-                    if (sekme != no) {
-                        sekme = no
-                        sekmeleriKur()
-                        yenile()
-                    }
-                }
+                setOnClickListener { sekmeyeGec(no, if (no > sekme) 1 else -1) }
             }
             hap.addView(ImageView(this).apply {
                 setImageResource(ikon)

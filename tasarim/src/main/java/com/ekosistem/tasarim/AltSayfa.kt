@@ -292,12 +292,30 @@ class AltSayfa(private val activity: Activity) {
         dialog.show()
         girdiAlani?.let { alan ->
             alan.requestFocus()
-            // ADJUST_RESIZE olmadan sayfa klavyenin altında kalıyor ve onay
-            // düğmesine ulaşılamıyordu.
-            dialog.window?.setSoftInputMode(
-                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
-                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            )
+            val pencere = dialog.window ?: return@let
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                // Android 15 ve sonrası kenardan kenara çalışır: ADJUST_RESIZE artık
+                // sayfayı klavyenin üstüne almıyor, metin kutusu klavyenin altında
+                // kalıyordu. Klavye yüksekliğini kendimiz alt boşluk yaparız.
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(pencere, false)
+                androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sarmal) { v, kenarlar ->
+                    val klavye = kenarlar.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+                    val cubuk = kenarlar.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom
+                    v.setPadding(0, 0, 0, maxOf(klavye, cubuk))
+                    kenarlar
+                }
+                sarmal.requestApplyInsets()
+                pencere.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                )
+            } else {
+                // Eski sürümlerde ADJUST_RESIZE olmadan sayfa klavyenin altında kalıyordu.
+                pencere.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                )
+            }
         }
     }
 

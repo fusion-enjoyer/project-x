@@ -9,6 +9,12 @@
     android:paddingRight="20dp"
     android:visibility="gone">
 
+    <Space
+        android:id="@+id/kronoUst"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
     <TextView
         android:id="@+id/kronoSure"
         android:layout_width="match_parent"
@@ -17,9 +23,9 @@
         android:fontFeatureSettings="tnum"
         android:gravity="center"
         android:includeFontPadding="false"
-        android:text="00:00.0"
+        android:text="00:00.00"
         android:textColor="@color/metin"
-        android:textSize="68sp" />
+        android:textSize="64sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -50,11 +56,19 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <Space
+        android:id="@+id/kronoAlt"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.35" />
+
     <ScrollView
+        android:id="@+id/kronoTurKaydirici"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
         android:layout_weight="1"
+        android:visibility="gone"
         android:clipToPadding="false"
         android:paddingBottom="104dp">
 

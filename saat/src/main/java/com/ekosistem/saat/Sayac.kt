@@ -72,15 +72,15 @@ data class Kronometre(
             }.getOrDefault(Kronometre())
         }
 
-        /** "1:02:03.4" ya da "02:03.4" (onda bir saniye). */
-        fun bicim(ms: Long, ondalik: Boolean = true): String {
+        /** "1:02:03.45" ya da "02:03.45"; [basamak] 0, 1 ya da 2 (saniyenin onda / yüzde biri). */
+        fun bicim(ms: Long, ondalik: Boolean = true, basamak: Int = 1): String {
             val toplam = ms.coerceAtLeast(0)
             val sa = toplam / 3_600_000
             val dk = (toplam / 60_000) % 60
             val sn = (toplam / 1000) % 60
-            val onda = (toplam / 100) % 10
             val ana = if (sa > 0) "%d:%02d:%02d".format(sa, dk, sn) else "%02d:%02d".format(dk, sn)
-            return if (ondalik) "$ana.$onda" else ana
+            if (!ondalik || basamak <= 0) return ana
+            return if (basamak == 1) "$ana.${(toplam / 100) % 10}" else "$ana.%02d".format((toplam / 10) % 100)
         }
     }
 }

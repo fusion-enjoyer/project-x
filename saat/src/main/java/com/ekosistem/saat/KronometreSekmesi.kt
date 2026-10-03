@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.Choreographer
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
@@ -14,8 +15,9 @@ import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.R as TR
 
 /**
- * Kronometre sekmesi. Ekran yalnız sekme görünürken ve çalışırken, saniyenin
- * onda biri kadar sıklıkta güncellenir (sürekli animasyon pil ve hız yer).
+ * Kronometre sekmesi. Süre yalnız sekme görünürken ve çalışırken, ekranın
+ * kendi kare hızında (Choreographer) güncellenir; yüzde bir saniye basamağı
+ * akıcı akar. Sekme gizlenince ya da durunca döngü biter, arka planda iş yok.
  */
 class KronometreSekmesi(private val activity: Activity) {
 
@@ -27,11 +29,23 @@ class KronometreSekmesi(private val activity: Activity) {
     private val vurgu = Tasarim.vurgu(activity)
     private val isleyici = Handler(Looper.getMainLooper())
     private var gorunur = false
-    private val tik = object : Runnable {
-        override fun run() {
-            sureYaz()
-            if (gorunur && Depo.kronometre(activity).calisiyor) isleyici.postDelayed(this, 100)
-        }
+    private var kareBekliyor = false
+    private val kare = Choreographer.FrameCallback {
+        kareBekliyor = false
+        sureYaz()
+        if (gorunur && kronometreCalisiyor) kareIste()
+    }
+    private var kronometreCalisiyor = false
+
+    private fun kareIste() {
+        if (kareBekliyor) return
+        kareBekliyor = true
+        Choreographer.getInstance().postFrameCallback(kare)
+    }
+
+    private fun kareyiDurdur() {
+        kareBekliyor = false
+        Choreographer.getInstance().removeFrameCallback(kare)
     }
 
     init {
@@ -55,7 +69,7 @@ class KronometreSekmesi(private val activity: Activity) {
     fun goster(evet: Boolean) {
         gorunur = evet
         kok.visibility = if (evet) View.VISIBLE else View.GONE
-        if (evet) yenile() else isleyici.removeCallbacks(tik)
+        if (evet) yenile() else kareyiDurdur()
     }
 
     fun yenile() {
@@ -69,18 +83,24 @@ class KronometreSekmesi(private val activity: Activity) {
         sol.isEnabled = !k.sifirda
         sol.alpha = if (k.sifirda) 0.4f else 1f
         turlariYaz(k)
-        isleyici.removeCallbacks(tik)
-        isleyici.post(tik)
+        kronometreCalisiyor = k.calisiyor
+        sureYaz()
+        if (k.calisiyor) kareIste() else kareyiDurdur()
     }
 
     private fun sureYaz() {
-        sure.text = Kronometre.bicim(Depo.kronometre(activity).gecen(SystemClock.elapsedRealtime()))
+        sure.text = Kronometre.bicim(Depo.kronometre(activity).gecen(SystemClock.elapsedRealtime()), basamak = 2)
     }
 
     private fun turlariYaz(k: Kronometre) {
         turlar.removeAllViews()
         val sureler = k.turSureleri()
-        if (sureler.isEmpty()) return
+        // Tur yokken süre ve düğmeler ekranın ortasında durur; tur gelince yukarı çıkar.
+        val turVar = sureler.isNotEmpty()
+        activity.findViewById<View>(R.id.kronoUst).visibility = if (turVar) View.GONE else View.VISIBLE
+        activity.findViewById<View>(R.id.kronoAlt).visibility = if (turVar) View.GONE else View.VISIBLE
+        activity.findViewById<View>(R.id.kronoTurKaydirici).visibility = if (turVar) View.VISIBLE else View.GONE
+        if (!turVar) return
         val enHizli = if (sureler.size > 1) sureler.indexOf(sureler.minOrNull()) else -1
         val enYavas = if (sureler.size > 1) sureler.indexOf(sureler.maxOrNull()) else -1
         val d = activity.resources.displayMetrics.density
@@ -106,8 +126,8 @@ class KronometreSekmesi(private val activity: Activity) {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, agirlik)
             }
             satir.addView(yazi(activity.getString(R.string.tur_n, i + 1), 1f, Gravity.START, renk))
-            satir.addView(yazi(Kronometre.bicim(sureler[i]), 1.2f, Gravity.CENTER, renk))
-            satir.addView(yazi(Kronometre.bicim(k.turlar[i]), 1.2f, Gravity.END,
+            satir.addView(yazi(Kronometre.bicim(sureler[i], basamak = 2), 1.2f, Gravity.CENTER, renk))
+            satir.addView(yazi(Kronometre.bicim(k.turlar[i], basamak = 2), 1.2f, Gravity.END,
                 ContextCompat.getColor(activity, TR.color.metin_ikincil)))
             turlar.addView(satir, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 bottomMargin = (8 * d).toInt()
@@ -115,5 +135,5 @@ class KronometreSekmesi(private val activity: Activity) {
         }
     }
 
-    fun durdur() = isleyici.removeCallbacks(tik)
+    fun durdur() = kareyiDurdur()
 }

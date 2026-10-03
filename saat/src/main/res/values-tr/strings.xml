@@ -180,4 +180,6 @@
     <string name="gorev_ilerleme">%1$d. işlem / %2$d</string>
     <string name="gorev_sil">Sil</string>
     <string name="gorev_tamam">Cevabı kontrol et</string>
+    <string name="yerel_saat">Yerel saat</string>
+    <string name="yeni_zamanlayici">Yeni zamanlayıcı</string>
 </resources>
