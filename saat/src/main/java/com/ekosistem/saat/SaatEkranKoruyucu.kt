@@ -13,7 +13,9 @@ class SaatEkranKoruyucu : DreamService() {
         super.onAttachedToWindow()
         isInteractive = false
         isFullscreen = true
-        isScreenBright = false
-        setContentView(SaatModuGorunumu(this).apply { seviye = Depo.ayarlar(this@SaatEkranKoruyucu).getInt("saat_modu_seviye", 1) })
+        val seviye = Depo.ayarlar(this).getInt(SaatModuGorunumu.TERCIH, 2)
+        // Tam parlak seviyede ekran kısılmaz; loş seçildiyse sistem de kısar.
+        isScreenBright = seviye == 2
+        setContentView(SaatModuGorunumu(this).apply { this.seviye = seviye })
     }
 }

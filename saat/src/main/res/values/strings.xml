@@ -223,4 +223,9 @@
     <string name="widget_zamanlayici_adi">Quick timer</string>
     <string name="widget_zamanlayici_aciklama">Start a timer with one tap</string>
     <string name="zamanlayici_basladi">Timer started</string>
+    <string name="etiket_ekle">Add label</string>
+    <string name="etiket_degistir">Change label</string>
+    <string name="etiketi_kaldir">Remove label</string>
+    <string name="sehir_etiket_ipucu">e.g. Mom, Office</string>
+    <string name="siralama_tutaci">Drag to reorder</string>
 </resources>

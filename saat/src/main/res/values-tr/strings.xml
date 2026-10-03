@@ -217,4 +217,9 @@
     <string name="widget_zamanlayici_adi">Hızlı zamanlayıcı</string>
     <string name="widget_zamanlayici_aciklama">Tek dokunuşla zamanlayıcı başlat</string>
     <string name="zamanlayici_basladi">Zamanlayıcı başladı</string>
+    <string name="etiket_ekle">Etiket ekle</string>
+    <string name="etiket_degistir">Etiketi değiştir</string>
+    <string name="etiketi_kaldir">Etiketi kaldır</string>
+    <string name="sehir_etiket_ipucu">örn. Annem, Ofis</string>
+    <string name="siralama_tutaci">Sıralamak için sürükle</string>
 </resources>

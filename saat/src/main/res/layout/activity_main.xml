@@ -198,6 +198,7 @@
                 android:layout_marginBottom="64dp" />
 
             <View
+                android:id="@+id/altSis"
                 android:layout_width="match_parent"
                 android:layout_height="104dp"
                 android:layout_gravity="bottom"

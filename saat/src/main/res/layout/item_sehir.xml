@@ -11,6 +11,18 @@
     android:paddingRight="18dp"
     android:paddingBottom="16dp">
 
+    <!-- Sürükleyerek sıralama tutacı (yalnız eklenen şehirlerde görünür). -->
+    <ImageView
+        android:id="@+id/sehirTutac"
+        android:layout_width="40dp"
+        android:layout_height="48dp"
+        android:layout_marginLeft="-10dp"
+        android:contentDescription="@string/siralama_tutaci"
+        android:paddingLeft="8dp"
+        android:paddingRight="12dp"
+        android:src="@drawable/ic_tutac"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"

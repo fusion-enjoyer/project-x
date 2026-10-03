@@ -11,8 +11,8 @@ android {
         applicationId = "com.ekosistem.saat"
         minSdk = 21
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.10.0"
+        versionCode = 14
+        versionName = "0.11.0"
         vectorDrawables.useSupportLibrary = true
         // AppCompat 80'den fazla dil taşıyor; sadece bizim dillerimiz kalsın.
         resourceConfigurations += listOf("tr", "en")

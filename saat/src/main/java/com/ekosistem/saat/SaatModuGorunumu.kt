@@ -55,8 +55,8 @@ class SaatModuGorunumu(context: Context) : FrameLayout(context) {
         }
     }
 
-    /** 0 çok loş, 1 orta, 2 parlak. */
-    var seviye: Int = 1
+    /** 0 çok loş, 1 orta, 2 tam parlak (varsayılan: gündüz de okunur). */
+    var seviye: Int = 2
         set(deger) {
             field = deger.coerceIn(0, 2)
             kutu.alpha = ALFA[field]
@@ -72,17 +72,25 @@ class SaatModuGorunumu(context: Context) : FrameLayout(context) {
             ).apply { gravity = Gravity.CENTER_HORIZONTAL })
         }
         addView(kutu, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
-        seviye = 1
+        seviye = 2
     }
 
     override fun onSizeChanged(w: Int, h: Int, eskiW: Int, eskiH: Int) {
         super.onSizeChanged(w, h, eskiW, eskiH)
+        // Yazı boyutu yerleşim geçişinin içinde değiştirilirse görünümler bayat
+        // ölçüyle kalıyor (saat kayboluyor, tarih kesiliyor); geçiş bitince uygula.
+        post { boyutlariUygula(w, h) }
+    }
+
+    private fun boyutlariUygula(w: Int, h: Int) {
+        if (w == 0 || h == 0) return
         fun px(oran: Float) = (minOf(h * 1.8f, w * 0.55f) * oran)
         // Yatayda yükseklik kısa: saat yüksekliğin yarısına yakın olsun.
-        saat.setTextSize(TypedValue.COMPLEX_UNIT_PX, minOf(h * 0.52f, w * 0.30f))
+        saat.setTextSize(TypedValue.COMPLEX_UNIT_PX, minOf(h * 0.44f, w * 0.30f))
         tarih.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(0.07f).coerceAtLeast(28f))
         alarm.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(0.06f).coerceAtLeast(24f))
         (alarm.layoutParams as LinearLayout.LayoutParams).topMargin = (h * 0.04f).toInt()
+        kutu.requestLayout()
     }
 
     override fun onAttachedToWindow() {
@@ -120,6 +128,9 @@ class SaatModuGorunumu(context: Context) : FrameLayout(context) {
         private const val ANA = 0xFFF2EFE9.toInt()
         private const val IKINCIL = 0xFF8B867D.toInt()
         private const val VURGU = 0xFFF97316.toInt()
-        private val ALFA = floatArrayOf(0.30f, 0.62f, 1f)
+        private val ALFA = floatArrayOf(0.40f, 0.75f, 1f)
+
+        /** Seviye tercihi; eski (çok loş varsayılanlı) kayıt kullanılmaz. */
+        const val TERCIH = "saat_modu_seviye_v2"
     }
 }

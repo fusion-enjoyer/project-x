@@ -110,6 +110,19 @@ object Depo {
     fun sehirleriKaydet(c: Context, liste: List<String>) =
         ayarlar(c).edit().putString("sehirler", org.json.JSONArray(liste.distinct()).toString()).apply()
 
+    /** Şehirlere verilen özel adlar (saat dilimi kimliği → etiket): "Annem", "Ofis". */
+    fun sehirEtiketleri(c: Context): Map<String, String> = runCatching {
+        val o = org.json.JSONObject(ayarlar(c).getString("sehir_etiketleri", "{}"))
+        o.keys().asSequence().associateWith { o.getString(it) }
+    }.getOrDefault(emptyMap())
+
+    /** Etiket boşsa kaldırılır. */
+    fun sehirEtiketiKaydet(c: Context, id: String, etiket: String) {
+        val yeni = sehirEtiketleri(c).toMutableMap()
+        if (etiket.isBlank()) yeni.remove(id) else yeni[id] = etiket.trim()
+        ayarlar(c).edit().putString("sehir_etiketleri", org.json.JSONObject(yeni as Map<*, *>).toString()).apply()
+    }
+
     /** Alarm klasörleri (adlar, oluşturulma sırasıyla). Boş klasör de kalır. */
     fun klasorler(c: Context): List<String> = runCatching {
         val d = org.json.JSONArray(ayarlar(c).getString("klasorler", "[]"))

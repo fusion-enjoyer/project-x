@@ -56,7 +56,7 @@ class SaatWidget : AppWidgetProvider() {
                     g.setViewVisibility(kutu[0], View.GONE)
                 } else {
                     g.setViewVisibility(kutu[0], View.VISIBLE)
-                    g.setTextViewText(kutu[1], Sehirler.ad(id))
+                    g.setTextViewText(kutu[1], Sehirler.gorunenAd(context, id))
                     g.setString(kutu[2], "setTimeZone", id)
                 }
             }

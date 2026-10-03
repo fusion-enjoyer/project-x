@@ -13,12 +13,19 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.transition.ChangeBounds
+import android.transition.Fade
+import android.transition.TransitionManager
+import android.transition.TransitionSet
 import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -133,10 +140,18 @@ class MainActivity : AppCompatActivity() {
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             kaydirmaSatirdaBasladi = listedeMi(R.id.alarmListesi, ev) || listedeMi(R.id.dunyaListesi, ev) ||
-                listedeMi(R.id.klasorKutusu, ev)
+                ustundeMi(R.id.klasorKaydirici, ev) || ustundeMi(R.id.zamanHazirKaydirici, ev)
         }
         kaydirmaAlgilayici.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
+    }
+
+    /** Dokunma, görünen bir yatay kaydırıcının (çip şeridi) kendi alanında mı? */
+    private fun ustundeMi(kimlik: Int, ev: MotionEvent): Boolean {
+        val v = findViewById<View>(kimlik) ?: return false
+        if (!v.isShown) return false
+        val kutu = android.graphics.Rect()
+        return v.getGlobalVisibleRect(kutu) && kutu.contains(ev.rawX.toInt(), ev.rawY.toInt())
     }
 
     /** Dokunma, verilen kapsayıcının görünen çocuklarından birinin üstünde mi? */
@@ -151,20 +166,88 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+    /** Sekme içeriğini oluşturan görünümler (alt çubuk ve üst başlık hariç). */
+    private val icerikKimlikleri = intArrayOf(
+        R.id.kaydirici, R.id.sekmeDunya, R.id.sekmeKronometre, R.id.sekmeZamanlayici, R.id.bosDurum
+    )
+
+    /**
+     * Sekme değişimi: eski içeriğin anlık görüntüsü yan tarafa kayarak soluk,
+     * yeni içerik karşı taraftan kayarak gelir; alt çubuktaki hap da yumuşakça
+     * yer değiştirir. [yon] +1: sağdaki sekmeye geçiş (içerik sola akar).
+     */
     private fun sekmeyeGec(yeni: Int, yon: Int) {
         if (yeni !in SEKME_ALARM..SEKME_KRONOMETRE || yeni == sekme) return
+        val kok = findViewById<FrameLayout>(R.id.sekmeIcerik)
+        val eski = icerikAnligi(kok)
+        val eskiUst = kok.top
         sekme = yeni
-        sekmeleriKur()
+        sekmeDurumunuGuncelle(animasyonlu = true)
         yenile()
-        // Hafif kayarak gelir (alt çubuk yerinde kalır): yön, sekmenin geldiği taraf.
+        gecisiOynat(kok, eski, eskiUst, yon)
+    }
+
+    private fun icerikAnligi(kok: FrameLayout): Bitmap? {
+        if (kok.width == 0 || kok.height == 0) return null
+        return runCatching {
+            val bmp = Bitmap.createBitmap(kok.width, kok.height, Bitmap.Config.ARGB_8888)
+            val tuval = Canvas(bmp)
+            tuval.drawColor(ContextCompat.getColor(this, TR.color.zemin))
+            for (id in icerikKimlikleri) {
+                val v = findViewById<View>(id)
+                if (v.visibility != View.VISIBLE) continue
+                tuval.save()
+                tuval.translate(v.left.toFloat(), v.top.toFloat())
+                v.draw(tuval)
+                tuval.restore()
+            }
+            bmp
+        }.getOrNull()
+    }
+
+    private fun gecisiOynat(kok: FrameLayout, eski: Bitmap?, eskiUst: Int, yon: Int) {
         val d = resources.displayMetrics.density
-        for (id in intArrayOf(R.id.kaydirici, R.id.sekmeDunya, R.id.sekmeKronometre, R.id.sekmeZamanlayici, R.id.bosDurum)) {
+        val mesafe = kok.width * 0.28f * yon
+        val sure = 280L
+        val yumusak = android.view.animation.DecelerateInterpolator(1.6f)
+        if (eski != null) {
+            val perde = ImageView(this).apply {
+                setImageBitmap(eski)
+                scaleType = ImageView.ScaleType.FIT_XY
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+            // Alt çubuğun ve alt sis perdesinin altında kalır: çubuk yerinde durur.
+            kok.addView(
+                perde, kok.indexOfChild(findViewById(R.id.altSis)),
+                FrameLayout.LayoutParams(eski.width, eski.height, Gravity.TOP or Gravity.START)
+            )
+            // Üstteki şeritler (tatil, klasör) sekmeyle değişince içerik alanı kayar;
+            // anlık görüntü eski konumunda kalsın.
+            kok.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    kok.viewTreeObserver.removeOnPreDrawListener(this)
+                    perde.translationY = (eskiUst - kok.top).toFloat()
+                    return true
+                }
+            })
+            perde.animate().translationX(-mesafe).alpha(0f).setDuration(sure).setInterpolator(yumusak)
+                .withEndAction { kok.removeView(perde); eski.recycle() }.start()
+        }
+        for (id in icerikKimlikleri) {
             val v = findViewById<View>(id)
             if (v.visibility != View.VISIBLE) continue
             v.animate().cancel()
-            v.translationX = 36 * d * yon
-            v.alpha = 0.4f
-            v.animate().translationX(0f).alpha(1f).setDuration(180).start()
+            v.translationX = mesafe
+            v.alpha = 0f
+            v.animate().translationX(0f).alpha(1f).setDuration(sure).setInterpolator(yumusak).start()
+        }
+        // Başlık ve şeritler de yumuşakça belirir.
+        for (id in intArrayOf(R.id.baslik, R.id.altBaslik, R.id.klasorKaydirici, R.id.tatilSeridi)) {
+            val v = findViewById<View>(id)
+            if (v.visibility != View.VISIBLE) continue
+            v.animate().cancel()
+            v.alpha = 0f
+            v.animate().alpha(1f).setDuration(220).start()
         }
     }
 
@@ -616,58 +699,100 @@ class MainActivity : AppCompatActivity() {
         sayfa.goster()
     }
 
+    private class Hap(val no: Int, val kutu: LinearLayout, val ikon: ImageView, val yazi: TextView)
+
+    private val haplar = ArrayList<Hap>()
+
     private fun sekmeleriKur() {
-        geriSekme.isEnabled = sekme != SEKME_ALARM
         val kutu = findViewById<LinearLayout>(R.id.sekmeler)
-        kutu.removeAllViews()
-        val d = resources.displayMetrics.density
-        val sekmeler = listOf(
-            Triple(SEKME_ALARM, R.drawable.ic_alarm, R.string.alarm),
-            Triple(SEKME_DUNYA, R.drawable.ic_dunya, R.string.dunya_saati),
-            Triple(SEKME_ZAMANLAYICI, R.drawable.ic_zamanlayici, R.string.zamanlayici),
-            Triple(SEKME_KRONOMETRE, R.drawable.ic_kronometre, R.string.kronometre)
-        )
-        val pasif = ContextCompat.getColor(this, TR.color.metin_ikincil)
-        for ((no, ikon, ad) in sekmeler) {
-            val secili = no == sekme
-            val hap = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER
-                contentDescription = getString(ad)
-                isSelected = secili
-                setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
-                if (secili) {
+        if (haplar.isEmpty()) {
+            val d = resources.displayMetrics.density
+            val sekmeler = listOf(
+                Triple(SEKME_ALARM, R.drawable.ic_alarm, R.string.alarm),
+                Triple(SEKME_DUNYA, R.drawable.ic_dunya, R.string.dunya_saati),
+                Triple(SEKME_ZAMANLAYICI, R.drawable.ic_zamanlayici, R.string.zamanlayici),
+                Triple(SEKME_KRONOMETRE, R.drawable.ic_kronometre, R.string.kronometre)
+            )
+            for ((no, ikon, ad) in sekmeler) {
+                val kapsayici = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    contentDescription = getString(ad)
+                    setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
                     setBackgroundResource(R.drawable.bg_sekme)
-                    backgroundTintList = ColorStateList.valueOf(Tasarim.pastel(vurgu))
+                    setOnClickListener { sekmeyeGec(no, if (no > sekme) 1 else -1) }
                 }
-                setOnClickListener { sekmeyeGec(no, if (no > sekme) 1 else -1) }
-            }
-            hap.addView(ImageView(this).apply {
-                setImageResource(ikon)
-                imageTintList = ColorStateList.valueOf(if (secili) vurgu else pasif)
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }, LinearLayout.LayoutParams((22 * d).toInt(), (22 * d).toInt()))
-            if (secili) {
-                hap.addView(TextView(this).apply {
+                val simge = ImageView(this).apply {
+                    setImageResource(ikon)
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+                kapsayici.addView(simge, LinearLayout.LayoutParams((22 * d).toInt(), (22 * d).toInt()))
+                val yazi = TextView(this).apply {
                     text = getString(ad)
                     textSize = 14f
                     setTypeface(null, android.graphics.Typeface.BOLD)
                     setTextColor(vurgu)
                     maxLines = 1
                     importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                    leftMargin = (6 * d).toInt()
-                })
-            } else {
-                ipucuVer(hap)
+                }
+                kapsayici.addView(yazi, LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { leftMargin = (6 * d).toInt() })
+                kutu.addView(kapsayici, LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f))
+                haplar.add(Hap(no, kapsayici, simge, yazi))
+                ipucuVer(kapsayici)
             }
-            // Seçili hap içeriği kadar, diğerleri kalan yeri eşit paylaşır.
-            val lp = if (secili) {
+        }
+        sekmeDurumunuGuncelle(animasyonlu = false)
+    }
+
+    /**
+     * Seçili sekme hap olur (simge + ad), diğerleri yalnız simge. Yer değişimi,
+     * hap rengi ve simge renkleri [animasyonlu] ise yumuşak geçişle olur.
+     */
+    private fun sekmeDurumunuGuncelle(animasyonlu: Boolean) {
+        geriSekme.isEnabled = sekme != SEKME_ALARM
+        val kutu = findViewById<LinearLayout>(R.id.sekmeler)
+        val d = resources.displayMetrics.density
+        val pasif = ContextCompat.getColor(this, TR.color.metin_ikincil)
+        val pastel = Tasarim.pastel(vurgu)
+        if (animasyonlu) {
+            val gecis = TransitionSet().apply {
+                addTransition(ChangeBounds())
+                addTransition(Fade())
+                duration = 260
+                interpolator = android.view.animation.DecelerateInterpolator(1.4f)
+            }
+            TransitionManager.beginDelayedTransition(kutu, gecis)
+        }
+        for (h in haplar) {
+            val secili = h.no == sekme
+            h.kutu.isSelected = secili
+            h.yazi.visibility = if (secili) View.VISIBLE else View.GONE
+            h.kutu.layoutParams = if (secili) {
                 LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (44 * d).toInt())
             } else {
                 LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f)
             }
-            kutu.addView(hap, lp)
+            val hedefHap = if (secili) pastel else (pastel and 0x00FFFFFF)
+            val hedefSimge = if (secili) vurgu else pasif
+            val eskiHap = (h.kutu.backgroundTintList?.defaultColor) ?: (pastel and 0x00FFFFFF)
+            val eskiSimge = h.ikon.imageTintList?.defaultColor ?: hedefSimge
+            if (animasyonlu) {
+                android.animation.ValueAnimator.ofObject(android.animation.ArgbEvaluator(), eskiHap, hedefHap).apply {
+                    duration = 260
+                    addUpdateListener { h.kutu.backgroundTintList = ColorStateList.valueOf(it.animatedValue as Int) }
+                    start()
+                }
+                android.animation.ValueAnimator.ofObject(android.animation.ArgbEvaluator(), eskiSimge, hedefSimge).apply {
+                    duration = 260
+                    addUpdateListener { h.ikon.imageTintList = ColorStateList.valueOf(it.animatedValue as Int) }
+                    start()
+                }
+            } else {
+                h.kutu.backgroundTintList = ColorStateList.valueOf(hedefHap)
+                h.ikon.imageTintList = ColorStateList.valueOf(hedefSimge)
+            }
         }
     }
 

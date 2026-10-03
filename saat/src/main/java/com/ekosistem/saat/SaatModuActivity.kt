@@ -33,7 +33,7 @@ class SaatModuActivity : AppCompatActivity() {
             }
         }
         gorunum = SaatModuGorunumu(this)
-        gorunum.seviye = Depo.ayarlar(this).getInt("saat_modu_seviye", 1)
+        gorunum.seviye = Depo.ayarlar(this).getInt(SaatModuGorunumu.TERCIH, 2)
         val ipucu = TextView(this).apply {
             text = getString(R.string.saat_modu_ipucu)
             setTextColor(0xFF8B867D.toInt())
@@ -52,7 +52,7 @@ class SaatModuActivity : AppCompatActivity() {
         ipucu.animate().alpha(0f).setStartDelay(3000).setDuration(800).start()
         kok.setOnClickListener {
             gorunum.seviye = (gorunum.seviye + 1) % 3
-            Depo.ayarlar(this).edit().putInt("saat_modu_seviye", gorunum.seviye).apply()
+            Depo.ayarlar(this).edit().putInt(SaatModuGorunumu.TERCIH, gorunum.seviye).apply()
             parlaklikUygula()
         }
     }
@@ -76,6 +76,7 @@ class SaatModuActivity : AppCompatActivity() {
 
     companion object {
         /** Seviyeye göre pencere parlaklığı (0–1). */
-        private val PARLAKLIK = floatArrayOf(0.02f, 0.25f, 0.7f)
+        // Son seviye pencereye dokunmaz: telefonun kendi parlaklığı geçerli.
+        private val PARLAKLIK = floatArrayOf(0.05f, 0.35f, WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
     }
 }

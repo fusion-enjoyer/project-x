@@ -103,7 +103,7 @@ class DunyaWidget : AppWidgetProvider() {
                     g.setViewVisibility(h[0], View.INVISIBLE)
                 } else {
                     g.setViewVisibility(h[0], View.VISIBLE)
-                    g.setTextViewText(h[1], Sehirler.ad(id))
+                    g.setTextViewText(h[1], Sehirler.gorunenAd(context, id))
                     g.setString(h[2], "setTimeZone", id)
                 }
             }

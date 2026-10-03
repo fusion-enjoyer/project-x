@@ -17,6 +17,9 @@ object Sehirler {
     @Volatile
     private var onbellek: Pair<String, List<Sehir>>? = null
 
+    /** Kullanıcının verdiği etiket varsa o, yoksa şehrin kendi adı. */
+    fun gorunenAd(context: Context, id: String): String = Depo.sehirEtiketleri(context)[id] ?: ad(id)
+
     fun ad(id: String): String {
         if (Build.VERSION.SDK_INT >= 24) {
             runCatching {
