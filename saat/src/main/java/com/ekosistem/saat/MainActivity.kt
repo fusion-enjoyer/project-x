@@ -49,6 +49,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var kaydirici: View
     private var vurgu = 0
     private var sekme = SEKME_ALARM
+
+    /** Alarm listesinde seçili klasör; null = Tümü. */
+    private var seciliKlasor: String? = null
+
+    /** Yatay kaydırma satır ya da çip şeridinde başladıysa sekme değişmez. */
+    private var kaydirmaSatirdaBasladi = false
     private lateinit var kronometre: KronometreSekmesi
     private lateinit var zamanlayici: ZamanlayiciSekmesi
     private lateinit var dunya: DunyaSekmesi
@@ -59,7 +65,7 @@ class MainActivity : AppCompatActivity() {
         val d = resources.displayMetrics.density
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if (e1 == null) return false
+                if (e1 == null || kaydirmaSatirdaBasladi) return false
                 val dx = e2.x - e1.x
                 val dy = e2.y - e1.y
                 // Belirgin ve yataya yakın bir hareket; dikey kaydırma listeyi bozmasın.
@@ -95,6 +101,7 @@ class MainActivity : AppCompatActivity() {
         kaydirici = findViewById(R.id.kaydirici)
         sekme = savedInstanceState?.getInt("sekme", SEKME_ALARM)
             ?: intent.getIntExtra(EK_SEKME, SEKME_ALARM)
+        seciliKlasor = savedInstanceState?.getString("klasor")
         kronometre = KronometreSekmesi(this)
         zamanlayici = ZamanlayiciSekmesi(this)
         dunya = DunyaSekmesi(this, bosDurum)
@@ -105,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                 when (sekme) {
                     SEKME_ZAMANLAYICI -> zamanlayici.yeniDugmesi()
                     SEKME_DUNYA -> dunya.sehirEkle()
-                    else -> startActivity(Intent(this@MainActivity, DuzenleActivity::class.java))
+                    else -> yeniAlarm()
                 }
             }
         }
@@ -121,8 +128,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            kaydirmaSatirdaBasladi = listedeMi(R.id.alarmListesi, ev) || listedeMi(R.id.dunyaListesi, ev) ||
+                listedeMi(R.id.klasorKutusu, ev)
+        }
         kaydirmaAlgilayici.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
+    }
+
+    /** Dokunma, verilen kapsayıcının görünen çocuklarından birinin üstünde mi? */
+    private fun listedeMi(kapsayiciId: Int, ev: MotionEvent): Boolean {
+        val kapsayici = findViewById<ViewGroup>(kapsayiciId) ?: return false
+        if (!kapsayici.isShown) return false
+        val kutu = android.graphics.Rect()
+        for (i in 0 until kapsayici.childCount) {
+            val c = kapsayici.getChildAt(i)
+            if (c.getGlobalVisibleRect(kutu) && kutu.contains(ev.rawX.toInt(), ev.rawY.toInt())) return true
+        }
+        return false
     }
 
     private fun sekmeyeGec(yeni: Int, yon: Int) {
@@ -145,6 +168,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(durum: Bundle) {
         super.onSaveInstanceState(durum)
         durum.putInt("sekme", sekme)
+        durum.putString("klasor", seciliKlasor)
     }
 
     override fun onResume() {
@@ -176,6 +200,7 @@ class MainActivity : AppCompatActivity() {
         ustBilgiyiYaz(alarmlar)
         uyariyiYaz()
         tatilSeridiniYaz()
+        klasorSeridiniYaz()
         findViewById<View>(R.id.btnTatil).visibility = if (sekme == SEKME_ALARM) View.VISIBLE else View.GONE
         bosDurum.translationY = 0f
         kronometre.goster(sekme == SEKME_KRONOMETRE)
@@ -193,19 +218,20 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnYeni).visibility = View.VISIBLE
         kaydirici.visibility = View.VISIBLE
         liste.removeAllViews()
-        if (alarmlar.isEmpty()) {
+        val gorunen = seciliKlasor?.let { k -> alarmlar.filter { it.klasor == k } } ?: alarmlar
+        if (gorunen.isEmpty()) {
+            val klasorde = seciliKlasor != null
             BosDurum.goster(
                 bosDurum, R.drawable.ic_alarm,
-                getString(R.string.bos_alarm_baslik), getString(R.string.bos_alarm_aciklama),
-                getString(R.string.alarm_ekle) to {
-                    startActivity(Intent(this, DuzenleActivity::class.java))
-                }
+                getString(if (klasorde) R.string.bos_klasor_baslik else R.string.bos_alarm_baslik),
+                getString(if (klasorde) R.string.bos_klasor_aciklama else R.string.bos_alarm_aciklama),
+                getString(R.string.alarm_ekle) to { yeniAlarm() }
             )
             return
         }
         bosDurum.visibility = View.GONE
         val simdi = System.currentTimeMillis()
-        for (a in alarmlar) liste.addView(kart(a, simdi))
+        for (a in gorunen) liste.addView(kart(a, simdi))
     }
 
     /** "Sonraki alarm 8 sa 12 dk sonra · Yarın 06:30" — kalan süre vurgulu. */
@@ -386,7 +412,125 @@ class MainActivity : AppCompatActivity() {
             secenekler(alarm)
             true
         }
-        return v
+        // Sola kaydır: sil; sağa kaydır: klasöre taşı. Uzun basma seçenekleri de duruyor.
+        val sarmal = KaydirmaSatiri(this)
+        sarmal.icerik(v)
+        sarmal.sola = KaydirmaSatiri.silme(this, getString(R.string.sil)) { alarmiSil(alarm) }
+        sarmal.saga = KaydirmaSatiri.klasor(this, getString(R.string.klasore_tasi)) { klasorSec(alarm) }
+        sarmal.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = (12 * resources.displayMetrics.density).toInt() }
+        return sarmal
+    }
+
+    private fun yeniAlarm() {
+        startActivity(
+            Intent(this, DuzenleActivity::class.java).apply {
+                seciliKlasor?.let { putExtra(DuzenleActivity.EK_KLASOR, it) }
+            }
+        )
+    }
+
+    /** Silme (kaydırarak ya da menüden): hemen silinir, beş saniye "Geri al" şeridi kalır. */
+    private fun alarmiSil(alarm: Alarm) {
+        Depo.sil(this, alarm.id)
+        AlarmKurucu.iptal(this, alarm.id)
+        Bildirimler.ertelemeyiKaldir(this, alarm.id)
+        yenile()
+        GeriAl.goster(this, getString(R.string.alarm_silindi)) {
+            Depo.yaz(this, alarm)
+            AlarmKurucu.hepsiniKur(this)
+            yenile()
+        }
+    }
+
+    /** Alarmı klasöre taşı / klasörden çıkar / yeni klasör aç. */
+    private fun klasorSec(alarm: Alarm) {
+        val sayfa = AltSayfa(this).baslik(getString(R.string.klasore_tasi))
+        fun tasi(ad: String) {
+            Depo.yaz(this, (Depo.alarm(this, alarm.id) ?: alarm).copy(klasor = ad))
+            yenile()
+        }
+        sayfa.madde(TR.drawable.ic_kapat, getString(R.string.klasorsuz), secili = alarm.klasor.isEmpty()) { tasi("") }
+        for (k in Depo.klasorler(this)) {
+            sayfa.madde(R.drawable.ic_klasor, k, secili = alarm.klasor == k) { tasi(k) }
+        }
+        sayfa.madde(R.drawable.ic_arti, getString(R.string.yeni_klasor)) {
+            yeniKlasorSor { ad -> tasi(ad) }
+        }
+        sayfa.goster()
+    }
+
+    private fun yeniKlasorSor(tamam: (String) -> Unit) {
+        AltSayfa(this).baslik(getString(R.string.yeni_klasor))
+            .girdi(getString(R.string.klasor_ipucu), "", getString(R.string.tamam)) { ad ->
+                val temiz = ad.take(24)
+                if (temiz !in Depo.klasorler(this)) Depo.klasorleriKaydet(this, Depo.klasorler(this) + temiz)
+                tamam(temiz)
+            }
+            .goster()
+    }
+
+    /** Alarm sekmesinin üstündeki klasör çipleri: Tümü, klasörler, yeni klasör. */
+    private fun klasorSeridiniYaz() {
+        val kaydirici = findViewById<View>(R.id.klasorKaydirici)
+        val kutu = findViewById<LinearLayout>(R.id.klasorKutusu)
+        val klasorler = Depo.klasorler(this)
+        val alarmVar = Depo.alarmlar(this).any { it.id != DENEME_ID }
+        if (sekme != SEKME_ALARM || (!alarmVar && klasorler.isEmpty())) {
+            kaydirici.visibility = View.GONE
+            return
+        }
+        // Silinen klasör seçili kaldıysa Tümü'ne dön.
+        if (seciliKlasor != null && seciliKlasor !in klasorler) seciliKlasor = null
+        kaydirici.visibility = View.VISIBLE
+        kutu.removeAllViews()
+        val d = resources.displayMetrics.density
+        val metin = ContextCompat.getColor(this, TR.color.metin)
+        val pastel = Tasarim.pastel(vurgu)
+        fun cip(ad: String, secili: Boolean, ikon: Boolean = false): TextView = TextView(this).apply {
+            text = ad
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(if (secili) vurgu else metin)
+            setTypeface(null, if (secili) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+            setBackgroundResource(R.drawable.bg_chip_hedef)
+            backgroundTintList = ColorStateList.valueOf(if (secili) pastel else ContextCompat.getColor(this@MainActivity, TR.color.kart))
+            setPadding((16 * d).toInt(), 0, (16 * d).toInt(), 0)
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (48 * d).toInt()).apply {
+                rightMargin = (8 * d).toInt()
+            }
+        }
+        kutu.addView(cip(getString(R.string.tum_alarmlar), seciliKlasor == null).apply {
+            setOnClickListener { seciliKlasor = null; yenile() }
+        })
+        for (k in klasorler) {
+            kutu.addView(cip(k, seciliKlasor == k).apply {
+                setOnClickListener { seciliKlasor = k; yenile() }
+                setOnLongClickListener { klasorSecenekleri(k); true }
+            })
+        }
+        kutu.addView(cip("＋ " + getString(R.string.klasor), false).apply {
+            setTextColor(vurgu)
+            setOnClickListener { yeniKlasorSor { ad -> seciliKlasor = ad; yenile() } }
+        })
+    }
+
+    private fun klasorSecenekleri(ad: String) {
+        AltSayfa(this).baslik(ad)
+            .madde(R.drawable.ic_cogalt, getString(R.string.yeniden_adlandir)) {
+                AltSayfa(this).baslik(getString(R.string.yeniden_adlandir))
+                    .girdi(getString(R.string.klasor_ipucu), ad, getString(R.string.tamam)) { yeni ->
+                        Depo.klasorDegistir(this, ad, yeni.take(24))
+                        if (seciliKlasor == ad) seciliKlasor = yeni.take(24)
+                        yenile()
+                    }.goster()
+            }
+            .madde(R.drawable.ic_sil, getString(R.string.klasoru_sil), tehlikeli = true) {
+                Depo.klasorDegistir(this, ad, "")
+                yenile()
+            }
+            .goster()
     }
 
     private fun aralikMetni(alarm: Alarm): String =
@@ -463,13 +607,8 @@ class MainActivity : AppCompatActivity() {
             AlarmKurucu.hepsiniKur(this)
             yenile()
         }
-        sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) {
-            Depo.sil(this, alarm.id)
-            AlarmKurucu.iptal(this, alarm.id)
-            Bildirimler.ertelemeyiKaldir(this, alarm.id)
-            yenile()
-            Toast.makeText(this, R.string.alarm_silindi, Toast.LENGTH_SHORT).show()
-        }
+        sayfa.madde(R.drawable.ic_klasor, getString(R.string.klasore_tasi)) { klasorSec(alarm) }
+        sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { alarmiSil(alarm) }
         sayfa.goster()
     }
 

@@ -189,4 +189,16 @@
     <string name="aralik_sec">Tarih aralığı seç…</string>
     <string name="aralik_bitis">Son gün (%1$s tarihinden itibaren)</string>
     <string name="aralik_kullan">Bu aralığı kullan</string>
+    <string name="klasore_tasi">Klasöre taşı</string>
+    <string name="klasorsuz">Klasörsüz</string>
+    <string name="yeni_klasor">Yeni klasör</string>
+    <string name="klasor_ipucu">örn. İş</string>
+    <string name="tum_alarmlar">Tümü</string>
+    <string name="klasor">Klasör</string>
+    <string name="yeniden_adlandir">Yeniden adlandır</string>
+    <string name="klasoru_sil">Klasörü sil (alarmlar kalır)</string>
+    <string name="bos_klasor_baslik">Bu klasörde alarm yok</string>
+    <string name="bos_klasor_aciklama">Buraya ekle ya da bir alarmı sağa kaydırıp taşı.</string>
+    <string name="geri_al">Geri al</string>
+    <string name="sehir_silindi">%1$s kaldırıldı</string>
 </resources>

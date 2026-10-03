@@ -122,7 +122,10 @@ class DuzenleActivity : AppCompatActivity() {
             add(Calendar.MINUTE, 30)
             if (get(Calendar.MINUTE) > 0) add(Calendar.HOUR_OF_DAY, 1)
         }
-        return Alarm(id = -1, saat = c.get(Calendar.HOUR_OF_DAY), dakika = 0)
+        return Alarm(
+            id = -1, saat = c.get(Calendar.HOUR_OF_DAY), dakika = 0,
+            klasor = intent.getStringExtra(EK_KLASOR).orEmpty()
+        )
     }
 
     private fun hepsiniYaz() {
@@ -226,7 +229,8 @@ class DuzenleActivity : AppCompatActivity() {
             ayarlariYaz()
         }
         satir(kutu, getString(R.string.erteleme), ertelemeOzeti()) { ertelemeSec() }
-        satir(kutu, getString(R.string.gorev), gorevAdi(alarm.gorev), ayracYok = true) { gorevSec() }
+        satir(kutu, getString(R.string.gorev), gorevAdi(alarm.gorev)) { gorevSec() }
+        satir(kutu, getString(R.string.klasor), alarm.klasor.ifBlank { "—" }, ayracYok = true) { klasorSec() }
     }
 
     private fun satir(
@@ -359,6 +363,27 @@ class DuzenleActivity : AppCompatActivity() {
             sayfa.madde(R.drawable.ic_alarm, yukselmeAdi(sn), secili = alarm.kademeliSn == sn) {
                 alarm = alarm.copy(kademeliSn = sn); ayarlariYaz()
             }
+        }
+        sayfa.goster()
+    }
+
+    private fun klasorSec() {
+        val sayfa = AltSayfa(this).baslik(getString(R.string.klasor))
+        sayfa.madde(TR.drawable.ic_kapat, getString(R.string.klasorsuz), secili = alarm.klasor.isEmpty()) {
+            alarm = alarm.copy(klasor = ""); ayarlariYaz()
+        }
+        for (k in Depo.klasorler(this)) {
+            sayfa.madde(R.drawable.ic_klasor, k, secili = alarm.klasor == k) {
+                alarm = alarm.copy(klasor = k); ayarlariYaz()
+            }
+        }
+        sayfa.madde(R.drawable.ic_arti, getString(R.string.yeni_klasor)) {
+            AltSayfa(this).baslik(getString(R.string.yeni_klasor))
+                .girdi(getString(R.string.klasor_ipucu), "", getString(R.string.tamam)) { ad ->
+                    val temiz = ad.take(24)
+                    if (temiz !in Depo.klasorler(this)) Depo.klasorleriKaydet(this, Depo.klasorler(this) + temiz)
+                    alarm = alarm.copy(klasor = temiz); ayarlariYaz()
+                }.goster()
         }
         sayfa.goster()
     }
@@ -509,5 +534,8 @@ class DuzenleActivity : AppCompatActivity() {
 
     companion object {
         private const val ISTEK_SES = 7
+
+        /** Yeni alarmın hangi klasörde açılacağı (klasör filtresindeyken "+" ile gelinir). */
+        const val EK_KLASOR = "klasor"
     }
 }

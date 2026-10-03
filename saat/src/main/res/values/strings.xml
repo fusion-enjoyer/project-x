@@ -195,4 +195,16 @@
     <string name="aralik_sec">Pick a date range…</string>
     <string name="aralik_bitis">Last day (from %1$s)</string>
     <string name="aralik_kullan">Use this range</string>
+    <string name="klasore_tasi">Move to folder</string>
+    <string name="klasorsuz">No folder</string>
+    <string name="yeni_klasor">New folder</string>
+    <string name="klasor_ipucu">e.g. Work</string>
+    <string name="tum_alarmlar">All</string>
+    <string name="klasor">Folder</string>
+    <string name="yeniden_adlandir">Rename</string>
+    <string name="klasoru_sil">Delete folder (alarms are kept)</string>
+    <string name="bos_klasor_baslik">No alarms in this folder</string>
+    <string name="bos_klasor_aciklama">Add one here, or swipe an alarm right to move it in.</string>
+    <string name="geri_al">Undo</string>
+    <string name="sehir_silindi">%1$s removed</string>
 </resources>

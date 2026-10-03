@@ -128,6 +128,25 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Alarm klasörleri: Tümü + klasör çipleri + yeni klasör. -->
+        <HorizontalScrollView
+            android:id="@+id/klasorKaydirici"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/klasorKutusu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
         <FrameLayout
             android:id="@+id/sekmeIcerik"
             android:layout_width="match_parent"
@@ -172,6 +191,22 @@
                 android:layout_gravity="bottom"
                 android:background="@drawable/bg_alt_sis"
                 android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/geriAlSeridi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="92dp"
+                android:background="@drawable/bg_pill_buton"
+                android:backgroundTint="@color/metin"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:paddingLeft="22dp"
+                android:paddingRight="22dp"
+                android:textColor="@color/zemin"
+                android:textSize="15sp"
+                android:visibility="gone" />
 
             <!-- Yüzen alt çubuk: dört sekme ve sağında vurgulu "yeni" düğmesi. -->
             <LinearLayout

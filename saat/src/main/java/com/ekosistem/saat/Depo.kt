@@ -110,6 +110,22 @@ object Depo {
     fun sehirleriKaydet(c: Context, liste: List<String>) =
         ayarlar(c).edit().putString("sehirler", org.json.JSONArray(liste.distinct()).toString()).apply()
 
+    /** Alarm klasörleri (adlar, oluşturulma sırasıyla). Boş klasör de kalır. */
+    fun klasorler(c: Context): List<String> = runCatching {
+        val d = org.json.JSONArray(ayarlar(c).getString("klasorler", "[]"))
+        List(d.length()) { d.getString(it) }
+    }.getOrDefault(emptyList())
+
+    fun klasorleriKaydet(c: Context, liste: List<String>) =
+        ayarlar(c).edit().putString("klasorler", org.json.JSONArray(liste.distinct()).toString()).apply()
+
+    /** Klasörü yeniden adlandırır ya da (yeniAd boşsa) siler; içindeki alarmlar yeni adı alır / klasörsüz kalır. */
+    fun klasorDegistir(c: Context, eski: String, yeniAd: String) = synchronized(kilit) {
+        val liste = klasorler(c).map { if (it == eski) yeniAd else it }.filter { it.isNotBlank() }
+        klasorleriKaydet(c, liste)
+        kaydet(c, alarmlar(c).map { if (it.klasor == eski) it.copy(klasor = yeniAd) else it })
+    }
+
     /** Zamanlayıcı hazır ayarları (ms, gösterim sırasıyla); hiç değiştirilmediyse varsayılanlar. */
     fun hazirSureler(c: Context): List<Long> = runCatching {
         val m = ayarlar(c).getString("hazir_sureler", null) ?: return@runCatching VARSAYILAN_HAZIR

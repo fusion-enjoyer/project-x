@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextClock
 import android.widget.TextView
@@ -41,6 +42,18 @@ class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
         return v
     }
 
+    private fun sehriSil(id: String, ad: String) {
+        val onceki = Depo.sehirler(activity)
+        Depo.sehirleriKaydet(activity, onceki - id)
+        SaatWidget.guncelle(activity)
+        yenile()
+        GeriAl.goster(activity, activity.getString(R.string.sehir_silindi, ad)) {
+            Depo.sehirleriKaydet(activity, onceki)
+            SaatWidget.guncelle(activity)
+            yenile()
+        }
+    }
+
     fun sehirEkle() = activity.startActivity(Intent(activity, SehirSecActivity::class.java))
 
     fun yenile() {
@@ -65,18 +78,21 @@ class DunyaSekmesi(private val activity: Activity, private val bosDurum: View) {
             val ad = Sehirler.ad(id)
             v.findViewById<TextView>(R.id.sehirAd).text = ad
             v.findViewById<TextView>(R.id.sehirFark).text = Sehirler.farkMetni(activity, id, simdi)
-            v.findViewById<TextClock>(R.id.sehirSaat).timeZone = id
+            v.findViewById<TextView>(R.id.sehirSaat).let { (it as TextClock).timeZone = id }
             v.setOnLongClickListener {
                 AltSayfa(activity).baslik(ad)
-                    .madde(R.drawable.ic_sil, activity.getString(R.string.sil), tehlikeli = true) {
-                        Depo.sehirleriKaydet(activity, Depo.sehirler(activity) - id)
-                        SaatWidget.guncelle(activity)
-                        yenile()
-                    }
+                    .madde(R.drawable.ic_sil, activity.getString(R.string.sil), tehlikeli = true) { sehriSil(id, ad) }
                     .goster()
                 true
             }
-            liste.addView(v)
+            // Sola kaydırarak da silinir; yanlışlıkla olursa "Geri al".
+            val sarmal = KaydirmaSatiri(activity)
+            sarmal.icerik(v)
+            sarmal.sola = KaydirmaSatiri.silme(activity, activity.getString(R.string.sil)) { sehriSil(id, ad) }
+            sarmal.layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (12 * activity.resources.displayMetrics.density).toInt() }
+            liste.addView(sarmal)
         }
     }
 }
