@@ -29,6 +29,9 @@ object Metinler {
     /** "Ekim 2026" */
     fun ayYil(gun: Int) = bicim("LLLLy", gun).basHarfBuyuk()
 
+    /** "Ekim" (yıl görünümündeki küçük ayların başlığı) */
+    fun ayAdi(gun: Int) = bicim("LLLL", gun).basHarfBuyuk()
+
     /** "4 Ekim" */
     fun gunAy(gun: Int) = bicim("dMMMM", gun)
 

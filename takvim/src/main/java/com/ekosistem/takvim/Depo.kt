@@ -11,6 +11,13 @@ object Depo {
     const val GORUNUM_HAFTA = 1
     const val GORUNUM_GUN = 2
     const val GORUNUM_GUNDEM = 3
+    /** Sekmesi yok: Ay sekmesinin üst katı (başlığa dokununca ya da Görünüm menüsünden). */
+    const val GORUNUM_YIL = 4
+
+    /** Ay görünümünün yoğunluğu: tek nokta / her etkinliğe çubuk / hücrede başlıklar. */
+    const val AY_KOMPAKT = 0
+    const val AY_YIGILI = 1
+    const val AY_AYRINTILI = 2
 
     private fun p(c: Context) = c.getSharedPreferences(DOSYA, Context.MODE_PRIVATE)
 
@@ -48,6 +55,27 @@ object Depo {
 
     fun ertelemeDk(c: Context) = p(c).getInt("erteleme_dk", 10)
     fun ertelemeDkKaydet(c: Context, v: Int) = p(c).edit().putInt("erteleme_dk", v).apply()
+
+    fun ayYogunlugu(c: Context) = p(c).getInt("ay_yogunluk", AY_KOMPAKT).coerceIn(AY_KOMPAKT, AY_AYRINTILI)
+    fun ayYogunluguKaydet(c: Context, v: Int) = p(c).edit().putInt("ay_yogunluk", v).apply()
+
+    /** Hafta sekmesinde kaç gün: 7 ya da 3. */
+    fun haftaGunSayisi(c: Context) = if (p(c).getInt("hafta_gun_sayisi", 7) == 3) 3 else 7
+    fun haftaGunSayisiKaydet(c: Context, v: Int) = p(c).edit().putInt("hafta_gun_sayisi", v).apply()
+
+    /** Gün sekmesi saat ızgarası yerine liste olarak. */
+    fun gunListe(c: Context) = p(c).getBoolean("gun_liste", false)
+    fun gunListeKaydet(c: Context, v: Boolean) = p(c).edit().putBoolean("gun_liste", v).apply()
+
+    /** Saat ızgarasında bir saatin yükseklik çarpanı (iki parmakla yakınlaştırma). */
+    fun saatOlcegi(c: Context) = p(c).getFloat("saat_olcegi", 1f).coerceIn(SAAT_OLCEGI_EN_AZ, SAAT_OLCEGI_EN_COK)
+    fun saatOlcegiKaydet(c: Context, v: Float) = p(c).edit().putFloat("saat_olcegi", v).apply()
+    const val SAAT_OLCEGI_EN_AZ = 0.5f
+    const val SAAT_OLCEGI_EN_COK = 2.5f
+
+    /** Yıl görünümünde günler etkinlik sayısına göre koyulaşır (varsayılan açık). */
+    fun yilIsiHaritasi(c: Context) = p(c).getBoolean("yil_isi_haritasi", true)
+    fun yilIsiHaritasiKaydet(c: Context, v: Boolean) = p(c).edit().putBoolean("yil_isi_haritasi", v).apply()
 
     fun haftaNumaralari(c: Context) = p(c).getBoolean("hafta_numaralari", false)
     fun haftaNumaralariKaydet(c: Context, v: Boolean) = p(c).edit().putBoolean("hafta_numaralari", v).apply()

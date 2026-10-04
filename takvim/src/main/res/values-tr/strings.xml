@@ -243,4 +243,27 @@
         <item>3.</item>
         <item>4.</item>
     </string-array>
+    <!-- v0.9 görünümler -->
+    <string name="gorunum_secenekleri">Görünüm seçenekleri</string>
+    <string name="gorunum_yil">Yıl</string>
+    <string name="gorunum_uc_gun">3 gün</string>
+    <string name="ay_kompakt">Kompakt</string>
+    <string name="ay_yigili">Yığılı</string>
+    <string name="ay_ayrintili">Ayrıntılı</string>
+    <string name="ay_gorunum_baslik">Ay görünümü · iki parmakla sıkıştırarak da değişir</string>
+    <string name="yil_isi_haritasi">Yoğunluk haritası</string>
+    <string name="yil_etkinlik_n">%1$d etkinlik</string>
+    <string name="yil_gorunumune_gec">Yıl görünümü</string>
+    <string name="gosterilen_gunler">Gösterilen günler</string>
+    <string name="yedi_gun">7 gün</string>
+    <string name="uc_gun">3 gün</string>
+    <string name="saat_araligi">Saat aralığı · iki parmakla da değişir</string>
+    <string name="saat_sik">Sık</string>
+    <string name="saat_normal">Normal</string>
+    <string name="saat_genis">Geniş</string>
+    <string name="gun_gorunumu">Gün görünümü</string>
+    <string name="gun_izgara">Saat ızgarası</string>
+    <string name="gun_liste">Liste</string>
+    <string name="bos_zaman">%1$s boş</string>
+    <string name="bu_yil_yok">Bu yıl etkinlik yok</string>
 </resources>

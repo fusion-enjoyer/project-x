@@ -87,6 +87,15 @@
                 android:textSize="15sp" />
 
             <ImageButton
+                android:id="@+id/btnGorunum"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/gorunum_secenekleri"
+                android:src="@drawable/ic_gorunum"
+                app:tint="@color/metin" />
+
+            <ImageButton
                 android:id="@+id/btnOnceki"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -245,6 +254,43 @@
                         android:layout_marginRight="8dp" />
                 </ScrollView>
             </LinearLayout>
+
+            <!-- YIL: on iki küçük ay -->
+            <ScrollView
+                android:id="@+id/icerikYil"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingLeft="16dp"
+                android:paddingTop="12dp"
+                android:paddingRight="16dp"
+                android:paddingBottom="104dp"
+                android:visibility="gone">
+
+                <com.ekosistem.takvim.YilIzgarasi
+                    android:id="@+id/yilIzgara"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </ScrollView>
+
+            <!-- GÜN (liste): saat ızgarası yerine günün etkinlikleri ve aradaki boş zaman -->
+            <ScrollView
+                android:id="@+id/icerikGunListe"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="104dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/gunListeKutusu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="20dp"
+                    android:paddingTop="8dp"
+                    android:paddingRight="20dp" />
+            </ScrollView>
 
             <!-- GÜNDEM -->
             <ScrollView

@@ -17,7 +17,9 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
+import android.widget.ScrollView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
@@ -348,13 +350,23 @@ class ZamanIzgarasi @JvmOverloads constructor(
         set(v) { field = v; bloklariKur() }
     var ornekTiklandi: ((Ornek) -> Unit)? = null
     var bosUzunBasildi: ((gun: Int, dakika: Int) -> Unit)? = null
+    /** İki parmakla yakınlaştırma bitince yeni saat çarpanı (kaydedilsin diye). */
+    var olcekDegisti: ((Float) -> Unit)? = null
+    /** Bir saatin yükseklik çarpanı; 1 = 56 dp. */
+    var saatCarpani = 1f
+        set(v) {
+            val yeni = v.coerceIn(Depo.SAAT_OLCEGI_EN_AZ, Depo.SAAT_OLCEGI_EN_COK)
+            if (yeni == field) return
+            field = yeni
+            requestLayout()
+        }
 
     private class Blok(val ornek: Ornek, val gun: Int, val alan: RectF, val basDk: Int, val bitDk: Int)
 
     private val d = resources.displayMetrics.density
     private val olcek get() = resources.configuration.fontScale.coerceIn(1f, 1.3f)
     /** Bir saatin yüksekliği (px). */
-    val saatYuksekligi get() = 56f * d * olcek
+    val saatYuksekligi get() = 56f * d * olcek * saatCarpani
     private val altBosluk get() = 104f * d
 
     private val metin = ContextCompat.getColor(context, TR.color.metin)
@@ -381,7 +393,42 @@ class ZamanIzgarasi @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         bloklariKur()
+        // Yakınlaştırırken parmakların arasındaki saat yerinde kalsın: yükseklik değişince kaydırma burada ayarlanır
+        // (önceden ayarlansa kaydırıcı eski yüksekliğe göre kırpardı).
+        if (bekleyenKaydirma >= 0) {
+            (parent as? ScrollView)?.scrollTo(0, bekleyenKaydirma)
+            bekleyenKaydirma = -1
+        }
     }
+
+    private var bekleyenKaydirma = -1
+    private var olcekleniyor = false
+
+    private val olcekAlgilayici = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            olcekleniyor = true
+            parent?.requestDisallowInterceptTouchEvent(true)
+            return true
+        }
+
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            // Yalnız dikey açılma önemli: saatler uzar, sütunlar aynı kalır.
+            val oran = if (detector.previousSpanY > 10f * d) detector.currentSpanY / detector.previousSpanY else detector.scaleFactor
+            val eski = saatYuksekligi
+            val eskiCarpan = saatCarpani
+            saatCarpani = eskiCarpan * oran
+            if (saatCarpani == eskiCarpan) return true
+            val kaydirici = parent as? ScrollView ?: return true
+            val odak = detector.focusY
+            val ekrandaki = odak - kaydirici.scrollY
+            bekleyenKaydirma = maxOf(0, (odak / eski * saatYuksekligi - ekrandaki).toInt())
+            return true
+        }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
+            olcekDegisti?.invoke(saatCarpani)
+        }
+    })
 
     fun dakikaY(dakika: Int) = dakika / 60f * saatYuksekligi
 
@@ -519,6 +566,7 @@ class ZamanIzgarasi @JvmOverloads constructor(
         override fun onDown(e: MotionEvent) = true
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
+            if (olcekleniyor) return false
             bloklar.lastOrNull { it.alan.contains(e.x, e.y) }?.let {
                 performClick()
                 ornekTiklandi?.invoke(it.ornek)
@@ -528,6 +576,7 @@ class ZamanIzgarasi @JvmOverloads constructor(
         }
 
         override fun onLongPress(e: MotionEvent) {
+            if (olcekleniyor) return
             if (e.x < kenar || bloklar.any { it.alan.contains(e.x, e.y) }) return
             val gun = ilkGun + ((e.x - kenar) / sutun()).toInt().coerceIn(0, gunSayisi - 1)
             val dk = (e.y / saatYuksekligi * 60).toInt().coerceIn(0, 1410) / 30 * 30
@@ -536,7 +585,13 @@ class ZamanIzgarasi @JvmOverloads constructor(
         }
     })
 
-    override fun onTouchEvent(e: MotionEvent): Boolean = hareket.onTouchEvent(e) || super.onTouchEvent(e)
+    override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (e.actionMasked == MotionEvent.ACTION_DOWN) olcekleniyor = false
+        if (e.actionMasked == MotionEvent.ACTION_POINTER_DOWN) parent?.requestDisallowInterceptTouchEvent(true)
+        olcekAlgilayici.onTouchEvent(e)
+        if (olcekleniyor || e.pointerCount > 1) return true
+        return hareket.onTouchEvent(e) || super.onTouchEvent(e)
+    }
 
     override fun performClick(): Boolean = super.performClick()
 

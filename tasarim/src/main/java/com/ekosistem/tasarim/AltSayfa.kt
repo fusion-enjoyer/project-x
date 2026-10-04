@@ -27,7 +27,8 @@ class AltSayfa(private val activity: Activity) {
         val baslik: String,
         val secili: Boolean,
         val tehlikeli: Boolean,
-        val tikla: () -> Unit
+        val tikla: () -> Unit,
+        val bolum: Boolean = false
     )
 
     private val maddeler = mutableListOf<Madde>()
@@ -89,6 +90,12 @@ class AltSayfa(private val activity: Activity) {
         tikla: () -> Unit
     ): AltSayfa {
         maddeler.add(Madde(ikon, baslik, secili, tehlikeli, tikla))
+        return this
+    }
+
+    /** Maddeleri gruplayan küçük gri ara başlık ("Saat aralığı" gibi). */
+    fun bolum(metin: String): AltSayfa {
+        maddeler.add(Madde(0, metin, false, false, {}, bolum = true))
         return this
     }
 
@@ -202,6 +209,15 @@ class AltSayfa(private val activity: Activity) {
         val maddeKutusu = LinearLayout(activity)
         maddeKutusu.orientation = LinearLayout.VERTICAL
         for (madde in maddeler) {
+            if (madde.bolum) {
+                val tv = TextView(activity)
+                tv.text = madde.baslik
+                tv.textSize = 13f
+                tv.setTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
+                tv.setPadding((24 * y).toInt(), (14 * y).toInt(), (24 * y).toInt(), (4 * y).toInt())
+                maddeKutusu.addView(tv)
+                continue
+            }
             val satir = LinearLayout(activity)
             satir.orientation = LinearLayout.HORIZONTAL
             satir.gravity = Gravity.CENTER_VERTICAL
@@ -250,7 +266,7 @@ class AltSayfa(private val activity: Activity) {
                 )
             )
         }
-        val toplam = (maddeler.size * 56 * y).toInt()
+        val toplam = maddeler.sumOf { if (it.bolum) 40 else 56 }.let { (it * y).toInt() }
         val sinir = (activity.resources.displayMetrics.heightPixels * 0.6f).toInt()
         if (toplam > sinir) {
             val kaydirici = ScrollView(activity)

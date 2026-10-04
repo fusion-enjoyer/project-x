@@ -243,4 +243,27 @@
         <item>3rd</item>
         <item>4th</item>
     </string-array>
+    <!-- v0.9 görünümler -->
+    <string name="gorunum_secenekleri">View options</string>
+    <string name="gorunum_yil">Year</string>
+    <string name="gorunum_uc_gun">3 days</string>
+    <string name="ay_kompakt">Compact</string>
+    <string name="ay_yigili">Stacked</string>
+    <string name="ay_ayrintili">Details</string>
+    <string name="ay_gorunum_baslik">Month view · pinch to switch, too</string>
+    <string name="yil_isi_haritasi">Heat map</string>
+    <string name="yil_etkinlik_n">%1$d events</string>
+    <string name="yil_gorunumune_gec">Year view</string>
+    <string name="gosterilen_gunler">Days shown</string>
+    <string name="yedi_gun">7 days</string>
+    <string name="uc_gun">3 days</string>
+    <string name="saat_araligi">Hour spacing · pinch to change, too</string>
+    <string name="saat_sik">Compact</string>
+    <string name="saat_normal">Normal</string>
+    <string name="saat_genis">Spacious</string>
+    <string name="gun_gorunumu">Day view</string>
+    <string name="gun_izgara">Timeline</string>
+    <string name="gun_liste">List</string>
+    <string name="bos_zaman">%1$s free</string>
+    <string name="bu_yil_yok">No events this year</string>
 </resources>

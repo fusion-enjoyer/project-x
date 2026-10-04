@@ -23,6 +23,7 @@ import android.view.GestureDetector
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -43,7 +44,8 @@ import java.util.concurrent.Executors
 import com.ekosistem.tasarim.R as TR
 
 /**
- * Ana ekran: Ay, Hafta, Gün ve Gündem görünümleri. Etkinlikler telefonun
+ * Ana ekran: Ay (ve üst katı Yıl), Hafta (7 ya da 3 gün), Gün (ızgara ya da
+ * liste) ve Gündem görünümleri. Etkinlikler telefonun
  * takvim deposundan okunur; depo değişince (senkron, başka uygulama) ekran
  * kendiliğinden yenilenir.
  */
@@ -85,6 +87,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var zamanKaydirici: ScrollView
     private lateinit var zamanIzgara: ZamanIzgarasi
     private lateinit var gundemListe: LinearLayout
+    private lateinit var btnGorunum: View
+    private lateinit var icerikYil: ScrollView
+    private lateinit var yilIzgara: YilIzgarasi
+    private lateinit var icerikGunListe: ScrollView
+    private lateinit var gunListeKutusu: LinearLayout
 
     private val yenileIs = Runnable { yenile() }
 
@@ -111,13 +118,43 @@ class MainActivity : AppCompatActivity() {
         val d = resources.displayMetrics.density
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if (e1 == null || mod == Depo.GORUNUM_GUNDEM) return false
+                if (e1 == null || mod == Depo.GORUNUM_GUNDEM || cokParmak) return false
                 val dx = e2.x - e1.x
                 val dy = e2.y - e1.y
                 if (kotlin.math.abs(dx) < 80 * d || kotlin.math.abs(dx) < 2 * kotlin.math.abs(dy)) return false
                 if (kotlin.math.abs(vx) < 500 * d) return false
                 git(if (dx < 0) 1 else -1)
                 return true
+            }
+        })
+    }
+
+    /** Dokunuşta ikinci parmak indi mi: sıkıştırma yatay kaydırma (sayfa değiştirme) sayılmasın. */
+    private var cokParmak = false
+
+    /**
+     * Ay ve Yıl'da iki parmakla sıkıştırma: açınca daha ayrıntılı (Yıl → Ay,
+     * Kompakt → Yığılı → Ayrıntılı), kapatınca daha toplu. Aynı seçenekler
+     * Görünüm düğmesinde de var (gizli jest tek yol olmasın).
+     */
+    private val ayOlcekAlgilayici by lazy {
+        ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            private var toplam = 1f
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                toplam = 1f
+                return mod == Depo.GORUNUM_AY || mod == Depo.GORUNUM_YIL
+            }
+
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                toplam *= detector.scaleFactor
+                return true
+            }
+
+            override fun onScaleEnd(detector: ScaleGestureDetector) {
+                when {
+                    toplam > 1.25f -> yogunluguDegistir(1)
+                    toplam < 0.8f -> yogunluguDegistir(-1)
+                }
             }
         })
     }
@@ -146,6 +183,11 @@ class MainActivity : AppCompatActivity() {
         zamanKaydirici = findViewById(R.id.zamanKaydirici)
         zamanIzgara = findViewById(R.id.zamanIzgara)
         gundemListe = findViewById(R.id.gundemListe)
+        btnGorunum = findViewById(R.id.btnGorunum)
+        icerikYil = findViewById(R.id.icerikYil)
+        yilIzgara = findViewById(R.id.yilIzgara)
+        icerikGunListe = findViewById(R.id.icerikGunListe)
+        gunListeKutusu = findViewById(R.id.gunListeKutusu)
 
         mod = savedInstanceState?.getInt("mod") ?: Depo.baslangicGorunumu(this)
         ref = savedInstanceState?.getInt("ref") ?: gidilecekGun() ?: bugun
@@ -163,16 +205,26 @@ class MainActivity : AppCompatActivity() {
             baslik, 20, (resources.getDimension(R.dimen.baslik_en_buyuk) / resources.displayMetrics.scaledDensity).toInt(), 1,
             android.util.TypedValue.COMPLEX_UNIT_SP
         )
+        btnGorunum.setOnClickListener { gorunumSecenekleri() }
+        // Apple Takvim'deki gibi: ay başlığına dokununca yıl açılır (aynı yol Görünüm düğmesinde de var).
+        baslik.setOnClickListener { if (mod == Depo.GORUNUM_AY) modDegistir(Depo.GORUNUM_YIL) }
         btnOnceki.setOnClickListener { git(-1) }
         btnSonraki.setOnClickListener { git(1) }
         findViewById<View>(R.id.uyariSeridi).setOnClickListener { bildirimIzniIste() }
-        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnAra), btnBugun, btnOnceki, btnSonraki)
+        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnAra), btnBugun, btnGorunum, btnOnceki, btnSonraki)
 
         ayIzgara.gunSecildi = { gunSec(it) }
         haftaBasligi.gunSecildi = { g -> ref = g; modDegistir(Depo.GORUNUM_GUN) }
         tumGunSeridi.ornekTiklandi = { ornekAc(it) }
         zamanIzgara.ornekTiklandi = { ornekAc(it) }
         zamanIzgara.bosUzunBasildi = { g, dk -> yeniEtkinlik(g, dk) }
+        zamanIzgara.saatCarpani = Depo.saatOlcegi(this)
+        zamanIzgara.olcekDegisti = { Depo.saatOlcegiKaydet(this, it) }
+        yilIzgara.aySecildi = { ay -> aydanAyaGit(ay) }
+        // Ayrıntılı ayda ızgara ekranın boyunu doldurur: kapsayıcının yüksekliği değişince (döndürme) yeniden hesaplanır.
+        icerikAy.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            if (bottom - top != oldBottom - oldTop) ayIzgara.hedefYukseklik = ayrintiliYukseklik()
+        }
         icerikGundem.viewTreeObserver.addOnScrollChangedListener { gundemKaydirildi() }
 
         sekmeleriKur()
@@ -258,6 +310,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> cokParmak = false
+            MotionEvent.ACTION_POINTER_DOWN -> cokParmak = true
+        }
+        ayOlcekAlgilayici.onTouchEvent(ev)
         kaydirmaAlgilayici.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
@@ -329,7 +386,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun aralik(): Pair<Int, Int> = when (mod) {
         Depo.GORUNUM_AY -> ayIlkGunu().let { it to it + aySatirSayisi() * 7 - 1 }
-        Depo.GORUNUM_HAFTA -> Gun.haftaBasi(ref, Depo.haftaBasi(this)).let { it to it + 6 }
+        Depo.GORUNUM_YIL -> Gun.gun(Gun.yil(ref), 1, 1) to Gun.gun(Gun.yil(ref), 12, 31)
+        // 3 günlük görünüm seçili günden başlar (Apple'ın çok günlü görünümü gibi); 7 gün haftanın başından.
+        Depo.GORUNUM_HAFTA -> if (Depo.haftaGunSayisi(this) == 3) ref to ref + 2
+            else Gun.haftaBasi(ref, Depo.haftaBasi(this)).let { it to it + 6 }
         Depo.GORUNUM_GUN -> ref to ref
         else -> ref to ref + gundemGunSayisi - 1
     }
@@ -373,12 +433,25 @@ class MainActivity : AppCompatActivity() {
     // ---- Çizim ----
 
     private fun icerikleriAyarla() {
+        val gunListesi = mod == Depo.GORUNUM_GUN && Depo.gunListe(this)
         icerikAy.visibility = if (mod == Depo.GORUNUM_AY) View.VISIBLE else View.GONE
-        icerikZaman.visibility = if (mod == Depo.GORUNUM_HAFTA || mod == Depo.GORUNUM_GUN) View.VISIBLE else View.GONE
+        icerikYil.visibility = if (mod == Depo.GORUNUM_YIL) View.VISIBLE else View.GONE
+        icerikZaman.visibility = if ((mod == Depo.GORUNUM_HAFTA || mod == Depo.GORUNUM_GUN) && !gunListesi) View.VISIBLE else View.GONE
+        icerikGunListe.visibility = if (gunListesi) View.VISIBLE else View.GONE
         icerikGundem.visibility = if (mod == Depo.GORUNUM_GUNDEM) View.VISIBLE else View.GONE
         val oklar = if (mod == Depo.GORUNUM_GUNDEM) View.INVISIBLE else View.VISIBLE
         btnOnceki.visibility = oklar
         btnSonraki.visibility = oklar
+        btnGorunum.visibility = if (mod == Depo.GORUNUM_GUNDEM) View.GONE else View.VISIBLE
+        baslik.isClickable = mod == Depo.GORUNUM_AY
+        if (mod == Depo.GORUNUM_AY) {
+            androidx.core.view.ViewCompat.replaceAccessibilityAction(
+                baslik, androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK,
+                getString(R.string.yil_gorunumune_gec), null
+            )
+        } else {
+            androidx.core.view.ViewCompat.removeAccessibilityAction(baslik, android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+        }
         sekmeDurumunuGuncelle(false)
     }
 
@@ -395,7 +468,15 @@ class MainActivity : AppCompatActivity() {
                 val sayi = ornekler.filter { o -> (o.ilkGun..o.sonGun).any { Gun.ay(it) == ay && Gun.yil(it) == yil } }.size
                 altBaslik.text = if (!yuklendi || takvimler.isEmpty()) "" else if (sayi == 0) getString(R.string.bu_ay_yok) else getString(R.string.bu_ay_n, sayi)
             }
-            Depo.GORUNUM_HAFTA -> {
+            Depo.GORUNUM_YIL -> {
+                baslik.text = Gun.yil(ref).toString()
+                altBaslik.text = if (!yuklendi || takvimler.isEmpty() || yuklenen != ilkSon) ""
+                    else if (ornekler.isEmpty()) getString(R.string.bu_yil_yok) else getString(R.string.yil_etkinlik_n, ornekler.size)
+            }
+            Depo.GORUNUM_HAFTA -> if (ilkSon.second - ilkSon.first < 6) {
+                baslik.text = Metinler.ayYil(ilkSon.first + 1)
+                altBaslik.text = Metinler.gunAyKisa(ilkSon.first) + " – " + Metinler.gunAyKisa(ilkSon.second)
+            } else {
                 baslik.text = Metinler.ayYil(ilkSon.first + 3)
                 altBaslik.text = getString(
                     R.string.hafta_aralik, Gun.isoHafta(ilkSon.first + Math.floorMod(-Depo.haftaBasi(this), 7)),
@@ -414,14 +495,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun icerikleriGizle() {
+        for (v in listOf(icerikAy, icerikYil, icerikZaman, icerikGunListe, icerikGundem)) v.visibility = View.GONE
+    }
+
     private fun bosDurumGizle() {
         bosDurum.visibility = View.GONE
     }
 
     private fun izinEkrani() {
-        icerikAy.visibility = View.GONE
-        icerikZaman.visibility = View.GONE
-        icerikGundem.visibility = View.GONE
+        icerikleriGizle()
         val ayardan = Depo.izinIstendi(this) && !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CALENDAR)
         BosDurum.goster(
             bosDurum, R.drawable.ic_takvim, getString(R.string.izin_baslik), getString(R.string.izin_aciklama),
@@ -439,9 +522,7 @@ class MainActivity : AppCompatActivity() {
         if (!izinKontrol()) return izinEkrani()
         ustBilgiyiYaz()
         if (takvimler.isEmpty()) {
-            icerikAy.visibility = View.GONE
-            icerikZaman.visibility = View.GONE
-            icerikGundem.visibility = View.GONE
+            icerikleriGizle()
             BosDurum.goster(
                 bosDurum, R.drawable.ic_takvim, getString(R.string.takvim_yok_baslik), getString(R.string.takvim_yok_aciklama),
                 getString(R.string.takvim_olustur) to { yerelTakvimOlustur { yenile() } }
@@ -453,7 +534,9 @@ class MainActivity : AppCompatActivity() {
             icerikleriAyarla()
             when (mod) {
                 Depo.GORUNUM_AY -> ayiCiz()
-                Depo.GORUNUM_HAFTA, Depo.GORUNUM_GUN -> zamaniCiz()
+                Depo.GORUNUM_YIL -> yiliCiz()
+                Depo.GORUNUM_GUN -> if (Depo.gunListe(this)) gunListesiniCiz() else zamaniCiz()
+                Depo.GORUNUM_HAFTA -> zamaniCiz()
                 else -> gundemiCiz()
             }
         }
@@ -501,10 +584,20 @@ class MainActivity : AppCompatActivity() {
         Hiz.olc("ay.ozetler") {
             for ((g, liste) in gunler) {
                 val sirali = liste.sortedWith(::gunSirasi)
-                ozetler[g] = GunOzeti(sirali.map { Renk.yuzey(this, it.renk) }.distinct().take(3).toIntArray(), liste.size)
+                val renkler = sirali.map { Renk.yuzey(this, it.renk) }
+                ozetler[g] = GunOzeti(
+                    renkler.distinct().take(3).toIntArray(), liste.size,
+                    if (yogunluk == Depo.AY_KOMPAKT) emptyList()
+                    else sirali.mapIndexed { i, o -> GunEtkinligi(renkler[i], o.baslik.ifBlank { getString(R.string.basliksiz) }) }
+                )
             }
         }
+        val ayrintili = yogunluk == Depo.AY_AYRINTILI
+        ayGunBasligi.visibility = if (ayrintili) View.GONE else View.VISIBLE
+        ayListe.visibility = if (ayrintili) View.GONE else View.VISIBLE
         Hiz.olc("ay.izgara") {
+            ayIzgara.yogunluk = yogunluk
+            ayIzgara.hedefYukseklik = ayrintiliYukseklik()
             ayIzgara.haftaBasi = Depo.haftaBasi(this)
             ayIzgara.haftaNumaralari = Depo.haftaNumaralari(this)
             ayIzgara.ilkGun = ayIlkGunu()
@@ -515,7 +608,163 @@ class MainActivity : AppCompatActivity() {
             ayIzgara.gunler = ozetler
         }
 
-        Hiz.olc("ay.liste") { ayListeyiYaz(gunler) }
+        if (!ayrintili) Hiz.olc("ay.liste") { ayListeyiYaz(gunler) }
+    }
+
+    private val yogunluk get() = Depo.ayYogunlugu(this)
+
+    /** Ayrıntılı ayda ızgaranın yüksekliği: gün adlarının altından yüzen çubuğun üstüne kadar. */
+    private fun ayrintiliYukseklik(): Int {
+        val h = icerikAy.height
+        if (h == 0) return 0
+        return h - icerikAy.paddingBottom - ayGunAdlari.bottom - (4 * resources.displayMetrics.density).toInt()
+    }
+
+    /** Sıkıştırma: +1 daha ayrıntılı, -1 daha toplu. Yıl ← Kompakt ← Yığılı ← Ayrıntılı. */
+    private fun yogunluguDegistir(yon: Int) {
+        val su = if (mod == Depo.GORUNUM_YIL) -1 else yogunluk
+        val yeni = (su + yon).coerceIn(-1, Depo.AY_AYRINTILI)
+        if (yeni == su) return
+        android.transition.TransitionManager.beginDelayedTransition(findViewById(R.id.icerik), ChangeBounds().setDuration(200))
+        if (yeni < 0) {
+            modDegistir(Depo.GORUNUM_YIL)
+        } else {
+            Depo.ayYogunluguKaydet(this, yeni)
+            if (mod == Depo.GORUNUM_YIL) modDegistir(Depo.GORUNUM_AY) else goster()
+        }
+        icerikAy.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+    }
+
+    // ---- Yıl ----
+
+    private fun yiliCiz() {
+        val sayilar = HashMap<Int, Int>()
+        Hiz.olc("yil.sayilar(${ornekler.size})") {
+            for ((g, liste) in gunlereBol()) sayilar[g] = liste.size
+        }
+        yilIzgara.yil = Gun.yil(ref)
+        yilIzgara.haftaBasi = Depo.haftaBasi(this)
+        yilIzgara.bugun = bugun
+        yilIzgara.isiHaritasi = Depo.yilIsiHaritasi(this)
+        yilIzgara.sayilar = sayilar
+    }
+
+    /** Yıl görünümünde bir aya dokunuldu: o ay açılır; bu aysa bugün, değilse ayın 1'i seçili. */
+    private fun aydanAyaGit(ay: Int) {
+        val yil = Gun.yil(ref)
+        ref = if (Gun.yil(bugun) == yil && Gun.ay(bugun) == ay) bugun else Gun.gun(yil, ay, 1)
+        modDegistir(Depo.GORUNUM_AY)
+    }
+
+    // ---- Gün (liste) ----
+
+    /** Günün etkinlikleri kart olarak; saatli etkinlikler arasında yarım saatten uzun boşluk varsa yazılır. */
+    private fun gunListesiniCiz() {
+        gunListeKutusu.removeAllViews()
+        val d = resources.displayMetrics.density
+        val liste = ornekler.filter { it.gunuIcerir(ref) }.sortedWith(::gunSirasi)
+        if (liste.isEmpty()) {
+            val t = TextView(this)
+            t.text = getString(R.string.etkinlik_yok)
+            t.textSize = 15f
+            t.setTextColor(ContextCompat.getColor(this, TR.color.metin_ikincil))
+            t.setPadding(0, (8 * d).toInt(), 0, 0)
+            gunListeKutusu.addView(t)
+            return
+        }
+        var sonBitis = -1
+        for (o in liste) {
+            if (!o.tumGun) {
+                val bas = o.gunBaslangicDk(ref)
+                if (sonBitis >= 0 && bas - sonBitis >= 30) {
+                    val t = TextView(this)
+                    t.text = getString(R.string.bos_zaman, Metinler.sure(this, bas - sonBitis))
+                    t.textSize = 13f
+                    t.setTextColor(ContextCompat.getColor(this, TR.color.metin_ikincil))
+                    t.setPadding((16 * d).toInt(), (2 * d).toInt(), 0, (10 * d).toInt())
+                    gunListeKutusu.addView(t)
+                }
+                sonBitis = maxOf(sonBitis, o.gunBitisDk(ref))
+            }
+            kartEkle(gunListeKutusu, o, ref)
+        }
+    }
+
+    // ---- Görünüm seçenekleri (her sekmeye göre) ----
+
+    private fun gorunumSecenekleri() {
+        val sayfa = AltSayfa(this)
+        when (mod) {
+            Depo.GORUNUM_AY, Depo.GORUNUM_YIL -> {
+                sayfa.baslik(getString(R.string.ay_gorunum_baslik))
+                val yil = mod == Depo.GORUNUM_YIL
+                val secenekler = listOf(
+                    Triple(Depo.AY_KOMPAKT, R.drawable.ic_yogun_kompakt, R.string.ay_kompakt),
+                    Triple(Depo.AY_YIGILI, R.drawable.ic_yogun_yigili, R.string.ay_yigili),
+                    Triple(Depo.AY_AYRINTILI, R.drawable.ic_yogun_ayrintili, R.string.ay_ayrintili)
+                )
+                for ((no, ikon, ad) in secenekler) {
+                    sayfa.madde(ikon, getString(ad), secili = !yil && yogunluk == no) {
+                        Depo.ayYogunluguKaydet(this, no)
+                        if (yil) modDegistir(Depo.GORUNUM_AY) else goster()
+                    }
+                }
+                sayfa.madde(R.drawable.ic_yil, getString(R.string.gorunum_yil), secili = yil) {
+                    modDegistir(Depo.GORUNUM_YIL)
+                }
+                if (yil) {
+                    sayfa.madde(R.drawable.ic_isi, getString(R.string.yil_isi_haritasi), secili = Depo.yilIsiHaritasi(this)) {
+                        Depo.yilIsiHaritasiKaydet(this, !Depo.yilIsiHaritasi(this))
+                        goster()
+                    }
+                }
+            }
+            Depo.GORUNUM_HAFTA -> {
+                sayfa.baslik(getString(R.string.gosterilen_gunler))
+                for ((n, ikon, ad) in listOf(Triple(7, R.drawable.ic_hafta, R.string.yedi_gun), Triple(3, R.drawable.ic_uc_gun, R.string.uc_gun))) {
+                    sayfa.madde(ikon, getString(ad), secili = Depo.haftaGunSayisi(this) == n) {
+                        Depo.haftaGunSayisiKaydet(this, n)
+                        sekmeAdlariniYaz()
+                        zamanKaydirmaGerekli = true
+                        yeniGorunum()
+                    }
+                }
+                saatAraligiSecenekleri(sayfa)
+            }
+            Depo.GORUNUM_GUN -> {
+                sayfa.baslik(getString(R.string.gun_gorunumu))
+                val liste = Depo.gunListe(this)
+                sayfa.madde(R.drawable.ic_gun, getString(R.string.gun_izgara), secili = !liste) {
+                    Depo.gunListeKaydet(this, false)
+                    zamanKaydirmaGerekli = true
+                    yeniGorunum()
+                }
+                sayfa.madde(R.drawable.ic_liste, getString(R.string.gun_liste), secili = liste) {
+                    Depo.gunListeKaydet(this, true)
+                    yeniGorunum()
+                }
+                if (!liste) saatAraligiSecenekleri(sayfa)
+            }
+            else -> return
+        }
+        sayfa.goster()
+    }
+
+    /** İki parmakla yakınlaştırmanın görünür karşılığı: üç hazır saat yüksekliği. */
+    private fun saatAraligiSecenekleri(sayfa: AltSayfa) {
+        sayfa.bolum(getString(R.string.saat_araligi))
+        val su = Depo.saatOlcegi(this)
+        val hazir = listOf(0.7f to R.string.saat_sik, 1f to R.string.saat_normal, 1.6f to R.string.saat_genis)
+        // Sıkıştırmayla ara bir değer seçildiyse en yakın hazır değer işaretlenir.
+        val en = hazir.minByOrNull { kotlin.math.abs(it.first - su) }?.first
+        for ((carpan, ad) in hazir) {
+            sayfa.madde(R.drawable.ic_saat, getString(ad), secili = carpan == en) {
+                Depo.saatOlcegiKaydet(this, carpan)
+                zamanIzgara.saatCarpani = carpan
+                zamanKaydirmaGerekli = true
+                goster()
+            }
+        }
     }
 
     private fun ayListeyiYaz(gunler: Map<Int, List<Ornek>>) {
@@ -576,7 +825,7 @@ class MainActivity : AppCompatActivity() {
         haftaBasligi.ilkGun = ilk
         haftaBasligi.gunSayisi = adet
         haftaBasligi.bugun = bugun
-        haftaBasligi.hafta = if (haftaGorunumu && Depo.haftaNumaralari(this))
+        haftaBasligi.hafta = if (haftaGorunumu && adet == 7 && Depo.haftaNumaralari(this))
             getString(R.string.hafta_kisa, Gun.isoHafta(ilk + Math.floorMod(-Depo.haftaBasi(this), 7))) else ""
         val kesisen = ornekler.filter { it.sonGun >= ilk && it.ilkGun <= son }
         tumGunSeridi.gunleriAyarla(ilk, adet)
@@ -647,7 +896,8 @@ class MainActivity : AppCompatActivity() {
         val eski = ref
         ref = when (mod) {
             Depo.GORUNUM_AY -> Gun.ayEkle(ref, yon)
-            Depo.GORUNUM_HAFTA -> ref + 7 * yon
+            Depo.GORUNUM_YIL -> Gun.ayEkle(ref, 12 * yon)
+            Depo.GORUNUM_HAFTA -> ref + Depo.haftaGunSayisi(this) * yon
             Depo.GORUNUM_GUN -> ref + yon
             else -> ref
         }
@@ -670,7 +920,9 @@ class MainActivity : AppCompatActivity() {
     private fun kaydir(yon: Int) {
         val hedef: View = when (mod) {
             Depo.GORUNUM_AY -> icerikAy
+            Depo.GORUNUM_YIL -> icerikYil
             Depo.GORUNUM_GUNDEM -> icerikGundem
+            Depo.GORUNUM_GUN -> if (Depo.gunListe(this)) icerikGunListe else icerikZaman
             else -> icerikZaman
         }
         val d = resources.displayMetrics.density
@@ -681,7 +933,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun gunSec(g: Int) {
-        if (g == ref) {
+        // Ayrıntılı ayda günün etkinlikleri hücrede zaten yazılı; dokunuş doğrudan o günü açar.
+        if (g == ref || yogunluk == Depo.AY_AYRINTILI) {
+            ref = g
             // Seçili güne ikinci dokunuş o günün saatli görünümünü açar.
             modDegistir(Depo.GORUNUM_GUN)
             return
@@ -737,7 +991,7 @@ class MainActivity : AppCompatActivity() {
 
     // ---- Alt sekmeler (Saat ile aynı hap düzeni) ----
 
-    private class Hap(val no: Int, val kutu: LinearLayout, val ikon: ImageView, val yazi: TextView)
+    private class Hap(val no: Int, val kutu: LinearLayout, val ikon: ImageView, val yazi: TextView, val ad: Int)
 
     private val haplar = ArrayList<Hap>()
 
@@ -777,10 +1031,20 @@ class MainActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = (6 * d).toInt() }
             )
             kutu.addView(kapsayici, LinearLayout.LayoutParams(0, (48 * d).toInt(), 1f))
-            haplar.add(Hap(no, kapsayici, simge, yazi))
+            haplar.add(Hap(no, kapsayici, simge, yazi, ad))
             ipucuVer(kapsayici)
         }
+        sekmeAdlariniYaz()
         sekmeDurumunuGuncelle(false)
+    }
+
+    /** Hafta sekmesi 3 gün seçiliyse "3 gün" adını alır. */
+    private fun sekmeAdlariniYaz() {
+        for (h in haplar) {
+            val ad = if (h.no == Depo.GORUNUM_HAFTA && Depo.haftaGunSayisi(this) == 3) R.string.gorunum_uc_gun else h.ad
+            h.yazi.text = getString(ad)
+            h.kutu.contentDescription = getString(ad)
+        }
     }
 
     /** Seçili sekme hap olur (simge + ad), diğerleri yalnız simge. */
@@ -798,8 +1062,9 @@ class MainActivity : AppCompatActivity() {
             }
             TransitionManager.beginDelayedTransition(kutu, gecis)
         }
+        val sekme = if (mod == Depo.GORUNUM_YIL) Depo.GORUNUM_AY else mod
         for (h in haplar) {
-            val secili = h.no == mod
+            val secili = h.no == sekme
             h.kutu.isSelected = secili
             h.yazi.visibility = if (secili) View.VISIBLE else View.GONE
             h.kutu.layoutParams = if (secili) {
