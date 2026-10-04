@@ -25,6 +25,21 @@ object NotWidget {
         }
     }
 
+    /**
+     * Widget'taki ikonu vurgu rengine boyar. "Sistemle aynı" seçiliyse renk
+     * kaynak olarak verilir ve başlatıcıda çözülür: duvar kağıdı değişince
+     * widget da uygulama açılmadan yeni tonu alır.
+     */
+    fun vurguyaBoya(context: Context, gorunum: RemoteViews, gorunumId: Int, uzeri: Boolean = false) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Renkler.sistemSecili(context)) {
+            val kaynak = if (uzeri) R.color.vurgu_sistem_uzeri else R.color.vurgu_sistem
+            gorunum.setColor(gorunumId, "setColorFilter", kaynak)
+        } else {
+            val renk = if (uzeri) Renkler.vurguUzeri(context) else Renkler.vurgu(context)
+            gorunum.setInt(gorunumId, "setColorFilter", renk)
+        }
+    }
+
     /** Not kaydedildikten/silindikten sonra tüm widget'ları tazeler. */
     fun hepsiniGuncelle(context: Context) {
         val yonetici = AppWidgetManager.getInstance(context) ?: return
@@ -54,12 +69,10 @@ class HizliNotWidget : AppWidgetProvider() {
         yonetici: AppWidgetManager,
         widgetIds: IntArray
     ) {
-        val vurgu = Renkler.vurgu(context)
-        val vurguUzeri = Renkler.vurguUzeri(context)
         for (id in widgetIds) {
             val gorunum = RemoteViews(context.packageName, R.layout.widget_hizli_not)
-            gorunum.setInt(R.id.widgetDaire, "setColorFilter", vurgu)
-            gorunum.setInt(R.id.widgetArti, "setColorFilter", vurguUzeri)
+            NotWidget.vurguyaBoya(context, gorunum, R.id.widgetDaire)
+            NotWidget.vurguyaBoya(context, gorunum, R.id.widgetArti, uzeri = true)
             val niyet = Intent(context, EditorActivity::class.java)
                 .setAction(Intent.ACTION_MAIN)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -138,10 +151,9 @@ class ListeWidget : AppWidgetProvider() {
         yonetici: AppWidgetManager,
         widgetIds: IntArray
     ) {
-        val vurgu = Renkler.vurgu(context)
         for (id in widgetIds) {
             val gorunum = RemoteViews(context.packageName, R.layout.widget_liste)
-            gorunum.setInt(R.id.widgetEkle, "setColorFilter", vurgu)
+            NotWidget.vurguyaBoya(context, gorunum, R.id.widgetEkle)
 
             val servis = Intent(context, ListeWidgetServisi::class.java)
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)

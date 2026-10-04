@@ -2,13 +2,27 @@ package com.ekosistem.notlar
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
 import androidx.core.content.ContextCompat
 
 /**
  * Vurgu rengi kullanıcı tarafından seçilebilir. Her seçenek açık ve koyu tema
  * için ayrı tonda tutulur; böylece saf siyah zeminde de okunur kalır.
+ *
+ * Android 12+ cihazlarda [SISTEM] seçilirse renk duvar kağıdından gelen
+ * Material You paletinden alınır (`vurgu_sistem`, values-v31).
  */
 object Renkler {
+
+    /** "Sistemle aynı" seçeneğinin kayıtlı değeri; renk listesinde yer almaz. */
+    const val SISTEM = -1
+
+    /** Sistem paleti (dinamik renk) yalnızca Android 12 ve sonrasında var. */
+    fun sistemRengiVar(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+    /** Sistem seçili ama cihaz desteklemiyorsa (yedekten geldiyse) ilk renge düşer. */
+    fun sistemSecili(context: Context): Boolean =
+        Prefs.vurguIndeksi(context) == SISTEM && sistemRengiVar()
 
     data class Secenek(val adKaynagi: Int, val acik: Int, val koyu: Int)
 
@@ -41,6 +55,7 @@ object Renkler {
      * ve seçim tutamakları rengi buradan alır; kod içinden boyanamıyorlar.
      */
     fun temaStili(context: Context): Int {
+        if (sistemSecili(context)) return R.style.Theme_Notlar_VurguSistem
         val indeks = Prefs.vurguIndeksi(context)
         return TEMALAR[indeks.coerceIn(0, TEMALAR.size - 1)]
     }
@@ -50,6 +65,7 @@ object Renkler {
             Configuration.UI_MODE_NIGHT_YES
 
     fun vurgu(context: Context): Int {
+        if (sistemSecili(context)) return ContextCompat.getColor(context, R.color.vurgu_sistem)
         val indeks = Prefs.vurguIndeksi(context)
         if (indeks < 0 || indeks >= SECENEKLER.size) {
             return ContextCompat.getColor(context, R.color.vurgu)
@@ -60,6 +76,7 @@ object Renkler {
 
     /** Vurgu zemini üzerine gelecek metin/ikon rengi. */
     fun vurguUzeri(context: Context): Int {
+        if (sistemSecili(context)) return ContextCompat.getColor(context, R.color.vurgu_sistem_uzeri)
         val renk = vurgu(context)
         val r = (renk shr 16) and 0xFF
         val g = (renk shr 8) and 0xFF

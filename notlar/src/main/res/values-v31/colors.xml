@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You: duvar kağıdından gelen birincil ton (M3 açık temada primary) -->
+    <color name="vurgu_sistem">@android:color/system_accent1_600</color>
+    <color name="vurgu_sistem_uzeri">@android:color/system_accent1_0</color>
+</resources>

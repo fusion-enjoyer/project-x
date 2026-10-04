@@ -64,6 +64,12 @@
         <item name="colorControlActivated">@color/vurgu_8</item>
     </style>
 
+    <!-- Sistem paleti: renk values-v31'de duvar kağıdından gelir, öncesinde ilk renk. -->
+    <style name="Theme.Notlar.VurguSistem" parent="Theme.Notlar">
+        <item name="colorAccent">@color/vurgu_sistem</item>
+        <item name="colorControlActivated">@color/vurgu_sistem</item>
+    </style>
+
     <style name="AltSayfaTemasi" parent="Theme.AppCompat.DayNight.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">false</item>

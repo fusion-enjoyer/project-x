@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You: koyu temada primary tonu, saf siyah zeminde de okunur -->
+    <color name="vurgu_sistem">@android:color/system_accent1_200</color>
+    <color name="vurgu_sistem_uzeri">@android:color/system_accent1_800</color>
+</resources>

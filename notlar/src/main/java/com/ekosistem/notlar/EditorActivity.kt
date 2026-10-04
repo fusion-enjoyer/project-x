@@ -1,5 +1,6 @@
 package com.ekosistem.notlar
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Typeface
@@ -810,14 +811,24 @@ class EditorActivity : AppCompatActivity() {
 
     // --- Görsel ekleme ---
 
+    /**
+     * Android 11+ (güncel sistemlerde) sistemin fotoğraf seçicisi açılır, daha
+     * eskilerde belge seçici. Seçici her iki durumda da tekli seçimi `data`,
+     * çokluyu `clipData` ile döndürür; sonuç aynı yoldan işlenir.
+     */
     private fun gorselSec() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            .setType("image/*")
-            .addCategory(Intent.CATEGORY_OPENABLE)
-            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         Kilit.sistemAraciBekleniyor = true
+        if (Gorseller.fotoSeciciVar()) {
+            try {
+                @Suppress("DEPRECATION")
+                startActivityForResult(Gorseller.fotoSeciciNiyeti(), ISTEK_GORSEL)
+                return
+            } catch (_: ActivityNotFoundException) {
+                // Seçici devre dışı bırakılmışsa belge seçiciye düş.
+            }
+        }
         @Suppress("DEPRECATION")
-        startActivityForResult(intent, ISTEK_GORSEL)
+        startActivityForResult(Gorseller.belgeSeciciNiyeti(), ISTEK_GORSEL)
     }
 
     /**

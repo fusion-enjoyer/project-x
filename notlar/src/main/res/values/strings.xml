@@ -95,6 +95,7 @@
     <string name="renk_deniz">Teal</string>
     <string name="renk_yesil">Green</string>
     <string name="renk_gri">Gray</string>
+    <string name="renk_sistem">Follow system</string>
 
     <!-- Sorting -->
     <string name="siralama">Sort</string>

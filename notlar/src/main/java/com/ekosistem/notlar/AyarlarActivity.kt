@@ -195,6 +195,7 @@ class AyarlarActivity : AppCompatActivity() {
     }
 
     private fun renkAdi(): String {
+        if (Renkler.sistemSecili(this)) return getString(R.string.renk_sistem)
         val indeks = Prefs.vurguIndeksi(this).coerceIn(0, Renkler.SECENEKLER.size - 1)
         return getString(Renkler.SECENEKLER[indeks].adKaynagi)
     }
@@ -398,6 +399,17 @@ class AyarlarActivity : AppCompatActivity() {
             val boyut = (44 * yogunluk).toInt()
             hucreKap.addView(ornek, FrameLayout.LayoutParams(boyut, boyut, Gravity.CENTER))
             satir?.addView(hucreKap, LinearLayout.LayoutParams(hucre, hucre))
+        }
+        // Android 12+: renk duvar kağıdından (Material You) gelsin, cihazla bütün dursun.
+        if (Renkler.sistemRengiVar()) {
+            sayfa.madde(
+                R.drawable.ic_ayar_gorunum,
+                getString(R.string.renk_sistem),
+                secili = seciliIndeks == Renkler.SISTEM
+            ) {
+                Prefs.vurguKaydet(this, Renkler.SISTEM)
+                recreate()
+            }
         }
         renkSayfasi = sayfa
         sayfa.goster()

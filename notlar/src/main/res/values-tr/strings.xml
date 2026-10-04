@@ -95,6 +95,7 @@
     <string name="renk_deniz">Deniz</string>
     <string name="renk_yesil">Yeşil</string>
     <string name="renk_gri">Gri</string>
+    <string name="renk_sistem">Sistemle aynı</string>
 
     <!-- Sıralama -->
     <string name="siralama">Sıralama</string>

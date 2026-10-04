@@ -1,14 +1,20 @@
 package com.ekosistem.notlar
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.ext.SdkExtensions
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.LruCache
 import android.webkit.MimeTypeMap
+import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
 import java.util.Collections
 
@@ -46,6 +52,39 @@ object Gorseller {
         adresler.clear()
         basarisiz.clear()
     }
+
+    // --- Seçici ---
+
+    /**
+     * Sistemin fotoğraf seçicisi (Photo Picker): Android 13'te geldi, Android
+     * 11-12'ye sistem güncellemesiyle taşındı (SDK uzantısı R ≥ 2). İzin
+     * istemez, galeriyle aynı arayüzü sunar ve cihazla bütün durur.
+     */
+    fun fotoSeciciVar(): Boolean = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> true
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> Uzanti.surum() >= 2
+        else -> false
+    }
+
+    /** SdkExtensions Android 11'de geldi; eski sürümde sınıf hiç yüklenmesin. */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private object Uzanti {
+        fun surum(): Int = SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R)
+    }
+
+    /** Fotoğraf seçicinin niyeti; yalnızca [fotoSeciciVar] doğruyken kullanılır. */
+    @SuppressLint("NewApi", "InlinedApi")
+    fun fotoSeciciNiyeti(): Intent =
+        Intent(MediaStore.ACTION_PICK_IMAGES)
+            .setType("image/*")
+            .putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, MediaStore.getPickImagesMaxLimit())
+
+    /** Fotoğraf seçicisi olmayan sürümlerde belge seçici (görsellerle süzülü). */
+    fun belgeSeciciNiyeti(): Intent =
+        Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .setType("image/*")
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
 
     // --- Yol çözümleme ---
 
