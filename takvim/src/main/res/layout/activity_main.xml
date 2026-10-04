@@ -33,6 +33,17 @@
                 android:textSize="32sp"
                 android:textStyle="bold" />
 
+            <ImageButton
+                android:id="@+id/btnAra"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginRight="8dp"
+                android:background="@drawable/bg_daire"
+                android:backgroundTint="@color/kart"
+                android:contentDescription="@string/ara"
+                android:src="@drawable/ic_ara"
+                app:tint="@color/metin" />
+
             <TextView
                 android:id="@+id/btnBugun"
                 android:layout_width="48dp"

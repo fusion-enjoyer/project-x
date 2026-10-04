@@ -83,6 +83,26 @@
                 android:textSize="26sp"
                 android:textStyle="bold" />
 
+            <!-- Başlığa "yarın 14:00 toplantı" gibi yazılınca çıkan öneri: dokununca tarih/saat alanları dolar. -->
+            <TextView
+                android:id="@+id/dogalDilCip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:background="@drawable/bg_chip_hedef"
+                android:drawableStart="@drawable/ic_takvim_vurgu"
+                android:drawablePadding="8dp"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:minHeight="48dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="16dp"
+                android:textColor="@color/vurgu"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/kutuZaman"
                 style="@style/AyarKutusu"

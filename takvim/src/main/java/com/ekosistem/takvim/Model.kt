@@ -35,7 +35,9 @@ data class Ornek(
     /** İlk gündeki başlangıç dakikası (tüm gün için 0). */
     val baslangicDk: Int,
     /** Son gündeki bitiş dakikası (tüm gün için 1440). */
-    val bitisDk: Int
+    val bitisDk: Int,
+    /** Yalnız aramada doldurulur (listeler için bellek harcanmasın). */
+    val aciklama: String = ""
 ) {
     /** [gun] günündeki dilimin başlangıç dakikası (zaman ızgarası için). */
     fun gunBaslangicDk(gun: Int): Int = if (gun == ilkGun) baslangicDk else 0
@@ -56,14 +58,15 @@ data class Ornek(
             tumGun: Boolean,
             renk: Int,
             tekrarli: Boolean,
-            tz: TimeZone
+            tz: TimeZone,
+            aciklama: String = ""
         ): Ornek {
             if (tumGun) {
                 val ilk = Gun.utcGun(baslangic)
                 val son = if (bitis > baslangic) Gun.utcGun(bitis - 1) else ilk
                 return Ornek(
                     etkinlikId, takvimId, baslik, konum, baslangic, bitis, true, renk, tekrarli,
-                    ilk, maxOf(ilk, son), 0, 1440
+                    ilk, maxOf(ilk, son), 0, 1440, aciklama
                 )
             }
             val ilk = Gun.yerelGun(baslangic, tz)
@@ -73,7 +76,7 @@ data class Ornek(
             val sonGun = maxOf(ilk, son)
             return Ornek(
                 etkinlikId, takvimId, baslik, konum, baslangic, bitis, false, renk, tekrarli,
-                ilk, sonGun, basDk, if (sonGun > ilk) bitDk else maxOf(bitDk, basDk)
+                ilk, sonGun, basDk, if (sonGun > ilk) bitDk else maxOf(bitDk, basDk), aciklama
             )
         }
     }

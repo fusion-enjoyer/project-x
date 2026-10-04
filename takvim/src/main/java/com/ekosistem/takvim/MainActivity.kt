@@ -157,10 +157,15 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.btnAyarlar).setOnClickListener { startActivity(Intent(this, AyarlarActivity::class.java)) }
         btnBugun.setOnClickListener { bugunuGoster() }
+        findViewById<View>(R.id.btnAra).setOnClickListener { startActivity(Intent(this, AramaActivity::class.java)) }
+        // Dar ekranda ve büyük yazıda "Ekim 2026" üç düğmenin yanında kesilmesin: yazı küçülür.
+        androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+            baslik, 22, 32, 1, android.util.TypedValue.COMPLEX_UNIT_SP
+        )
         btnOnceki.setOnClickListener { git(-1) }
         btnSonraki.setOnClickListener { git(1) }
         findViewById<View>(R.id.uyariSeridi).setOnClickListener { bildirimIzniIste() }
-        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), btnBugun, btnOnceki, btnSonraki)
+        ipucuVer(findViewById(R.id.btnYeni), findViewById(R.id.btnAyarlar), findViewById(R.id.btnAra), btnBugun, btnOnceki, btnSonraki)
 
         ayIzgara.gunSecildi = { gunSec(it) }
         haftaBasligi.gunSecildi = { g -> ref = g; modDegistir(Depo.GORUNUM_GUN) }

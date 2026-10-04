@@ -90,6 +90,12 @@ class DuzenleActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) { if (hazir) isaretle() }
         }
         etBaslik.addTextChangedListener(izleyici)
+        etBaslik.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) { if (hazir) oneriGuncelle() }
+        })
+        findViewById<TextView>(R.id.dogalDilCip).setOnClickListener { oneriUygula() }
         etKonum.addTextChangedListener(izleyici)
         etAciklama.addTextChangedListener(izleyici)
 
@@ -210,6 +216,55 @@ class DuzenleActivity : AppCompatActivity() {
         val bitis = basGun * 1440L + basDk + sure
         bitGun = Math.floorDiv(bitis, 1440L).toInt()
         bitDk = Math.floorMod(bitis, 1440L).toInt()
+    }
+
+    // ---- Başlıktan anlama ("yarın 14:00 toplantı") ----
+
+    private var oneri: DogalDil.Sonuc? = null
+
+    /** Yalnız yeni etkinlikte: başlık yazılırken tarih/saat cümlesi aranır ve öneri çıkar. */
+    private fun oneriGuncelle() {
+        val cip = findViewById<TextView>(R.id.dogalDilCip)
+        val yeni = orijinal == null
+        val metin = etBaslik.text.toString()
+        val simdi = System.currentTimeMillis()
+        val s = if (yeni && metin.length >= 3) DogalDil.coz(metin, Gun.bugun(simdi, tz), Gun.yerelDakika(simdi, tz)) else null
+        oneri = s?.takeIf { it.bulundu }
+        val o = oneri
+        if (o == null) {
+            cip.visibility = View.GONE
+            return
+        }
+        cip.text = getString(R.string.dogal_uygula, Metinler.oneriOzeti(this, o, Gun.bugun(simdi, tz)))
+        cip.visibility = View.VISIBLE
+    }
+
+    /** Öneriyi uygular: tarih/saat/süre/tekrar alanları dolar, anlaşılan kısım başlıktan çıkar. */
+    private fun oneriUygula() {
+        val o = oneri ?: return
+        if (o.tumGun && !tumGun) tumGunDegistir(true)
+        else if (!o.tumGun && o.baslangicDk != null && tumGun) tumGunDegistir(false)
+        val eskiSure = bitGun * 1440L + bitDk - (basGun * 1440L + basDk)
+        if (o.gun != null) basGun = o.gun
+        if (!tumGun) {
+            if (o.baslangicDk != null) basDk = o.baslangicDk
+            val sure = when {
+                o.bitisDk != null -> (if (o.bitisDk > basDk) o.bitisDk - basDk else o.bitisDk + 1440 - basDk).toLong()
+                o.sureDk != null -> o.sureDk.toLong()
+                else -> maxOf(eskiSure, Depo.varsayilanSure(this).toLong()).coerceAtLeast(15)
+            }
+            val bit = basGun * 1440L + basDk + sure
+            bitGun = Math.floorDiv(bit, 1440L).toInt()
+            bitDk = Math.floorMod(bit, 1440L).toInt()
+        } else {
+            bitGun = basGun
+            bitDk = 0
+        }
+        o.kural?.let { kural = Tekrar.yaz(it, tumGun, tz) }
+        etBaslik.setText(o.baslik)
+        etBaslik.setSelection(etBaslik.text.length)
+        isaretle()
+        arayuzuYaz()
     }
 
     // ---- Arayüz ----

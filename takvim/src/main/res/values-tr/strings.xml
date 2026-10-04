@@ -171,6 +171,16 @@
     <string name="silindi">Etkinlik silindi</string>
     <string name="geri_al">Geri al</string>
     <string name="geri_alinamadi">Geri alınamadı.</string>
+    <string name="ara">Ara</string>
+    <string name="ara_ipucu">Etkinlik ara</string>
+    <string name="ara_baslik">Etkinliklerde ara</string>
+    <string name="ara_aciklama">Başlık, konum ya da açıklamadaki kelimeleri yaz; geçmiş bir yıl ve gelecek iki yıl taranır.</string>
+    <string name="ara_sonuc_yok">Sonuç yok</string>
+    <string name="ara_sonuc_yok_aciklama">Başka bir kelime dene. Arama Türkçe harflerden bağımsızdır.</string>
+    <string name="yaklasan_bolum">Yaklaşan · %1$d</string>
+    <string name="gecmis_bolum">Geçmiş · %1$d</string>
+    <string name="dogal_uygula">Uygula: %1$s</string>
+    <string name="tekrarli_kisa">tekrarlı</string>
     <string-array name="sira_adlari">
         <item>1.</item>
         <item>2.</item>

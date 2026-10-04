@@ -104,6 +104,25 @@ object Metinler {
         else -> haftaGunuKisa(Gun.haftaGunu(gun)) + " " + Gun.ayinGunu(gun)
     }
 
+    /** Arama sonucunda tarih: "Bugün", "Yarın", yoksa "Pzt, 5 Eki" (başka yıldaysa yılıyla). */
+    fun widgetGunuUzun(c: Context, gun: Int, bugun: Int): String = when (gun - bugun) {
+        0 -> c.getString(R.string.bugun)
+        1 -> c.getString(R.string.yarin)
+        -1 -> c.getString(R.string.dun)
+        else -> haftaGunuKisa(Gun.haftaGunu(gun)) + ", " + (if (Gun.yil(gun) == Gun.yil(bugun)) gunAyKisa(gun) else tamTarihKisa(gun))
+    }
+
+    /** Başlığa yazılan cümleden anlaşılanın kısa özeti ("Yarın · 14:00 – 15:00 · Her hafta"). */
+    fun oneriOzeti(c: Context, s: DogalDil.Sonuc, bugun: Int): String {
+        val p = ArrayList<String>()
+        s.gun?.let { p.add(widgetGunuUzun(c, it, bugun)) }
+        if (s.tumGun) p.add(c.getString(R.string.tum_gun))
+        else if (s.baslangicDk != null) p.add(saat(c, s.baslangicDk) + (s.bitisDk?.let { " – " + saat(c, it) } ?: ""))
+        s.sureDk?.let { p.add(sure(c, it)) }
+        s.kural?.let { p.add(tekrar(c, it, "x", s.gun ?: bugun)) }
+        return p.joinToString(" · ")
+    }
+
     /** Sıradaki etkinlik widget'ında zaman satırı: "Şimdi · 15:00'e kadar", "Bugün 14:00", "Yarın 09:30". */
     fun siradakiZamani(c: Context, o: Ornek, simdi: Long, bugun: Int): String {
         if (o.tumGun) return c.getString(R.string.tum_gun)

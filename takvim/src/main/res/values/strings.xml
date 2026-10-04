@@ -171,6 +171,16 @@
     <string name="silindi">Event deleted</string>
     <string name="geri_al">Undo</string>
     <string name="geri_alinamadi">Couldn\'t undo.</string>
+    <string name="ara">Search</string>
+    <string name="ara_ipucu">Search events</string>
+    <string name="ara_baslik">Search your events</string>
+    <string name="ara_aciklama">Type words from the title, location or description; the past year and next two years are searched.</string>
+    <string name="ara_sonuc_yok">No results</string>
+    <string name="ara_sonuc_yok_aciklama">Try another word.</string>
+    <string name="yaklasan_bolum">Upcoming · %1$d</string>
+    <string name="gecmis_bolum">Past · %1$d</string>
+    <string name="dogal_uygula">Apply: %1$s</string>
+    <string name="tekrarli_kisa">repeats</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>

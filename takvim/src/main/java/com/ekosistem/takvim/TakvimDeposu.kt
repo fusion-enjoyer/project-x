@@ -101,7 +101,7 @@ object TakvimDeposu {
     // ---- Okuma ----
 
     /** [ilkGun]..[sonGun] (dahil) arasındaki bütün görünür takvimlerin etkinlik örnekleri. */
-    fun ornekler(c: Context, ilkGun: Int, sonGun: Int): List<Ornek> {
+    fun ornekler(c: Context, ilkGun: Int, sonGun: Int, aciklamaDahil: Boolean = false): List<Ornek> {
         val liste = ArrayList<Ornek>()
         val tz = TimeZone.getDefault()
         try {
@@ -114,7 +114,7 @@ object TakvimDeposu {
                     Instances.EVENT_ID, Instances.CALENDAR_ID, Instances.TITLE, Instances.EVENT_LOCATION,
                     Instances.BEGIN, Instances.END, Instances.ALL_DAY, Instances.RRULE,
                     Instances.EVENT_COLOR, Instances.CALENDAR_COLOR, Instances.STATUS, Instances.SELF_ATTENDEE_STATUS,
-                    Instances.ORIGINAL_ID
+                    Instances.ORIGINAL_ID, if (aciklamaDahil) Instances.DESCRIPTION else Instances.EVENT_LOCATION
                 ),
                 "${Calendars.VISIBLE}=1", null, "${Instances.BEGIN} ASC, ${Instances.END} DESC"
             )?.use { k ->
@@ -129,7 +129,8 @@ object TakvimDeposu {
                             baslangic = k.getLong(4), bitis = k.getLong(5), tumGun = k.getInt(6) != 0,
                             renk = renk,
                             tekrarli = !k.getString(7).isNullOrBlank() || !k.isNull(12),
-                            tz = tz
+                            tz = tz,
+                            aciklama = if (aciklamaDahil) k.getString(13).orEmpty() else ""
                         )
                     )
                 }
