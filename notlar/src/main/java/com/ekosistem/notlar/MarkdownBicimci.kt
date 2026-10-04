@@ -75,19 +75,34 @@ class MarkdownBicimci(private val context: Context) {
         var bas = 0
         var satirNo = 0
         var kodBlogunda = false
+        // Açık bir bilgi kutusunun rengi; alıntı olmayan satırda kapanır.
+        var calloutRengi: Int? = null
         while (bas <= s.length) {
             var son = s.indexOf('\n', bas)
             if (son < 0) son = s.length
             val aktif = imlec in bas..son
             // ``` ile açılıp kapanan kod bloğu: içinde başka işaret yorumlanmaz.
             val cit = satirNo > 0 && KOD_CITI.containsMatchIn(s.subSequence(bas, son))
+            val satir = s.subSequence(bas, son)
+            val callout = if (cit || kodBlogunda || satirNo == 0) null else CALLOUT.find(satir)
             when {
                 cit -> {
+                    calloutRengi = null
                     kodSatiri(s, bas, son, cit = true)
                     kodBlogunda = !kodBlogunda
                 }
                 kodBlogunda -> kodSatiri(s, bas, son, cit = false)
-                else -> satirBicimle(s, bas, son, satirNo == 0, aktif, genislik)
+                callout != null -> {
+                    val renk = calloutRengi(callout.groupValues[1])
+                    calloutRengi = renk
+                    calloutBasligi(s, bas, son, callout, renk, aktif)
+                }
+                calloutRengi != null && ALINTI.containsMatchIn(satir) ->
+                    calloutSatiri(s, bas, son, calloutRengi, aktif)
+                else -> {
+                    calloutRengi = null
+                    satirBicimle(s, bas, son, satirNo == 0, aktif, genislik)
+                }
             }
             if (son >= s.length) break
             bas = son + 1
@@ -110,6 +125,60 @@ class MarkdownBicimci(private val context: Context) {
         for (span in s.getSpans(0, s.length, GorselSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, UnderlineSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, KodBlokSpan::class.java)) s.removeSpan(span)
+        for (span in s.getSpans(0, s.length, CalloutSpan::class.java)) s.removeSpan(span)
+    }
+
+    // --- Bilgi kutusu (callout) ---
+
+    private fun calloutRengi(tur: String): Int {
+        val sira = calloutRenkSirasi(tur) ?: return vurgu
+        val secenek = Renkler.SECENEKLER[sira]
+        return if (Renkler.geceMi(context)) secenek.koyu else secenek.acik
+    }
+
+    /** Kutunun ortak kısmı: gövde boyu (satır ölçümü için, bkz. satirBicimle) ve zemin. */
+    private fun calloutZemini(s: Editable, bas: Int, son: Int, renk: Int) {
+        val satirSonu = minOf(son + 1, s.length)
+        s.setSpan(AbsoluteSizeSpan(govdeSp, true), bas, if (son > bas) son else satirSonu, EE)
+        val zemin = (renk and 0x00FFFFFF) or 0x24000000
+        s.setSpan(CalloutSpan(renk, zemin, yogunluk), bas, satirSonu, EE)
+    }
+
+    /**
+     * `> [!tür] Başlık` satırı. İşaret gizlenir, başlık türün renginde kalın
+     * görünür; başlık yazılmamışsa tür adının kendisi başlık olur.
+     */
+    private fun calloutBasligi(
+        s: Editable,
+        bas: Int,
+        son: Int,
+        eslesme: MatchResult,
+        renk: Int,
+        aktif: Boolean
+    ) {
+        calloutZemini(s, bas, son, renk)
+        val baslik = eslesme.groupValues[3].trimEnd()
+        val (yaziBas, yaziSon) = if (baslik.isNotEmpty()) {
+            val b = bas + eslesme.value.length - eslesme.groupValues[3].length
+            b to b + baslik.length
+        } else {
+            val b = bas + eslesme.value.indexOf("[!") + 2
+            b to b + eslesme.groupValues[1].length
+        }
+        isaret(s, bas, yaziBas, aktif)
+        isaret(s, yaziSon, son, aktif)
+        if (yaziSon <= yaziBas) return
+        s.setSpan(StyleSpan(Typeface.BOLD), yaziBas, yaziSon, EE)
+        s.setSpan(ForegroundColorSpan(renk), yaziBas, yaziSon, EE)
+        if (baslik.isNotEmpty()) satirIci(s, yaziBas, yaziSon, aktif)
+    }
+
+    /** Kutunun gövde satırı: `>` gizlenir, metin normal renkte biçimlenir. */
+    private fun calloutSatiri(s: Editable, bas: Int, son: Int, renk: Int, aktif: Boolean) {
+        calloutZemini(s, bas, son, renk)
+        val isaretBoyu = ALINTI.find(s.subSequence(bas, son))?.value?.length ?: 0
+        isaret(s, bas, bas + isaretBoyu, aktif)
+        satirIci(s, bas + isaretBoyu, son, aktif)
     }
 
     /** Kod bloğu satırı: eş aralıklı yazı, satır boyu zemin; çit (```) soluk. */
@@ -429,5 +498,26 @@ class MarkdownBicimci(private val context: Context) {
         val KOD_CITI = Regex("^\\s*```")
 
         val GORSEL_WIKI = Regex("!\\[\\[([^\\[\\]\\n]{1,120})]]")
+
+        /** Bilgi kutusu başlığı: `> [!uyarı]- Başlık` (tür, katlama işareti, başlık). */
+        val CALLOUT = Regex("^> ?\\[!([\\p{L}\\p{N}_-]{1,30})]([+-]?)[ \\t]*(.*)$")
+
+        /**
+         * Callout türünün rengi, [Renkler.SECENEKLER] sırasıyla. Obsidian'ın
+         * İngilizce adları ve Türkçe karşılıkları tanınır; bilinmeyen tür null
+         * döner ve kutu vurgu rengini alır.
+         */
+        fun calloutRenkSirasi(tur: String): Int? = when (Arama.sadelestir(tur)) {
+            "note", "not", "info", "bilgi", "todo", "yapilacak" -> 5
+            "tip", "hint", "important", "ipucu", "onemli",
+            "abstract", "summary", "tldr", "ozet" -> 6
+            "success", "check", "done", "basari", "tamam" -> 7
+            "question", "help", "faq", "soru" -> 0
+            "warning", "caution", "attention", "uyari", "dikkat" -> 1
+            "failure", "fail", "missing", "danger", "error", "bug", "hata", "tehlike" -> 2
+            "example", "ornek" -> 4
+            "quote", "cite", "alinti" -> 8
+            else -> null
+        }
     }
 }

@@ -66,4 +66,24 @@ class MarkdownDesenTest {
         assertTrue(MarkdownBicimci.KOD_CITI.containsMatchIn("  ```kotlin"))
         assertFalse(MarkdownBicimci.KOD_CITI.containsMatchIn("metin ``` ortada"))
     }
+
+    @Test
+    fun calloutBasligiAyiklanir() {
+        val m = MarkdownBicimci.CALLOUT.find("> [!uyarı]- Dikkat et")!!
+        assertEquals("uyarı", m.groupValues[1])
+        assertEquals("-", m.groupValues[2])
+        assertEquals("Dikkat et", m.groupValues[3])
+        assertEquals("", MarkdownBicimci.CALLOUT.find(">[!tip]")!!.groupValues[3])
+        assertNull(MarkdownBicimci.CALLOUT.find("> düz alıntı"))
+        assertNull(MarkdownBicimci.CALLOUT.find("> [!] boş tür"))
+    }
+
+    @Test
+    fun calloutTuruRengeCevrilir() {
+        assertEquals(1, MarkdownBicimci.calloutRenkSirasi("UYARI"))
+        assertEquals(1, MarkdownBicimci.calloutRenkSirasi("warning"))
+        assertEquals(2, MarkdownBicimci.calloutRenkSirasi("Hata"))
+        assertEquals(5, MarkdownBicimci.calloutRenkSirasi("not"))
+        assertNull(MarkdownBicimci.calloutRenkSirasi("bilinmeyen"))
+    }
 }

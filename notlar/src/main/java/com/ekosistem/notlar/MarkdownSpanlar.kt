@@ -259,6 +259,48 @@ class KodBlokSpan(
 }
 
 /**
+ * Obsidian tarzı bilgi kutusu (`> [!uyarı] Başlık`): türün renginde soluk
+ * zemin ve solda ince şerit. Ardışık satırların zemini birleşip tek kutu olur.
+ */
+class CalloutSpan(
+    private val renk: Int,
+    private val zemin: Int,
+    private val yogunluk: Float
+) : android.text.style.LineBackgroundSpan, LeadingMarginSpan {
+
+    private val boya = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    override fun getLeadingMargin(first: Boolean): Int = (14 * yogunluk).toInt()
+
+    override fun drawLeadingMargin(
+        c: Canvas, p: Paint, x: Int, dir: Int, top: Int, baseline: Int, bottom: Int,
+        text: CharSequence, start: Int, end: Int, first: Boolean, layout: Layout?
+    ) {
+        boya.color = renk
+        boya.style = Paint.Style.FILL
+        val genislik = 3f * yogunluk
+        val sol = x + dir * 1f
+        c.drawRect(
+            minOf(sol, sol + dir * genislik),
+            top.toFloat(),
+            maxOf(sol, sol + dir * genislik),
+            bottom.toFloat(),
+            boya
+        )
+    }
+
+    override fun drawBackground(
+        c: Canvas, p: Paint, left: Int, right: Int, top: Int, baseline: Int, bottom: Int,
+        text: CharSequence, start: Int, end: Int, lineNumber: Int
+    ) {
+        val eski = p.color
+        p.color = zemin
+        c.drawRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(), p)
+        p.color = eski
+    }
+}
+
+/**
  * Bul ve değiştirde eşleşmenin zemini. BackgroundColorSpan'dan türemez:
  * biçimlendirici her harfte o türü siler, vurgu yazarken kaybolurdu.
  */
