@@ -270,6 +270,22 @@
                 android:background="@drawable/bg_alt_sis"
                 android:importantForAccessibility="no" />
 
+            <TextView
+                android:id="@+id/geriAlSeridi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="92dp"
+                android:background="@drawable/bg_pill_buton"
+                android:backgroundTint="@color/metin"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:paddingLeft="22dp"
+                android:paddingRight="22dp"
+                android:textColor="@color/zemin"
+                android:textSize="15sp"
+                android:visibility="gone" />
+
             <!-- Yüzen alt çubuk: dört görünüm ve sağında vurgulu "yeni" düğmesi. -->
             <LinearLayout
                 android:layout_width="match_parent"

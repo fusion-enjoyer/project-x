@@ -152,6 +152,25 @@
     <string name="hakkinda">Hakkında</string>
     <string name="surum">Sürüm</string>
     <string name="izin_yok_rozet">İnternet izni yok</string>
+    <string name="widget_gundem_adi">Gündem</string>
+    <string name="widget_ay_adi">Ay</string>
+    <string name="widget_siradaki_adi">Sıradaki etkinlik</string>
+    <string name="widget_gundem_aciklama">Yaklaşan etkinliklerin listesi</string>
+    <string name="widget_ay_aciklama">Ay takvimi; güne dokununca uygulama o günde açılır</string>
+    <string name="widget_siradaki_aciklama">Sıradaki etkinlik ve ne zaman olduğu</string>
+    <string name="widget_izin">Takvim izni ver</string>
+    <string name="widget_bos">Yaklaşan etkinlik yok</string>
+    <string name="siradaki_yok">Etkinlik yok</string>
+    <string name="simdi_kadar">Şimdi · bitiş %1$s</string>
+    <string name="dosemesi_yeni">Yeni etkinlik</string>
+    <string name="kisayol_yeni">Yeni etkinlik</string>
+    <string name="kisayol_bugun">Bugün</string>
+    <string name="kisayol_gundem">Gündem</string>
+    <string name="daha">Daha fazla</string>
+    <string name="cogalt">Çoğalt</string>
+    <string name="silindi">Etkinlik silindi</string>
+    <string name="geri_al">Geri al</string>
+    <string name="geri_alinamadi">Geri alınamadı.</string>
     <string-array name="sira_adlari">
         <item>1.</item>
         <item>2.</item>

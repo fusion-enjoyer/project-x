@@ -1,0 +1,1268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ay widget'ı (4x4): başlık + ileri/geri + yeni, gün adları, 6 satır x 7 gün. Üretilmiştir; hücre kimlikleri wc/wn/wd0..41. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widgetAyBaslik"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:paddingLeft="6dp"
+            android:textColor="@color/metin"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/widgetAyOnceki"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@null"
+            android:contentDescription="@string/onceki"
+            android:padding="9dp"
+            android:src="@drawable/ic_geri" />
+
+        <ImageButton
+            android:id="@+id/widgetAySonraki"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@null"
+            android:contentDescription="@string/sonraki"
+            android:padding="9dp"
+            android:src="@drawable/ic_ileri" />
+
+        <ImageButton
+            android:id="@+id/widgetAyYeni"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@null"
+            android:contentDescription="@string/yeni_etkinlik"
+            android:padding="9dp"
+            android:src="@drawable/ic_arti" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+            <TextView
+                android:id="@+id/wh0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/wh1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/wh2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/wh3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/wh4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/wh5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/wh6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/metin_ikincil"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="2dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        <LinearLayout
+            android:id="@+id/wr0"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/wc0"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn0"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd0"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd1"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd2"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd3"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc4"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn4"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd4"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc5"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn5"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd5"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc6"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn6"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd6"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/wr1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/wc7"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn7"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd7"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc8"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn8"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd8"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc9"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn9"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd9"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc10"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn10"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd10"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc11"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn11"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd11"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc12"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn12"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd12"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc13"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn13"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd13"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/wr2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/wc14"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn14"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd14"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc15"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn15"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd15"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc16"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn16"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd16"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc17"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn17"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd17"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc18"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn18"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd18"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc19"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn19"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd19"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc20"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn20"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd20"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/wr3"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/wc21"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn21"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd21"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc22"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn22"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd22"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc23"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn23"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd23"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc24"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn24"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd24"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc25"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn25"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd25"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc26"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn26"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd26"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc27"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn27"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd27"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/wr4"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/wc28"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn28"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd28"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc29"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn29"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd29"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc30"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn30"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd30"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc31"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn31"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd31"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc32"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn32"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd32"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc33"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn33"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd33"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc34"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn34"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd34"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/wr5"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:id="@+id/wc35"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn35"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd35"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc36"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn36"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd36"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc37"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn37"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd37"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc38"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn38"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd38"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc39"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn39"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd39"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc40"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn40"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd40"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/wc41"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="1dp">
+
+                <TextView
+                    android:id="@+id/wn41"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/metin"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/wd41"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/bg_nokta"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

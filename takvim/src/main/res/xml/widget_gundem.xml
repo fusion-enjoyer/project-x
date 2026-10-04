@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_gundem_aciklama"
+    android:initialLayout="@layout/widget_gundem"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:previewLayout="@layout/widget_gundem"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="4"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

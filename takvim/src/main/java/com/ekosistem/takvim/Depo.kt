@@ -56,6 +56,10 @@ object Depo {
     fun izinIstendi(c: Context) = p(c).getBoolean("izin_istendi", false)
     fun izinIstendiKaydet(c: Context) = p(c).edit().putBoolean("izin_istendi", true).apply()
 
+    /** Ay widget'ında gösterilen ay, bu aydan kaç ay ileride/geride (0 = bu ay). */
+    fun widgetAyOfseti(c: Context) = p(c).getInt("widget_ay_ofseti", 0)
+    fun widgetAyOfsetiKaydet(c: Context, v: Int) = p(c).edit().putInt("widget_ay_ofseti", v).apply()
+
     fun bildirimIstendi(c: Context) = p(c).getBoolean("bildirim_istendi", false)
     fun bildirimIstendiKaydet(c: Context) = p(c).edit().putBoolean("bildirim_istendi", true).apply()
 

@@ -47,6 +47,10 @@
                     android:pathPrefix="/time"
                     android:scheme="content" />
             </intent-filter>
+            <!-- Simgeye uzun basınca: yeni etkinlik, bugün, gündem (Android 7.1+) -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/kisayollar" />
         </activity>
 
         <activity
@@ -80,6 +84,74 @@
         <activity
             android:name=".AyarlarActivity"
             android:exported="false" />
+
+        <receiver
+            android:name=".GundemWidget"
+            android:exported="true"
+            android:label="@string/widget_gundem_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_gundem" />
+        </receiver>
+
+        <receiver
+            android:name=".AyWidget"
+            android:exported="true"
+            android:label="@string/widget_ay_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ay" />
+        </receiver>
+
+        <receiver
+            android:name=".SiradakiWidget"
+            android:exported="true"
+            android:label="@string/widget_siradaki_adi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_siradaki" />
+        </receiver>
+
+        <!-- Widget'ları yeniler: depo değişti, saat/dilim değişti, gece yarısı alarmı, açılış. -->
+        <receiver
+            android:name=".WidgetYenileAlici"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROVIDER_CHANGED" />
+                <data
+                    android:host="com.android.calendar"
+                    android:scheme="content" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.ekosistem.takvim.WIDGET_GUNCELLE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Bildirim panelinde "Yeni etkinlik" döşemesi (Android 7+) -->
+        <service
+            android:name=".YeniEtkinlikDosemesi"
+            android:exported="true"
+            android:icon="@drawable/ic_bildirim"
+            android:label="@string/dosemesi_yeni"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".HatirlaticiAlici"

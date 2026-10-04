@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Simgeye uzun basınca çıkan kısayollar (Android 7.1+). Eski sürümlerde sistem
+  bu dosyayı hiç okumaz; uygulama aynı şekilde çalışır.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="yeni_etkinlik"
+        android:enabled="true"
+        android:icon="@drawable/kisayol_yeni"
+        android:shortcutShortLabel="@string/kisayol_yeni"
+        android:shortcutLongLabel="@string/kisayol_yeni">
+        <intent
+            android:action="com.ekosistem.takvim.YENI"
+            android:targetClass="com.ekosistem.takvim.DuzenleActivity"
+            android:targetPackage="com.ekosistem.takvim" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="bugun"
+        android:enabled="true"
+        android:icon="@drawable/kisayol_bugun"
+        android:shortcutShortLabel="@string/kisayol_bugun"
+        android:shortcutLongLabel="@string/kisayol_bugun">
+        <intent
+            android:action="com.ekosistem.takvim.BUGUN"
+            android:targetClass="com.ekosistem.takvim.MainActivity"
+            android:targetPackage="com.ekosistem.takvim" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="gundem"
+        android:enabled="true"
+        android:icon="@drawable/kisayol_gundem"
+        android:shortcutShortLabel="@string/kisayol_gundem"
+        android:shortcutLongLabel="@string/kisayol_gundem">
+        <intent
+            android:action="com.ekosistem.takvim.GUNDEM"
+            android:targetClass="com.ekosistem.takvim.MainActivity"
+            android:targetPackage="com.ekosistem.takvim" />
+    </shortcut>
+</shortcuts>

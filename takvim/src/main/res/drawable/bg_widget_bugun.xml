@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ay widget'ında bugünün hücresi: vurgu renginde yuvarlak köşeli zemin. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetBottom="2dp" android:insetLeft="3dp" android:insetRight="3dp" android:insetTop="2dp">
+    <shape android:shape="rectangle">
+        <solid android:color="@color/vurgu" />
+        <corners android:radius="12dp" />
+    </shape>
+</inset>

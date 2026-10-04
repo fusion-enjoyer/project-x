@@ -366,29 +366,64 @@ object TakvimDeposu {
         return ekle(c, yeni.copy(kural = yeniKural))
     }
 
-    fun sil(c: Context, eski: Etkinlik, ornekBas: Long, kapsam: Kapsam): Boolean {
+    /** Silmeyi geri almak için gerekenler ([Tur] nasıl geri alınacağını söyler). */
+    class SilmeKaydi(val tur: Tur, val etkinlik: Etkinlik, val ornekBas: Long, val iptalId: Long = 0)
+
+    enum class Tur {
+        /** Etkinlik satırı silindi; geri alma onu yeniden ekler (yeni kimlikle). */
+        TAM,
+        /** Tekrarın bir örneği iptal istisnasıyla gizlendi; geri alma istisnayı siler. */
+        ISTISNA,
+        /** Seri bölünen örnekten önce kesildi; geri alma eski kuralı yazar. */
+        KESIK,
+        /** Değiştirilmiş tek örnek iptal edildi; geri alma durumu eski haline getirir. */
+        DURUM
+    }
+
+    fun sil(c: Context, eski: Etkinlik, ornekBas: Long, kapsam: Kapsam): SilmeKaydi? {
         return try {
             val tz = TimeZone.getDefault()
             val cr = c.contentResolver
             val uri = ContentUris.withAppendedId(Events.CONTENT_URI, eski.id)
             when {
                 // Tekrarın değiştirilmiş tek örneği: silmek o örneği iptal etmektir (seri yerinde kalır).
-                eski.asilId > 0 -> cr.update(uri, ContentValues().apply { put(Events.STATUS, Events.STATUS_CANCELED) }, null, null) > 0
-                eski.kural == null -> cr.delete(uri, null, null) > 0
+                eski.asilId > 0 ->
+                    if (cr.update(uri, ContentValues().apply { put(Events.STATUS, Events.STATUS_CANCELED) }, null, null) > 0)
+                        SilmeKaydi(Tur.DURUM, eski, ornekBas) else null
+                eski.kural == null -> if (cr.delete(uri, null, null) > 0) SilmeKaydi(Tur.TAM, eski, ornekBas) else null
                 kapsam == Kapsam.HEPSI || kapsam == Kapsam.BUNDAN_SONRA && ilkOrnekMi(eski, ornekBas, tz) ->
-                    cr.delete(uri, null, null) > 0
+                    if (cr.delete(uri, null, null) > 0) SilmeKaydi(Tur.TAM, eski, ornekBas) else null
                 kapsam == Kapsam.BU -> {
                     val v = ContentValues().apply {
                         put(Events.ORIGINAL_INSTANCE_TIME, ornekBas)
                         put(Events.STATUS, Events.STATUS_CANCELED)
                     }
-                    cr.insert(ContentUris.withAppendedId(Events.CONTENT_EXCEPTION_URI, eski.id), v) != null
+                    cr.insert(ContentUris.withAppendedId(Events.CONTENT_EXCEPTION_URI, eski.id), v)
+                        ?.let { SilmeKaydi(Tur.ISTISNA, eski, ornekBas, ContentUris.parseId(it)) }
                 }
                 else -> {
                     val oncekiGun = (if (eski.tumGun) Gun.utcGun(ornekBas) else Gun.yerelGun(ornekBas, tz)) - 1
                     val v = degerler(eski.copy(kural = Tekrar.kes(eski.kural, ornekBas - 1000L, oncekiGun, eski.tumGun)))
-                    cr.update(uri, v, null, null) > 0
+                    if (cr.update(uri, v, null, null) > 0) SilmeKaydi(Tur.KESIK, eski, ornekBas) else null
                 }
+            }
+        } catch (_: RuntimeException) {
+            null
+        }
+    }
+
+    /** [sil]'in geri alması. Başarılıysa true. */
+    fun geriAl(c: Context, k: SilmeKaydi): Boolean {
+        return try {
+            val cr = c.contentResolver
+            when (k.tur) {
+                Tur.TAM -> ekle(c, k.etkinlik.copy(id = 0)) != null
+                Tur.ISTISNA -> cr.delete(ContentUris.withAppendedId(Events.CONTENT_URI, k.iptalId), null, null) > 0
+                Tur.KESIK -> cr.update(ContentUris.withAppendedId(Events.CONTENT_URI, k.etkinlik.id), degerler(k.etkinlik), null, null) > 0
+                Tur.DURUM -> cr.update(
+                    ContentUris.withAppendedId(Events.CONTENT_URI, k.etkinlik.id),
+                    ContentValues().apply { put(Events.STATUS, k.etkinlik.durum) }, null, null
+                ) > 0
             }
         } catch (_: RuntimeException) {
             false

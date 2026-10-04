@@ -132,7 +132,9 @@ class DuzenleActivity : AppCompatActivity() {
     // ---- Başlangıç durumu ----
 
     private fun baslat(e: Etkinlik?) {
-        orijinal = e
+        // Çoğaltma: bilgiler yüklenir ama kayıt "yeni etkinlik" olarak yazılır.
+        val cogalt = intent.getBooleanExtra(EK_COGALT, false)
+        orijinal = if (cogalt) null else e
         val simdi = System.currentTimeMillis()
         val bugun = Gun.bugun(simdi, tz)
         if (e != null) {
@@ -154,7 +156,7 @@ class DuzenleActivity : AppCompatActivity() {
             etBaslik.setText(e.baslik)
             etKonum.setText(e.konum)
             etAciklama.setText(e.aciklama)
-            findViewById<TextView>(R.id.duzenleBaslik).setText(R.string.etkinligi_duzenle)
+            findViewById<TextView>(R.id.duzenleBaslik).setText(if (cogalt) R.string.yeni_etkinlik else R.string.etkinligi_duzenle)
         } else {
             findViewById<TextView>(R.id.duzenleBaslik).setText(R.string.yeni_etkinlik)
             val yazilabilir = takvimler.filter { it.yazilabilir }
@@ -492,6 +494,7 @@ class DuzenleActivity : AppCompatActivity() {
         const val EK_BIT = "bit"
         const val EK_GUN = "gun"
         const val EK_DAKIKA = "dakika"
+        const val EK_COGALT = "cogalt"
 
         /** Tüm gün etkinliğinin varsayılan hatırlatıcısı: önceki gün 09:00. */
         const val VARSAYILAN_TUM_GUN = 900

@@ -152,6 +152,25 @@
     <string name="hakkinda">About</string>
     <string name="surum">Version</string>
     <string name="izin_yok_rozet">No internet permission</string>
+    <string name="widget_gundem_adi">Agenda</string>
+    <string name="widget_ay_adi">Month</string>
+    <string name="widget_siradaki_adi">Next event</string>
+    <string name="widget_gundem_aciklama">List of upcoming events</string>
+    <string name="widget_ay_aciklama">Month calendar; tap a day to open it in the app</string>
+    <string name="widget_siradaki_aciklama">Your next event and when it is</string>
+    <string name="widget_izin">Allow calendar access</string>
+    <string name="widget_bos">Nothing coming up</string>
+    <string name="siradaki_yok">No events</string>
+    <string name="simdi_kadar">Now · until %1$s</string>
+    <string name="dosemesi_yeni">New event</string>
+    <string name="kisayol_yeni">New event</string>
+    <string name="kisayol_bugun">Today</string>
+    <string name="kisayol_gundem">Agenda</string>
+    <string name="daha">More</string>
+    <string name="cogalt">Duplicate</string>
+    <string name="silindi">Event deleted</string>
+    <string name="geri_al">Undo</string>
+    <string name="geri_alinamadi">Couldn\'t undo.</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>

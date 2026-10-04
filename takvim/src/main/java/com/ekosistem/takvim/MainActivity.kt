@@ -149,6 +149,7 @@ class MainActivity : AppCompatActivity() {
 
         mod = savedInstanceState?.getInt("mod") ?: Depo.baslangicGorunumu(this)
         ref = savedInstanceState?.getInt("ref") ?: gidilecekGun() ?: bugun
+        if (savedInstanceState == null) kisayoluIsle(intent, false)
 
         findViewById<ImageButton>(R.id.btnYeni).apply {
             imageTintList = ColorStateList.valueOf(Tasarim.vurguUzeri(this@MainActivity))
@@ -191,6 +192,18 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         gidilecekGun()?.let { ref = it; yeniGorunum() }
+        kisayoluIsle(intent, true)
+    }
+
+    /** Simge kısayolları: "Bugün" bugüne, "Gündem" gündem görünümüne götürür. */
+    private fun kisayoluIsle(i: Intent?, uygula: Boolean) {
+        when (i?.action) {
+            "com.ekosistem.takvim.BUGUN" -> { ref = bugun; mod = Depo.baslangicGorunumu(this) }
+            "com.ekosistem.takvim.GUNDEM" -> { ref = bugun; mod = Depo.GORUNUM_GUNDEM }
+            else -> return
+        }
+        zamanKaydirmaGerekli = true
+        if (uygula) yeniGorunum()
     }
 
     override fun onStart() {
@@ -221,6 +234,21 @@ class MainActivity : AppCompatActivity() {
         ayGunAdlariniKur()
         yenile()
         uyariyiYaz()
+        geriAlGoster()
+    }
+
+    /** Ayrıntı ekranında etkinlik silindiyse kısa süre "Silindi · Geri al" şeridi çıkar. */
+    private fun geriAlGoster() {
+        val k = GeriAlDeposu.al() ?: return
+        GeriAl.goster(this, getString(R.string.silindi)) {
+            yurutucu.execute {
+                val tamam = TakvimDeposu.geriAl(this, k)
+                runOnUiThread {
+                    if (!tamam) android.widget.Toast.makeText(this, R.string.geri_alinamadi, android.widget.Toast.LENGTH_LONG).show()
+                    yenile()
+                }
+            }
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {

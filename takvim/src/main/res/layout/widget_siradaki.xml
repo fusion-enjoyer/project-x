@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sıradaki etkinlik (2x1): renk çubuğu, başlık, ne zaman. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="14dp"
+    android:paddingTop="8dp"
+    android:paddingRight="14dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/widgetSiradakiRenk"
+                android:importantForAccessibility="no"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_cubuk" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widgetSiradakiBaslik"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/metin"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widgetSiradakiZaman"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/metin_ikincil"
+            android:textSize="12sp" />
+    </LinearLayout>
+</LinearLayout>

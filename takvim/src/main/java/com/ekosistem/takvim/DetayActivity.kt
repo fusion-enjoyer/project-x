@@ -38,8 +38,8 @@ class DetayActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnGeri).setOnClickListener { finish() }
         findViewById<View>(R.id.btnDuzenle).setOnClickListener { duzenle() }
         findViewById<View>(R.id.btnSil).setOnClickListener { silSor() }
-        findViewById<View>(R.id.btnPaylas).setOnClickListener { paylas() }
-        ipucuVer(findViewById(R.id.btnDuzenle), findViewById(R.id.btnSil), findViewById(R.id.btnPaylas))
+        findViewById<View>(R.id.btnDaha).setOnClickListener { dahaMenusu() }
+        ipucuVer(findViewById(R.id.btnDuzenle), findViewById(R.id.btnSil), findViewById(R.id.btnDaha))
     }
 
     override fun onResume() {
@@ -152,6 +152,25 @@ class DetayActivity : AppCompatActivity() {
         Toast.makeText(this, R.string.kopyalandi, Toast.LENGTH_SHORT).show()
     }
 
+    private fun dahaMenusu() {
+        val e = etkinlik ?: return
+        val sayfa = AltSayfa(this).baslik(e.baslik.ifBlank { getString(R.string.basliksiz) })
+        sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
+        if (TakvimDeposu.izinVar(this)) sayfa.madde(R.drawable.ic_cogalt, getString(R.string.cogalt)) { cogalt() }
+        sayfa.goster()
+    }
+
+    /** Aynı bilgilerle yeni bir etkinlik açar (kaydedilene kadar hiçbir şey değişmez). */
+    private fun cogalt() {
+        val e = etkinlik ?: return
+        startActivityForResult(
+            Intent(this, DuzenleActivity::class.java)
+                .putExtra(DuzenleActivity.EK_ID, e.id).putExtra(DuzenleActivity.EK_BAS, ornekBas).putExtra(DuzenleActivity.EK_BIT, ornekBit)
+                .putExtra(DuzenleActivity.EK_COGALT, true),
+            ISTEK_DUZENLE
+        )
+    }
+
     private fun paylas() {
         val e = etkinlik ?: return
         val ornek = Ornek.olustur(e.id, e.takvimId, e.baslik, e.konum, ornekBas, ornekBit, e.tumGun, e.renk, e.kural != null, tz)
@@ -201,11 +220,12 @@ class DetayActivity : AppCompatActivity() {
     private fun sil(kapsam: Kapsam) {
         val e = etkinlik ?: return
         yurutucu.execute {
-            val tamam = TakvimDeposu.sil(this, e, ornekBas, kapsam)
+            val kayit = TakvimDeposu.sil(this, e, ornekBas, kapsam)
             runOnUiThread {
-                if (tamam) {
+                if (kayit != null) {
                     HatirlaticiAlici.uyariyiKapat(this, e.id, ornekBas)
                     Bildirimler.kaldir(this, e.id, ornekBas)
+                    GeriAlDeposu.birak(kayit)
                     finish()
                 } else {
                     Toast.makeText(this, R.string.silinemedi, Toast.LENGTH_LONG).show()

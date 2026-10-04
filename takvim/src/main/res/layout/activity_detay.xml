@@ -31,12 +31,12 @@
             android:layout_weight="1" />
 
         <ImageButton
-            android:id="@+id/btnPaylas"
+            android:id="@+id/btnDaha"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/paylas"
-            android:src="@drawable/ic_paylas"
+            android:contentDescription="@string/daha"
+            android:src="@drawable/ic_daha"
             app:tint="@color/metin" />
 
         <ImageButton

@@ -97,6 +97,20 @@ object Metinler {
         else -> gunBaslik(gun)
     }
 
+    /** Widget'ta gün etiketi: Bugün / Yarın / "Pzt 5". */
+    fun widgetGunu(c: Context, gun: Int, bugun: Int): String = when (gun - bugun) {
+        0 -> c.getString(R.string.bugun)
+        1 -> c.getString(R.string.yarin)
+        else -> haftaGunuKisa(Gun.haftaGunu(gun)) + " " + Gun.ayinGunu(gun)
+    }
+
+    /** Sıradaki etkinlik widget'ında zaman satırı: "Şimdi · 15:00'e kadar", "Bugün 14:00", "Yarın 09:30". */
+    fun siradakiZamani(c: Context, o: Ornek, simdi: Long, bugun: Int): String {
+        if (o.tumGun) return c.getString(R.string.tum_gun)
+        if (o.baslangic <= simdi) return c.getString(R.string.simdi_kadar, saat(c, o.bitisDk))
+        return widgetGunu(c, o.ilkGun, bugun) + " " + saat(c, o.baslangicDk)
+    }
+
     /** Hatırlatıcı: "10 dakika önce"; tüm günde "1 gün önce 09:00". */
     fun hatirlatici(c: Context, dakika: Int, tumGun: Boolean): String {
         if (tumGun) {
