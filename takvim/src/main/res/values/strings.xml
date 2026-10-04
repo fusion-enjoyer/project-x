@@ -285,4 +285,17 @@
     <string name="davet_yok_aciklama">When someone invites you to an event, it shows up here.</string>
     <string name="davet_bekliyor_n">Invitations awaiting reply: %1$d</string>
     <string name="davet_bekliyor_alt">Tap to see and reply</string>
+    <string name="bu_telefonda">On this phone</string>
+    <string name="yeni_takvim">New calendar</string>
+    <string name="diger">Other</string>
+    <string name="takvim_secenekleri">%1$s options</string>
+    <string name="yeniden_adlandir">Rename</string>
+    <string name="takvimi_sil">Delete calendar</string>
+    <string name="takvim_adi">Calendar name</string>
+    <string name="olustur">Create</string>
+    <string name="takvim_sil_bos">Delete the “%1$s” calendar?</string>
+    <string name="takvim_sil_dolu">The “%1$s” calendar and its %2$d events will be deleted. This can\'t be undone.</string>
+    <string name="takvim_silinemedi">Couldn\'t delete the calendar.</string>
+    <string name="takvimler_ozet">%1$d calendars · %2$d visible</string>
+    <string name="takvimleri_yonet">Manage calendars</string>
 </resources>

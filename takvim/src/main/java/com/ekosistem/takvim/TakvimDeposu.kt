@@ -87,6 +87,49 @@ object TakvimDeposu {
         }
     }
 
+    /**
+     * Telefondaki (hesapsız) takvimin adı ve rengi. Renk yalnız senkron bağdaştırıcısı
+     * olarak yazılabilir; yerel hesabın bağdaştırıcısı biz sayılırız (oluştururken de öyle).
+     * Sunucu takvimlerinde değiştirmeyiz: ilk senkronda sunucudaki geri gelirdi.
+     */
+    fun yerelTakvimGuncelle(c: Context, t: Takvim, ad: String? = null, renk: Int? = null): Boolean {
+        if (t.hesapTuru != CalendarContract.ACCOUNT_TYPE_LOCAL) return false
+        return try {
+            val v = ContentValues()
+            ad?.let { v.put(Calendars.CALENDAR_DISPLAY_NAME, it) }
+            renk?.let { v.put(Calendars.CALENDAR_COLOR, it) }
+            c.contentResolver.update(ContentUris.withAppendedId(yerelUri(t.hesap), t.id), v, null, null) > 0
+        } catch (_: RuntimeException) {
+            false
+        }
+    }
+
+    /** Telefondaki takvimi siler; depo içindeki etkinlikleri ve hatırlatıcılarını da siler. */
+    fun yerelTakvimSil(c: Context, t: Takvim): Boolean {
+        if (t.hesapTuru != CalendarContract.ACCOUNT_TYPE_LOCAL) return false
+        return try {
+            c.contentResolver.delete(ContentUris.withAppendedId(yerelUri(t.hesap), t.id), null, null) > 0
+        } catch (_: RuntimeException) {
+            false
+        }
+    }
+
+    private fun yerelUri(hesap: String) = Calendars.CONTENT_URI.buildUpon()
+        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+        .appendQueryParameter(Calendars.ACCOUNT_NAME, hesap)
+        .appendQueryParameter(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
+        .build()
+
+    /** Takvimdeki etkinlik sayısı (tekrarlayan bir kez; değiştirilmiş tek örnekler sayılmaz). */
+    fun etkinlikSayisi(c: Context, takvimId: Long): Int = try {
+        c.contentResolver.query(
+            Events.CONTENT_URI, arrayOf(Events._ID),
+            "${Events.CALENDAR_ID}=? AND ${Events.DELETED}=0 AND ${Events.ORIGINAL_ID} IS NULL", arrayOf(takvimId.toString()), null
+        )?.use { it.count } ?: 0
+    } catch (_: RuntimeException) {
+        0
+    }
+
     fun gorunurDegistir(c: Context, takvimId: Long, gorunur: Boolean) {
         try {
             val v = ContentValues().apply {

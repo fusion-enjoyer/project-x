@@ -285,4 +285,17 @@
     <string name="davet_yok_aciklama">Biri seni bir etkinliğe davet ettiğinde burada görünür.</string>
     <string name="davet_bekliyor_n">%1$d davet yanıt bekliyor</string>
     <string name="davet_bekliyor_alt">Dokun, gör ve yanıtla</string>
+    <string name="bu_telefonda">Bu telefonda</string>
+    <string name="yeni_takvim">Yeni takvim</string>
+    <string name="diger">Diğer</string>
+    <string name="takvim_secenekleri">%1$s seçenekleri</string>
+    <string name="yeniden_adlandir">Yeniden adlandır</string>
+    <string name="takvimi_sil">Takvimi sil</string>
+    <string name="takvim_adi">Takvim adı</string>
+    <string name="olustur">Oluştur</string>
+    <string name="takvim_sil_bos">“%1$s” takvimi silinsin mi?</string>
+    <string name="takvim_sil_dolu">“%1$s” takvimi ve içindeki %2$d etkinlik silinecek. Bu geri alınamaz.</string>
+    <string name="takvim_silinemedi">Takvim silinemedi.</string>
+    <string name="takvimler_ozet">%1$d takvim · %2$d görünür</string>
+    <string name="takvimleri_yonet">Takvimleri yönet</string>
 </resources>

@@ -3,14 +3,11 @@ package com.ekosistem.takvim
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
-import android.widget.ImageView
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -67,11 +64,16 @@ class AyarlarActivity : AppCompatActivity() {
         AyarSatiri.kur(isi, R.drawable.ic_isi, vurgu, getString(R.string.yil_isi_ayar), getString(R.string.yil_isi_ozet))
         AyarSatiri.anahtar(isi, Depo.yilIsiHaritasi(this)) { Depo.yilIsiHaritasiKaydet(this, it) }
 
-        takvimleriKur(vurgu)
-
-        val dogum = findViewById<View>(R.id.satirDogum)
-        AyarSatiri.kur(dogum, R.drawable.ic_takvim, DogumGunleri.RENK, getString(R.string.dogum_satir), getString(R.string.dogum_ozet))
-        AyarSatiri.anahtar(dogum, DogumGunleri.etkin(this)) { acik -> dogumDegisti(acik) }
+        // Takvim listesi ayrı ekranda (hesaba göre gruplu, ekle/adlandır/renk/sil); burada tek satır özet.
+        val takvimSatiri = findViewById<View>(R.id.satirTakvimler)
+        AyarSatiri.kur(takvimSatiri, R.drawable.ic_takvim, vurgu, getString(R.string.takvimleri_yonet), getString(R.string.yukleniyor))
+        takvimSatiri.setOnClickListener { startActivity(Intent(this, TakvimlerActivity::class.java)) }
+        yurutucu.execute {
+            val t = TakvimDeposu.takvimler(this)
+            runOnUiThread {
+                if (!isDestroyed) AyarSatiri.ozet(takvimSatiri, getString(R.string.takvimler_ozet, t.size, t.count { it.gorunur }))
+            }
+        }
 
         val ozet = findViewById<View>(R.id.satirOzet)
         AyarSatiri.kur(ozet, R.drawable.ic_zil, vurgu, getString(R.string.ozet_satir), getString(R.string.ozet_ozet))
@@ -163,37 +165,6 @@ class AyarlarActivity : AppCompatActivity() {
         val surum = findViewById<View>(R.id.satirSurum)
         AyarSatiri.kur(surum, R.drawable.ic_ayar_bilgi, notr, getString(R.string.surum), "${BuildConfig.VERSION_NAME} · ${getString(R.string.izin_yok_rozet)}")
         AyarSatiri.oksuz(surum)
-    }
-
-    // ---- Takvimler ----
-
-    private fun takvimleriKur(vurgu: Int) {
-        val kutu = findViewById<LinearLayout>(R.id.takvimKutusu)
-        yurutucu.execute {
-            val liste = TakvimDeposu.takvimler(this)
-            runOnUiThread {
-                if (isDestroyed) return@runOnUiThread
-                kutu.removeAllViews()
-                if (liste.isEmpty()) {
-                    val satir = layoutInflater.inflate(TR.layout.item_ayar, kutu, false)
-                    AyarSatiri.kur(satir, R.drawable.ic_takvim, vurgu, getString(R.string.takvim_yok_baslik), getString(R.string.takvimler_bos_ozet))
-                    AyarSatiri.oksuz(satir)
-                    kutu.addView(satir)
-                    return@runOnUiThread
-                }
-                liste.forEachIndexed { i, t ->
-                    if (i > 0) kutu.addView(layoutInflater.inflate(R.layout.item_ayrac, kutu, false))
-                    val satir = layoutInflater.inflate(TR.layout.item_ayar, kutu, false)
-                    val ozet = listOfNotNull(t.hesap.takeIf { it.isNotEmpty() && it != t.ad && t.hesapTuru != android.provider.CalendarContract.ACCOUNT_TYPE_LOCAL }, if (!t.yazilabilir) getString(R.string.salt_okunur) else null).joinToString(" · ")
-                    AyarSatiri.kur(satir, R.drawable.ic_takvim, t.renk, t.ad, ozet)
-                    satir.findViewById<ImageView>(TR.id.ayarIkon).imageTintList = ColorStateList.valueOf(Tasarim.uzerindekiRenk(t.renk))
-                    AyarSatiri.anahtar(satir, t.gorunur) { acik ->
-                        yurutucu.execute { TakvimDeposu.gorunurDegistir(this, t.id, acik) }
-                    }
-                    kutu.addView(satir)
-                }
-            }
-        }
     }
 
     private fun varsayilanTakvimSec(yazilabilir: List<Takvim>) {
@@ -322,29 +293,6 @@ class AyarlarActivity : AppCompatActivity() {
     }
 
     // ---- Rehberdeki doğum günleri ----
-
-    private fun dogumDegisti(acik: Boolean) {
-        DogumGunleri.onbellegiTemizle()
-        if (!acik) {
-            Depo.dogumGunleriKaydet(this, false)
-            satirlariKur()
-            return
-        }
-        Depo.dogumGunleriKaydet(this, true)
-        if (!DogumGunleri.izinVar(this)) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 31)
-        }
-        satirlariKur()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 31 && grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED) {
-            Depo.dogumGunleriKaydet(this, false)
-            android.widget.Toast.makeText(this, R.string.dogum_izin_yok, android.widget.Toast.LENGTH_LONG).show()
-        }
-        satirlariKur()
-    }
 
     // ---- .ics içe/dışa aktarma ----
 

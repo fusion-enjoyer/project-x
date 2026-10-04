@@ -454,34 +454,11 @@ class DuzenleActivity : AppCompatActivity() {
     // ---- Renk ----
 
     private fun renkSec() {
-        val d = resources.displayMetrics.density
-        val sira = android.widget.LinearLayout(this)
-        sira.orientation = android.widget.LinearLayout.HORIZONTAL
-        val sayfa = AltSayfa(this).baslik(getString(R.string.renk))
-        for (renk in PALET) {
-            val secili = renk == ozelRenk
-            val daire = ImageView(this)
-            daire.setBackgroundResource(R.drawable.bg_nokta)
-            daire.backgroundTintList = ColorStateList.valueOf(renk)
-            daire.scaleType = ImageView.ScaleType.CENTER
-            if (secili) {
-                daire.setImageResource(TR.drawable.ic_onay_isaret)
-                daire.imageTintList = ColorStateList.valueOf(Tasarim.uzerindekiRenk(renk))
+        RenkSecici.sayfa(this, getString(R.string.renk), ozelRenk) { renk -> ozelRenk = renk; isaretle(); arayuzuYaz() }
+            .madde(R.drawable.ic_takvim, getString(R.string.renk_takvim), secili = ozelRenk == 0) {
+                ozelRenk = 0; isaretle(); arayuzuYaz()
             }
-            daire.contentDescription = getString(R.string.renk) + " " + (PALET.indexOf(renk) + 1)
-            daire.setOnClickListener { ozelRenk = renk; isaretle(); sayfa.kapat(); arayuzuYaz() }
-            sira.addView(daire, android.widget.LinearLayout.LayoutParams((40 * d).toInt(), (40 * d).toInt()).apply {
-                rightMargin = (8 * d).toInt()
-            })
-        }
-        val kaydirici = android.widget.HorizontalScrollView(this)
-        kaydirici.isHorizontalScrollBarEnabled = false
-        kaydirici.addView(sira)
-        sayfa.icerik(kaydirici)
-        sayfa.madde(R.drawable.ic_takvim, getString(R.string.renk_takvim), secili = ozelRenk == 0) {
-            ozelRenk = 0; isaretle(); arayuzuYaz()
-        }
-        sayfa.goster()
+            .goster()
     }
 
     // ---- Takvim ve hatırlatıcılar ----
@@ -621,11 +598,5 @@ class DuzenleActivity : AppCompatActivity() {
 
         /** Tüm gün etkinliğinin varsayılan hatırlatıcısı: önceki gün 09:00. */
         const val VARSAYILAN_TUM_GUN = 900
-
-        /** Etkinlik rengi paleti (tasarım dilinin vurguları + yaygın tonlar). */
-        val PALET = intArrayOf(
-            0xFF0F766E.toInt(), 0xFF2563EB.toInt(), 0xFF4F46E5.toInt(), 0xFF9333EA.toInt(), 0xFFDB2777.toInt(),
-            0xFFDC2626.toInt(), 0xFFEA580C.toInt(), 0xFFCA8A04.toInt(), 0xFF16A34A.toInt(), 0xFF52525B.toInt()
-        )
     }
 }

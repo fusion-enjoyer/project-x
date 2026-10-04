@@ -64,14 +64,8 @@
             </LinearLayout>
 
             <TextView style="@style/BolumBasligi" android:text="@string/takvimler" />
-            <LinearLayout
-                android:id="@+id/takvimKutusu"
-                style="@style/AyarKutusu" />
-
-            <LinearLayout
-                style="@style/AyarKutusu"
-                android:layout_marginTop="12dp">
-                <include android:id="@+id/satirDogum" layout="@layout/item_ayar" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirTakvimler" layout="@layout/item_ayar" />
             </LinearLayout>
 
             <TextView style="@style/BolumBasligi" android:text="@string/etkinlikler" />
