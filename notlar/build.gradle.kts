@@ -1,7 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+/*
+ * Yayın imzası repo dışında durur: ~/.gradle/gradle.properties içindeki
+ * `imzaDosyasi` bir .properties dosyasını gösterir (storeFile, storePassword,
+ * keyAlias, keyPassword). Ayar yoksa release imzasız derlenir; kodu klonlayan
+ * herkes kendi anahtarıyla imzalayabilir.
+ */
+val imza: Properties? = (findProperty("imzaDosyasi") as String?)
+    ?.let { file(it) }
+    ?.takeIf { it.exists() }
+    ?.let { dosya -> Properties().apply { dosya.inputStream().use { load(it) } } }
 
 android {
     namespace = "com.ekosistem.notlar"
@@ -22,8 +35,20 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        if (imza != null) {
+            create("yayin") {
+                storeFile = file(imza.getProperty("storeFile"))
+                storePassword = imza.getProperty("storePassword")
+                keyAlias = imza.getProperty("keyAlias")
+                keyPassword = imza.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (imza != null) signingConfig = signingConfigs.getByName("yayin")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
