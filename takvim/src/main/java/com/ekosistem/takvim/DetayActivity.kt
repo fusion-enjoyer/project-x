@@ -134,6 +134,7 @@ class DetayActivity : AppCompatActivity() {
             satir(R.drawable.ic_zil, e.hatirlaticilar.joinToString("\n") { Metinler.hatirlatici(this, it, e.tumGun) })
         }
         satir(R.drawable.ic_takvim, e.takvimAdi.ifBlank { getString(R.string.takvim) })
+        if (e.musaitlik == Etkinlik.UYGUN) satir(R.drawable.ic_kisi, getString(R.string.detay_uygun))
         if (e.aciklama.isNotBlank()) {
             val v = satir(R.drawable.ic_not, e.aciklama)
             v.findViewById<TextView>(R.id.bilgiBaslik).apply {

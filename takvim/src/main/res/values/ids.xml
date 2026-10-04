@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Saat ızgarasında etkinliğin ekran okuyucu eylemleri (sürüklemenin karşılığı). -->
+    <item name="eylem_ileri_al" type="id" />
+    <item name="eylem_geri_al" type="id" />
+    <item name="eylem_uzat" type="id" />
+</resources>

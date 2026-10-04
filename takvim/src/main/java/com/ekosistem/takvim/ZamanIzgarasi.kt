@@ -27,6 +27,7 @@ import androidx.customview.widget.ExploreByTouchHelper
 import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.R as TR
 import java.util.TimeZone
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -350,6 +351,10 @@ class ZamanIzgarasi @JvmOverloads constructor(
         set(v) { field = v; bloklariKur() }
     var ornekTiklandi: ((Ornek) -> Unit)? = null
     var bosUzunBasildi: ((gun: Int, dakika: Int) -> Unit)? = null
+    /** Etkinlik sürüklenip bırakıldı (taşındı ya da süresi değişti): yeni gün ve dakikalar. */
+    var tasindi: ((o: Ornek, gun: Int, basDk: Int, bitDk: Int) -> Unit)? = null
+    /** Bu örnek taşınabilir mi (yazılabilir takvim, saatli, tek günlük). */
+    var tasinabilir: (Ornek) -> Boolean = { false }
     /** İki parmakla yakınlaştırma bitince yeni saat çarpanı (kaydedilsin diye). */
     var olcekDegisti: ((Float) -> Unit)? = null
     /** Bir saatin yükseklik çarpanı; 1 = 56 dp. */
@@ -378,6 +383,8 @@ class ZamanIzgarasi @JvmOverloads constructor(
         color = soluk; textSize = 11f * d * olcek; textAlign = Paint.Align.RIGHT
     }
     private val dolgu = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cerceve = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f * d }
+    private val ince = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1f * d }
     private val yazi = TextPaint(Paint.ANTI_ALIAS_FLAG)
     private val bloklar = ArrayList<Blok>()
     private val yol = Path()
@@ -433,6 +440,7 @@ class ZamanIzgarasi @JvmOverloads constructor(
     fun dakikaY(dakika: Int) = dakika / 60f * saatYuksekligi
 
     private fun bloklariKur() {
+        val oncekiSecili = secili
         bloklar.clear()
         if (width > 0) {
             val sut = sutun()
@@ -459,6 +467,10 @@ class ZamanIzgarasi @JvmOverloads constructor(
                 }
             }
         }
+        // Veri yenilenince seçim aynı örnekte kalır; taşınan örnek yeni yerinde yeniden seçilmez.
+        secili = oncekiSecili?.let { s -> bloklar.firstOrNull { it.ornek.etkinlikId == s.ornek.etkinlikId && it.ornek.baslangic == s.ornek.baslangic && it.gun == s.gun } }
+        if (secili == null) surukleme = SURUKLEME_YOK
+        onizleme = null
         invalidate()
         erisim.invalidateRoot()
     }
@@ -481,8 +493,33 @@ class ZamanIzgarasi @JvmOverloads constructor(
             val x = kenar + i * sut
             canvas.drawLine(x, 0f, x, 24 * saatYuksekligi, cizgi)
         }
-        for (b in bloklar) blokCiz(canvas, b, gece)
+        val sec = secili
+        for (b in bloklar) {
+            if (b === sec) continue
+            blokCiz(canvas, b, gece)
+        }
         simdiCizgisi(canvas)
+        if (sec != null) seciliCiz(canvas, sec, gece)
+    }
+
+    /** Seçili (kaldırılmış) etkinlik: eski yeri soluk, yeni yeri çerçeveli, altta süre tutamağı. */
+    private fun seciliCiz(canvas: Canvas, b: Blok, gece: Boolean) {
+        val o = onizleme
+        if (o != null) {
+            canvas.saveLayerAlpha(b.alan.left, b.alan.top, b.alan.right, b.alan.bottom, 90)
+            blokCiz(canvas, b, gece)
+            canvas.restore()
+        }
+        val g = o ?: b
+        blokCiz(canvas, g, gece)
+        cerceve.color = vurgu
+        canvas.drawRoundRect(g.alan, 6f * d, 6f * d, cerceve)
+        val cx = g.alan.centerX()
+        val cy = g.alan.bottom
+        dolgu.color = ContextCompat.getColor(context, TR.color.zemin)
+        canvas.drawCircle(cx, cy, 7f * d, dolgu)
+        dolgu.color = vurgu
+        canvas.drawCircle(cx, cy, 5f * d, dolgu)
     }
 
     private fun blokCiz(canvas: Canvas, b: Blok, gece: Boolean) {
@@ -491,7 +528,13 @@ class ZamanIzgarasi @JvmOverloads constructor(
         val yaricap = 6f * d
         val ana = Renk.yuzey(b.ornek.renk, gece)
         dolgu.color = ZamanOlcusu.blokZemini(ana, gece)
+        // "Uygun" etkinlik (zamanı meşgul göstermeyen) daha açık zemin ve ince çerçeveyle ayrılır (Google/Apple gibi).
+        if (b.ornek.uygun) dolgu.alpha = dolgu.alpha / 3
         canvas.drawRoundRect(r, yaricap, yaricap, dolgu)
+        if (b.ornek.uygun) {
+            ince.color = ana
+            canvas.drawRoundRect(r.left + 0.5f * d, r.top + 0.5f * d, r.right - 0.5f * d, r.bottom - 0.5f * d, yaricap, yaricap, ince)
+        }
         canvas.save()
         yol.reset()
         yol.addRoundRect(r, yaricap, yaricap, Path.Direction.CW)
@@ -562,6 +605,101 @@ class ZamanIzgarasi @JvmOverloads constructor(
 
     // ---- Dokunma ----
 
+    // Sürükle-bırak (Apple Takvim gibi): etkinliğe uzun basınca kalkar ve parmağı izler (15 dk adım);
+    // bırakınca seçili kalır, alttaki tutamaktan çekince süre değişir. Boş yere dokunmak seçimi bırakır.
+    private var secili: Blok? = null
+    private var onizleme: Blok? = null
+    private var surukleme = SURUKLEME_YOK
+    private var ofsetDk = 0
+    private var basX = 0f
+    private var basY = 0f
+    private var oynadi = false
+    private var yut = false
+    /** Bu dokunuşta seçim uzun basmayla başladı: parmak oynamadan kalkarsa seçili kalır (açılmaz). */
+    private var uzunBasildi = false
+    private var sonEkranY = 0f
+    private var sonX = 0f
+    private val tikSiniri = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
+    /** Sürükleme sürerken etkinlik sayfası yatay kaydırma sayılmasın diye ekran sorar. */
+    val surukleniyor get() = surukleme != SURUKLEME_YOK
+
+    /** Bırakılan taşıma uygulanmadıysa (kapsam sorusu kapatıldı, izin yok) eski yerine döner. */
+    fun geriKoy() = bloklariKur()
+
+    fun secimiBirak() {
+        secili = null
+        onizleme = null
+        surukleme = SURUKLEME_YOK
+        removeCallbacks(kenarKaydirma)
+        invalidate()
+    }
+
+    private val kaydirici get() = parent as? ScrollView
+
+    private fun dakika(y: Float) = (y / saatYuksekligi * 60f).toInt()
+    private fun adim(dk: Int) = Math.round(dk / 15f) * 15
+
+    private fun suruklemeBaslat(b: Blok, tur: Int, y: Float) {
+        secili = b
+        surukleme = tur
+        ofsetDk = dakika(y) - b.basDk
+        oynadi = false
+        parent?.requestDisallowInterceptTouchEvent(true)
+        invalidate()
+    }
+
+    private fun onizlemeKur(x: Float, y: Float) {
+        val b = secili ?: return
+        val sure = b.bitDk - b.basDk
+        val eski = onizleme
+        val gun: Int
+        var bas: Int
+        var bit: Int
+        if (surukleme == SURUKLEME_UZAT) {
+            gun = b.gun
+            bas = b.basDk
+            bit = adim(dakika(y)).coerceIn(bas + 15, 1440)
+        } else {
+            gun = (ilkGun + ((x - kenar) / sutun()).toInt()).coerceIn(ilkGun, ilkGun + gunSayisi - 1)
+            bas = adim(dakika(y) - ofsetDk).coerceIn(0, 1440 - sure)
+            bit = bas + sure
+        }
+        if (eski != null && eski.gun == gun && eski.basDk == bas && eski.bitDk == bit) return
+        if (eski == null && gun == b.gun && bas == b.basDk && bit == b.bitDk) return
+        val sut = sutun()
+        val sol = kenar + (gun - ilkGun) * sut
+        onizleme = Blok(b.ornek, gun, RectF(sol + 1.5f * d, dakikaY(bas) + 1f * d, sol + sut - 1.5f * d, dakikaY(max(bit, bas + 30)) - 1f * d), bas, bit)
+        oynadi = true
+        performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        invalidate()
+    }
+
+    /** Parmak ekranın üst/alt kenarındayken ızgara kendiliğinden kayar. */
+    private val kenarKaydirma = object : Runnable {
+        override fun run() {
+            val k = kaydirici ?: return
+            if (surukleme == SURUKLEME_YOK) return
+            val bant = 56f * d
+            val alt = k.height - 120f * d
+            val hiz = when {
+                sonEkranY < bant -> -(10f * d)
+                sonEkranY > alt -> 10f * d
+                else -> 0f
+            }
+            if (hiz != 0f) {
+                k.scrollBy(0, hiz.toInt())
+                onizlemeKur(sonX, sonEkranY + k.scrollY)
+                postOnAnimation(this)
+            }
+        }
+    }
+
+    private fun tutamakta(b: Blok, x: Float, y: Float): Boolean {
+        val g = onizleme ?: b
+        return abs(y - g.alan.bottom) < 20f * d && x >= g.alan.left - 8f * d && x <= g.alan.right + 8f * d
+    }
+
     private val hareket = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(e: MotionEvent) = true
 
@@ -576,8 +714,16 @@ class ZamanIzgarasi @JvmOverloads constructor(
         }
 
         override fun onLongPress(e: MotionEvent) {
-            if (olcekleniyor) return
-            if (e.x < kenar || bloklar.any { it.alan.contains(e.x, e.y) }) return
+            if (olcekleniyor || surukleme != SURUKLEME_YOK) return
+            val blok = bloklar.lastOrNull { it.alan.contains(e.x, e.y) }
+            if (blok != null) {
+                if (!tasinabilir(blok.ornek)) return
+                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                uzunBasildi = true
+                suruklemeBaslat(blok, SURUKLEME_TASI, e.y)
+                return
+            }
+            if (e.x < kenar) return
             val gun = ilkGun + ((e.x - kenar) / sutun()).toInt().coerceIn(0, gunSayisi - 1)
             val dk = (e.y / saatYuksekligi * 60).toInt().coerceIn(0, 1410) / 30 * 30
             performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -587,9 +733,76 @@ class ZamanIzgarasi @JvmOverloads constructor(
 
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (e.actionMasked == MotionEvent.ACTION_DOWN) olcekleniyor = false
-        if (e.actionMasked == MotionEvent.ACTION_POINTER_DOWN) parent?.requestDisallowInterceptTouchEvent(true)
+        if (e.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
+            parent?.requestDisallowInterceptTouchEvent(true)
+            if (surukleme != SURUKLEME_YOK && !oynadi) surukleme = SURUKLEME_YOK
+        }
         olcekAlgilayici.onTouchEvent(e)
         if (olcekleniyor || e.pointerCount > 1) return true
+
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                basX = e.x; basY = e.y
+                yut = false
+                uzunBasildi = false
+                val s = secili
+                if (s != null) {
+                    when {
+                        tutamakta(s, e.x, e.y) -> { suruklemeBaslat(s, SURUKLEME_UZAT, e.y); return true }
+                        (onizleme ?: s).alan.contains(e.x, e.y) -> { suruklemeBaslat(s, SURUKLEME_TASI, e.y); return true }
+                        else -> { secimiBirak(); yut = true; return true }
+                    }
+                }
+            }
+            MotionEvent.ACTION_MOVE -> if (surukleme != SURUKLEME_YOK) {
+                if (!oynadi && abs(e.x - basX) < tikSiniri && abs(e.y - basY) < tikSiniri) return true
+                sonX = e.x
+                sonEkranY = e.y - (kaydirici?.scrollY ?: 0)
+                onizlemeKur(e.x, e.y)
+                removeCallbacks(kenarKaydirma)
+                postOnAnimation(kenarKaydirma)
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                if (yut) return true
+                if (surukleme != SURUKLEME_YOK) {
+                    removeCallbacks(kenarKaydirma)
+                    val b = secili
+                    val o = onizleme
+                    surukleme = SURUKLEME_YOK
+                    when {
+                        b != null && o != null -> {
+                            // Bırakıldı: yeni yer depo yenilenene kadar çizili kalır.
+                            tasindi?.invoke(b.ornek, o.gun, o.basDk, o.bitDk)
+                            secili = null
+                            bloklar.remove(b)
+                            bloklar.add(o)
+                            onizleme = null
+                            invalidate()
+                        }
+                        b != null && !oynadi && !uzunBasildi -> {
+                            // Seçili etkinliğe kısa dokunuş: açılır.
+                            secimiBirak()
+                            performClick()
+                            ornekTiklandi?.invoke(b.ornek)
+                        }
+                        else -> invalidate()
+                    }
+                    oynadi = false
+                    return true
+                }
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                removeCallbacks(kenarKaydirma)
+                if (surukleme != SURUKLEME_YOK) {
+                    surukleme = SURUKLEME_YOK
+                    onizleme = null
+                    oynadi = false
+                    invalidate()
+                }
+            }
+        }
+        if (yut) return true
         return hareket.onTouchEvent(e) || super.onTouchEvent(e)
     }
 
@@ -615,14 +828,24 @@ class ZamanIzgarasi @JvmOverloads constructor(
             b.alan.roundOut(r)
             node.setBoundsInParent(r)
             node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
+            // Sürüklemenin ekran okuyucudaki karşılığı.
+            if (tasinabilir(b.ornek)) {
+                node.addAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat(R.id.eylem_ileri_al, context.getString(R.string.eylem_ileri_al)))
+                node.addAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat(R.id.eylem_geri_al, context.getString(R.string.eylem_geri_al)))
+                node.addAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat(R.id.eylem_uzat, context.getString(R.string.eylem_uzat)))
+            }
         }
 
         override fun onPerformActionForVirtualView(id: Int, action: Int, args: Bundle?): Boolean {
-            if (action == AccessibilityNodeInfoCompat.ACTION_CLICK) {
-                ornekTiklandi?.invoke(bloklar[id].ornek)
-                return true
+            val b = bloklar.getOrNull(id) ?: return false
+            when (action) {
+                AccessibilityNodeInfoCompat.ACTION_CLICK -> ornekTiklandi?.invoke(b.ornek)
+                R.id.eylem_ileri_al -> if (b.bitDk + 30 <= 1440) tasindi?.invoke(b.ornek, b.gun, b.basDk + 30, b.bitDk + 30) else return false
+                R.id.eylem_geri_al -> if (b.basDk >= 30) tasindi?.invoke(b.ornek, b.gun, b.basDk - 30, b.bitDk - 30) else return false
+                R.id.eylem_uzat -> if (b.bitDk + 30 <= 1440) tasindi?.invoke(b.ornek, b.gun, b.basDk, b.bitDk + 30) else return false
+                else -> return false
             }
-            return false
+            return true
         }
     }
 
@@ -633,3 +856,7 @@ class ZamanIzgarasi @JvmOverloads constructor(
     override fun dispatchHoverEvent(event: MotionEvent): Boolean =
         erisim.dispatchHoverEvent(event) || super.dispatchHoverEvent(event)
 }
+
+private const val SURUKLEME_YOK = 0
+private const val SURUKLEME_TASI = 1
+private const val SURUKLEME_UZAT = 2

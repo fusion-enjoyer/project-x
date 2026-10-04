@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private var yuklendi = false
     private var gundemGunSayisi = GUNDEM_ILK
     private var gundemYukleniyor = false
+    private var bekleyenDavet = 0
     private var zamanKaydirmaGerekli = true
 
     private val yurutucu = Executors.newSingleThreadExecutor()
@@ -118,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         val d = resources.displayMetrics.density
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if (e1 == null || mod == Depo.GORUNUM_GUNDEM || cokParmak) return false
+                if (e1 == null || mod == Depo.GORUNUM_GUNDEM || cokParmak || zamanIzgara.surukleniyor) return false
                 val dx = e2.x - e1.x
                 val dy = e2.y - e1.y
                 if (kotlin.math.abs(dx) < 80 * d || kotlin.math.abs(dx) < 2 * kotlin.math.abs(dy)) return false
@@ -218,6 +219,8 @@ class MainActivity : AppCompatActivity() {
         tumGunSeridi.ornekTiklandi = { ornekAc(it) }
         zamanIzgara.ornekTiklandi = { ornekAc(it) }
         zamanIzgara.bosUzunBasildi = { g, dk -> yeniEtkinlik(g, dk) }
+        zamanIzgara.tasinabilir = { o -> tasinabilir(o) }
+        zamanIzgara.tasindi = { o, g, bas, bit -> ornekTasindi(o, g, bas, bit) }
         zamanIzgara.saatCarpani = Depo.saatOlcegi(this)
         zamanIzgara.olcekDegisti = { Depo.saatOlcegiKaydet(this, it) }
         yilIzgara.aySecildi = { ay -> aydanAyaGit(ay) }
@@ -427,10 +430,12 @@ class MainActivity : AppCompatActivity() {
         yurutucu.execute {
             val t = Hiz.olc("depo.takvimler") { TakvimDeposu.takvimler(this) }
             val o = Hiz.olc("depo.ornekler(${son - ilk + 1} gün)") { TakvimDeposu.ornekler(this, ilk, son) }
+            val davet = if (mod == Depo.GORUNUM_GUNDEM) TakvimDeposu.bekleyenDavetSayisi(this, bugun, bugun + 365) else bekleyenDavet
             runOnUiThread {
                 if (n == nesil && !isDestroyed) {
                     takvimler = t
                     ornekler = o
+                    bekleyenDavet = davet
                     yuklenen = ilk to son
                     yuklendi = true
                     gundemYukleniyor = false
@@ -864,6 +869,16 @@ class MainActivity : AppCompatActivity() {
         val (ilk, son) = aralik()
         var varMi = false
         val inflater = LayoutInflater.from(this)
+        // Yanıt bekleyen davetler (Apple'ın "Gelen kutusu"): gündemin başında tek kart, dokununca liste.
+        if (bekleyenDavet > 0) {
+            val v = inflater.inflate(R.layout.item_etkinlik, gundemListe, false)
+            v.findViewById<View>(R.id.etkRenk).backgroundTintList = ColorStateList.valueOf(vurgu)
+            v.findViewById<TextView>(R.id.etkBaslik).text = getString(R.string.davet_bekliyor_n, bekleyenDavet)
+            v.findViewById<TextView>(R.id.etkAlt).text = getString(R.string.davet_bekliyor_alt)
+            v.setOnClickListener { startActivity(Intent(this, AramaActivity::class.java).putExtra(AramaActivity.EK_DAVETLER, true)) }
+            gundemListe.addView(v)
+            varMi = true
+        }
         for (g in ilk..son) {
             val liste = (gunler[g] ?: continue).sortedWith(::gunSirasi)
             varMi = true
@@ -958,10 +973,94 @@ class MainActivity : AppCompatActivity() {
 
     private fun modDegistir(yeni: Int) {
         if (yeni == mod) return
+        zamanIzgara.secimiBirak()
         mod = yeni
         zamanKaydirmaGerekli = true
         gundemGunSayisi = GUNDEM_ILK
         yeniGorunum()
+    }
+
+    // ---- Sürükle-bırak ----
+
+    /** Saatli, tek günlük, yazılabilir takvimdeki gerçek etkinlik (doğum günü değil) taşınabilir. */
+    private fun tasinabilir(o: Ornek): Boolean =
+        o.etkinlikId > 0 && !o.tumGun && !o.cokGunlu && takvimler.any { it.id == o.takvimId && it.yazilabilir }
+
+    /**
+     * Saat ızgarasında bırakılan etkinlik: tekrarlayansa kapsam sorulur, başkasının
+     * daveti taşınmaz (sunucuda düzenleyen kişinin olur). Sonra "Geri al" şeridi.
+     */
+    private fun ornekTasindi(o: Ornek, gun: Int, basDk: Int, bitDk: Int) {
+        val tz = TimeZone.getDefault()
+        val yeniBas = Gun.yerelAn(gun, basDk, tz)
+        val yeniBit = Gun.yerelAn(gun, bitDk, tz)
+        if (yeniBas == o.baslangic && yeniBit == o.bitis) return zamanIzgara.geriKoy()
+        val sureDegisti = yeniBas == o.baslangic
+        yurutucu.execute {
+            val e = TakvimDeposu.etkinlik(this, o.etkinlikId)
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                if (e == null || !e.yazilabilir) {
+                    zamanIzgara.geriKoy()
+                    android.widget.Toast.makeText(this, R.string.tasinamadi, android.widget.Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                if (e.davetliler.isNotEmpty() && e.organizator.isNotEmpty() && !e.organizator.equals(e.sahipHesap, true)) {
+                    zamanIzgara.geriKoy()
+                    android.widget.Toast.makeText(this, R.string.tasinamaz_davet, android.widget.Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                val uygula = { k: Kapsam -> tasimayiUygula(e, o, yeniBas, yeniBit, k, sureDegisti) }
+                if (e.kural == null) {
+                    uygula(Kapsam.HEPSI)
+                    return@runOnUiThread
+                }
+                var secildi = false
+                AltSayfa(this).baslik(getString(R.string.tasima_kapsam))
+                    .madde(R.drawable.ic_gun, getString(R.string.kapsam_bu)) { secildi = true; uygula(Kapsam.BU) }
+                    .madde(R.drawable.ic_gundem, getString(R.string.kapsam_sonrakiler)) { secildi = true; uygula(Kapsam.BUNDAN_SONRA) }
+                    .madde(R.drawable.ic_tekrar, getString(R.string.kapsam_hepsi)) { secildi = true; uygula(Kapsam.HEPSI) }
+                    .kapaninca { if (!secildi) zamanIzgara.geriKoy() }
+                    .goster()
+            }
+        }
+    }
+
+    private fun tasimayiUygula(e: Etkinlik, o: Ornek, yeniBas: Long, yeniBit: Long, kapsam: Kapsam, sureDegisti: Boolean) {
+        yurutucu.execute {
+            val id = TakvimDeposu.guncelle(this, e, o.baslangic, e.copy(baslangic = yeniBas, bitis = yeniBit), kapsam)
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                if (id == null) {
+                    zamanIzgara.geriKoy()
+                    android.widget.Toast.makeText(this, R.string.tasinamadi, android.widget.Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                yenile()
+                // "Bu ve sonrakiler" seriyi böler; geri almak yeni seriyi silip eskisini uzatmak olurdu, şerit yok.
+                if (e.kural != null && kapsam == Kapsam.BUNDAN_SONRA) return@runOnUiThread
+                GeriAl.goster(this, getString(if (sureDegisti) R.string.sure_degisti else R.string.tasindi)) {
+                    yurutucu.execute {
+                        val tamam = tasimayiGeriAl(e, o, id, yeniBas, yeniBit, kapsam)
+                        runOnUiThread {
+                            if (!tamam) android.widget.Toast.makeText(this, R.string.geri_alinamadi, android.widget.Toast.LENGTH_LONG).show()
+                            yenile()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Taşımayı geri alır: tek etkinlik/tüm seri eski saatine döner, "yalnız bu" istisnası silinir. */
+    private fun tasimayiGeriAl(e: Etkinlik, o: Ornek, id: Long, yeniBas: Long, yeniBit: Long, kapsam: Kapsam): Boolean {
+        if (e.kural != null && kapsam == Kapsam.BU) {
+            return runCatching {
+                contentResolver.delete(android.content.ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id), null, null) > 0
+            }.getOrDefault(false)
+        }
+        val simdiki = TakvimDeposu.etkinlik(this, id) ?: return false
+        return TakvimDeposu.guncelle(this, simdiki, yeniBas, simdiki.copy(baslangic = o.baslangic, bitis = o.bitis), Kapsam.HEPSI) != null
     }
 
     // ---- Etkinlik açma/ekleme ----

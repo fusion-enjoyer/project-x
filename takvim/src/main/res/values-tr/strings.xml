@@ -266,4 +266,23 @@
     <string name="yil_isi_ayar">Yıl görünümünde yoğunluk haritası</string>
     <string name="yil_isi_ozet">Yoğun günler daha koyu</string>
     <string name="saat_araligi_ozet_ipucu">İki parmakla da değiştirebilirsin</string>
+    <string name="eylem_ileri_al">30 dk sonraya al</string>
+    <string name="eylem_geri_al">30 dk öne al</string>
+    <string name="eylem_uzat">30 dk uzat</string>
+    <string name="tasindi">Etkinlik taşındı</string>
+    <string name="sure_degisti">Süre değişti</string>
+    <string name="tasinamaz_davet">Bu etkinliği yalnız düzenleyen kişi taşıyabilir</string>
+    <string name="tasinamadi">Etkinlik taşınamadı</string>
+    <string name="tasima_kapsam">Taşınan tekrarlayan etkinlik</string>
+    <string name="musaitlik">Bu sürede</string>
+    <string name="musait_mesgul">Meşgul görünürüm</string>
+    <string name="musait_uygun">Uygun görünürüm</string>
+    <string name="detay_uygun">Uygun olarak görünür</string>
+    <string name="yanit_bekliyor">Yanıt bekliyor</string>
+    <string name="davetler_baslik">Davetler</string>
+    <string name="davetler_n">Yanıt bekleyen · %1$d</string>
+    <string name="davet_yok_baslik">Bekleyen davet yok</string>
+    <string name="davet_yok_aciklama">Biri seni bir etkinliğe davet ettiğinde burada görünür.</string>
+    <string name="davet_bekliyor_n">%1$d davet yanıt bekliyor</string>
+    <string name="davet_bekliyor_alt">Dokun, gör ve yanıtla</string>
 </resources>

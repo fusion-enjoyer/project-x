@@ -44,6 +44,18 @@
             android:textColor="@color/metin"
             android:textColorHint="@color/metin_ikincil"
             android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/davetBaslik"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:text="@string/davetler_baslik"
+            android:textColor="@color/metin"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 
     <FrameLayout

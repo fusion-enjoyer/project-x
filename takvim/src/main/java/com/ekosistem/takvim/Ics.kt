@@ -24,7 +24,9 @@ data class IcsEtkinlik(
     /** İptal edilen örneklerin (EXDATE) başlangıç anları. */
     val muaf: List<Long> = emptyList(),
     /** RECURRENCE-ID: bu kayıt, serinin şu örneğinin değiştirilmiş hali. */
-    val oncekiOrnek: Long? = null
+    val oncekiOrnek: Long? = null,
+    /** TRANSP:TRANSPARENT — zamanı meşgul göstermez ("Uygun"). */
+    val uygun: Boolean = false
 )
 
 /** Saf `.ics` yazıcı ve okuyucu (Android'e bağlı değil, birim testle sınanır). */
@@ -68,6 +70,7 @@ object Ics {
         if (e.baslik.isNotEmpty()) satir(b, "SUMMARY:" + kacis(e.baslik))
         if (e.konum.isNotEmpty()) satir(b, "LOCATION:" + kacis(e.konum))
         if (e.aciklama.isNotEmpty()) satir(b, "DESCRIPTION:" + kacis(e.aciklama))
+        if (e.uygun) satir(b, "TRANSP:TRANSPARENT")
         e.kural?.let { satir(b, "RRULE:" + it.removePrefix("RRULE:")) }
         if (e.muaf.isNotEmpty()) {
             satir(b, if (e.tumGun) "EXDATE;VALUE=DATE:" + e.muaf.joinToString(",") { tarih(it) } else "EXDATE:" + e.muaf.joinToString(",") { utc(it) })
@@ -263,7 +266,8 @@ object Ics {
             kural = al("RRULE")?.deger?.trim()?.takeIf { it.isNotEmpty() },
             hatirlaticilar = alarmlar.distinct().sorted(),
             muaf = muaf,
-            oncekiOrnek = al("RECURRENCE-ID")?.let { zaman(it, varsayilan)?.ms }
+            oncekiOrnek = al("RECURRENCE-ID")?.let { zaman(it, varsayilan)?.ms },
+            uygun = al("TRANSP")?.deger?.trim().equals("TRANSPARENT", true)
         )
     }
 }

@@ -39,7 +39,11 @@ data class Ornek(
     /** Yalnız aramada doldurulur (listeler için bellek harcanmasın). */
     val aciklama: String = "",
     /** Davete "hayır" denmiş (ayarlardan gösterilmesi istenirse listelenir). */
-    val reddedildi: Boolean = false
+    val reddedildi: Boolean = false,
+    /** Uygun olarak işaretli (AVAILABILITY_FREE): zaman ızgarasında açık çizilir. */
+    val uygun: Boolean = false,
+    /** Bana gelmiş, henüz yanıtlanmamış davet. */
+    val davetBekliyor: Boolean = false
 ) {
     /** [gun] günündeki dilimin başlangıç dakikası (zaman ızgarası için). */
     fun gunBaslangicDk(gun: Int): Int = if (gun == ilkGun) baslangicDk else 0
@@ -62,14 +66,16 @@ data class Ornek(
             tekrarli: Boolean,
             tz: TimeZone,
             aciklama: String = "",
-            reddedildi: Boolean = false
+            reddedildi: Boolean = false,
+            uygun: Boolean = false,
+            davetBekliyor: Boolean = false
         ): Ornek {
             if (tumGun) {
                 val ilk = Gun.utcGun(baslangic)
                 val son = if (bitis > baslangic) Gun.utcGun(bitis - 1) else ilk
                 return Ornek(
                     etkinlikId, takvimId, baslik, konum, baslangic, bitis, true, renk, tekrarli,
-                    ilk, maxOf(ilk, son), 0, 1440, aciklama, reddedildi
+                    ilk, maxOf(ilk, son), 0, 1440, aciklama, reddedildi, uygun, davetBekliyor
                 )
             }
             val ilk = Gun.yerelGun(baslangic, tz)
@@ -79,7 +85,7 @@ data class Ornek(
             val sonGun = maxOf(ilk, son)
             return Ornek(
                 etkinlikId, takvimId, baslik, konum, baslangic, bitis, false, renk, tekrarli,
-                ilk, sonGun, basDk, if (sonGun > ilk) bitDk else maxOf(bitDk, basDk), aciklama, reddedildi
+                ilk, sonGun, basDk, if (sonGun > ilk) bitDk else maxOf(bitDk, basDk), aciklama, reddedildi, uygun, davetBekliyor
             )
         }
     }
@@ -113,8 +119,16 @@ data class Etkinlik(
     val organizator: String = "",
     val sahipHesap: String = "",
     /** Benim katılım durumum ([Davetli.KABUL] …); 0 = davet yok. */
-    val benimDurumum: Int = 0
-)
+    val benimDurumum: Int = 0,
+    /** Bu sürede meşgul mü görünürüm: [MESGUL], [UYGUN], [BELKI_MESGUL] (Events.AVAILABILITY). */
+    val musaitlik: Int = MESGUL
+) {
+    companion object {
+        const val MESGUL = 0
+        const val UYGUN = 1
+        const val BELKI_MESGUL = 2
+    }
+}
 
 /** Etkinliğin bir davetlisi (depodaki `Attendees` satırı). */
 data class Davetli(val ad: String, val eposta: String, val durum: Int) {

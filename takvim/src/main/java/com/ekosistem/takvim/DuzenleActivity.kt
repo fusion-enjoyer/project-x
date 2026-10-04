@@ -47,6 +47,9 @@ class DuzenleActivity : AppCompatActivity() {
     private var sonSaatBit = 10 * 60
     private var kural: String? = null
     private var ozelRenk = 0
+    /** Uygun/Meşgul; yeni etkinlikte elle seçilmediyse tüm gün → Uygun, saatli → Meşgul (Google gibi). */
+    private var musaitlik = Etkinlik.MESGUL
+    private var musaitlikElle = false
     private var hatirlaticilar = mutableListOf<Int>()
     private var zamanDilimi = ""
     private var degisti = false
@@ -150,6 +153,8 @@ class DuzenleActivity : AppCompatActivity() {
             ornekBas = bas
             takvimId = e.takvimId
             tumGun = e.tumGun
+            musaitlik = e.musaitlik
+            musaitlikElle = true
             zamanDilimi = e.zamanDilimi
             if (e.tumGun) {
                 basGun = Gun.utcGun(bas)
@@ -279,6 +284,20 @@ class DuzenleActivity : AppCompatActivity() {
         zamanSatiriniYaz(findViewById(R.id.satirBaslangic), getString(R.string.baslangic), true)
         zamanSatiriniYaz(findViewById(R.id.satirBitis), getString(R.string.bitis), false)
 
+        // Uygun/Meşgul: dokundukça değişir (sunucudan gelen "belki meşgul" de bir dokunuşla Meşgul olur).
+        val musait = findViewById<View>(R.id.satirMusaitlik)
+        AyarSatiri.kur(
+            musait, R.drawable.ic_kisi, vurgu, getString(R.string.musaitlik),
+            getString(if (musaitlik == Etkinlik.UYGUN) R.string.musait_uygun else R.string.musait_mesgul)
+        )
+        AyarSatiri.oksuz(musait)
+        musait.setOnClickListener {
+            musaitlik = if (musaitlik == Etkinlik.MESGUL) Etkinlik.UYGUN else Etkinlik.MESGUL
+            musaitlikElle = true
+            isaretle()
+            arayuzuYaz()
+        }
+
         val tekrar = findViewById<View>(R.id.satirTekrar)
         AyarSatiri.kur(tekrar, R.drawable.ic_tekrar, vurgu, getString(R.string.tekrar), tekrarOzeti())
         tekrar.setOnClickListener { tekrarSec() }
@@ -373,6 +392,7 @@ class DuzenleActivity : AppCompatActivity() {
             if (bitGun == basGun && bitDk <= basDk) bitDk = minOf(1439, basDk + 60)
         }
         tumGun = acik
+        if (!musaitlikElle) musaitlik = if (acik) Etkinlik.UYGUN else Etkinlik.MESGUL
         // Hatırlatıcı henüz varsayılan haldeyse yeni türün varsayılanına geçer.
         if (hatirlaticilar == onceVarsayilan) {
             hatirlaticilar = varsayilanHatirlatmaListesi(acik).toMutableList()
@@ -541,7 +561,7 @@ class DuzenleActivity : AppCompatActivity() {
             konum = etKonum.text.toString().trim(), aciklama = etAciklama.text.toString().trim(),
             baslangic = baslangic, bitis = bitis, tumGun = tumGun,
             zamanDilimi = if (tumGun) "UTC" else (o?.takeIf { !it.tumGun }?.zamanDilimi ?: tz.id),
-            kural = yeniKural, hatirlaticilar = hatirlaticilar.sorted(), renk = o?.renk ?: 0,
+            kural = yeniKural, hatirlaticilar = hatirlaticilar.sorted(), renk = o?.renk ?: 0, musaitlik = musaitlik,
             ozelRenk = if (takvimler.firstOrNull { it.id == takvimId }?.hesapTuru == CalendarContract.ACCOUNT_TYPE_LOCAL) ozelRenk else 0
         )
     }

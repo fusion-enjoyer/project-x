@@ -23,6 +23,10 @@ import com.ekosistem.tasarim.R as TR
 /**
  * Etkinlik arama: başlık, konum ve açıklamada, geçmiş bir yıl ile gelecek iki yıl içinde.
  * Yaklaşanlar önce (yakından uzağa), sonra geçmiş (yeniden eskiye).
+ *
+ * [EK_DAVETLER] ile açılınca arama alanı yerine "Yanıt bekleyen davetler" listesi:
+ * önümüzdeki bir yılda yanıtlanmamış davetler (tekrarlayan davet bir kez); dokununca
+ * ayrıntı ve Evet/Belki/Hayır, dönünce liste yenilenir.
  */
 class AramaActivity : AppCompatActivity() {
 
@@ -35,6 +39,7 @@ class AramaActivity : AppCompatActivity() {
     private lateinit var alan: EditText
 
     private val ara = Runnable { sorgula() }
+    private val davetModu by lazy { intent.getBooleanExtra(EK_DAVETLER, false) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +49,11 @@ class AramaActivity : AppCompatActivity() {
         bosDurum = findViewById(R.id.bosDurum)
         alan = findViewById(R.id.etAra)
         findViewById<View>(R.id.btnGeri).setOnClickListener { finish() }
+        if (davetModu) {
+            alan.visibility = View.GONE
+            findViewById<View>(R.id.davetBaslik).visibility = View.VISIBLE
+            return
+        }
         alan.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -63,6 +73,34 @@ class AramaActivity : AppCompatActivity() {
                 .showSoftInput(alan, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }
         sorgula()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (davetModu) davetleriYukle()
+    }
+
+    private fun davetleriYukle() {
+        if (!TakvimDeposu.izinVar(this)) return
+        val n = ++nesil
+        yurutucu.execute {
+            val simdi = System.currentTimeMillis()
+            val bugun = Gun.bugun(simdi, TimeZone.getDefault())
+            val bekleyen = TakvimDeposu.ornekler(this, bugun, bugun + 365).filter { it.davetBekliyor }
+            val (yaklasan, _) = Arama.sirala(bekleyen, simdi)
+            runOnUiThread {
+                if (n != nesil || isDestroyed) return@runOnUiThread
+                liste.removeAllViews()
+                if (yaklasan.isEmpty()) {
+                    kaydirici.visibility = View.GONE
+                    BosDurum.goster(bosDurum, R.drawable.ic_kisi, getString(R.string.davet_yok_baslik), getString(R.string.davet_yok_aciklama))
+                    return@runOnUiThread
+                }
+                bosDurum.visibility = View.GONE
+                kaydirici.visibility = View.VISIBLE
+                bolum(getString(R.string.davetler_n, yaklasan.size), yaklasan, bugun)
+            }
+        }
     }
 
     private fun sorgula() {
@@ -119,6 +157,10 @@ class AramaActivity : AppCompatActivity() {
             v.setOnClickListener { runCatching { startActivity(OrnekAc.niyet(this, o)) } }
             liste.addView(v)
         }
+    }
+
+    companion object {
+        const val EK_DAVETLER = "davetler"
     }
 
     override fun onDestroy() {

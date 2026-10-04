@@ -113,7 +113,8 @@ object Metinler {
     /** "09:00 – 10:30 · Konum" ya da yalnız saat. */
     fun ornekAltYazisi(c: Context, o: Ornek, gun: Int): String =
         (if (o.konum.isBlank()) ornekSaati(c, o, gun) else ornekSaati(c, o, gun) + " · " + o.konum.lines().first()) +
-            if (o.reddedildi) " · " + c.getString(R.string.reddedildi) else ""
+            (if (o.reddedildi) " · " + c.getString(R.string.reddedildi) else "") +
+            (if (o.davetBekliyor) " · " + c.getString(R.string.yanit_bekliyor) else "")
 
     /** Süre: "1 sa 30 dk", "45 dk", "2 gün". */
     fun sure(c: Context, dakika: Int): String = when {

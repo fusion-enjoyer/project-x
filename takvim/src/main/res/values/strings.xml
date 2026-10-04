@@ -266,4 +266,23 @@
     <string name="yil_isi_ayar">Heat map in year view</string>
     <string name="yil_isi_ozet">Busier days are darker</string>
     <string name="saat_araligi_ozet_ipucu">You can pinch to change it, too</string>
+    <string name="eylem_ileri_al">Move 30 min later</string>
+    <string name="eylem_geri_al">Move 30 min earlier</string>
+    <string name="eylem_uzat">Extend by 30 min</string>
+    <string name="tasindi">Event moved</string>
+    <string name="sure_degisti">Duration changed</string>
+    <string name="tasinamaz_davet">Only the organizer can move this event</string>
+    <string name="tasinamadi">Couldn\'t move the event</string>
+    <string name="tasima_kapsam">Moving a repeating event</string>
+    <string name="musaitlik">During this time</string>
+    <string name="musait_mesgul">Show as busy</string>
+    <string name="musait_uygun">Show as free</string>
+    <string name="detay_uygun">Shown as free</string>
+    <string name="yanit_bekliyor">Awaiting reply</string>
+    <string name="davetler_baslik">Invitations</string>
+    <string name="davetler_n">Awaiting reply · %1$d</string>
+    <string name="davet_yok_baslik">No pending invitations</string>
+    <string name="davet_yok_aciklama">When someone invites you to an event, it shows up here.</string>
+    <string name="davet_bekliyor_n">Invitations awaiting reply: %1$d</string>
+    <string name="davet_bekliyor_alt">Tap to see and reply</string>
 </resources>

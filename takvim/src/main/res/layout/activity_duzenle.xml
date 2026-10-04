@@ -127,6 +127,12 @@
                 <include
                     android:id="@+id/satirTekrar"
                     layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirMusaitlik"
+                    layout="@layout/item_ayar" />
             </LinearLayout>
 
             <LinearLayout

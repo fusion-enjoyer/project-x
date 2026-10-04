@@ -115,7 +115,8 @@ object TakvimDeposu {
                     Instances.EVENT_ID, Instances.CALENDAR_ID, Instances.TITLE, Instances.EVENT_LOCATION,
                     Instances.BEGIN, Instances.END, Instances.ALL_DAY, Instances.RRULE,
                     Instances.EVENT_COLOR, Instances.CALENDAR_COLOR, Instances.STATUS, Instances.SELF_ATTENDEE_STATUS,
-                    Instances.ORIGINAL_ID, if (aciklamaDahil) Instances.DESCRIPTION else Instances.EVENT_LOCATION
+                    Instances.ORIGINAL_ID, if (aciklamaDahil) Instances.DESCRIPTION else Instances.EVENT_LOCATION,
+                    Instances.AVAILABILITY
                 ),
                 "${Calendars.VISIBLE}=1", null, "${Instances.BEGIN} ASC, ${Instances.END} DESC"
             )?.use { k ->
@@ -133,7 +134,9 @@ object TakvimDeposu {
                             tekrarli = !k.getString(7).isNullOrBlank() || !k.isNull(12),
                             tz = tz,
                             aciklama = if (aciklamaDahil) k.getString(13).orEmpty() else "",
-                            reddedildi = red
+                            reddedildi = red,
+                            uygun = k.getInt(14) == Events.AVAILABILITY_FREE,
+                            davetBekliyor = k.getInt(11) == CalendarContract.Attendees.ATTENDEE_STATUS_INVITED
                         )
                     )
                 }
@@ -142,6 +145,25 @@ object TakvimDeposu {
         }
         liste.addAll(DogumGunleri.ornekler(c, ilkGun, sonGun))
         return liste
+    }
+
+    /** [ilkGun]–[sonGun] arasında yanıtlanmamış davet sayısı (tekrarlayan davet bir kez sayılır). */
+    fun bekleyenDavetSayisi(c: Context, ilkGun: Int, sonGun: Int): Int {
+        val idler = HashSet<Long>()
+        try {
+            val b = Instances.CONTENT_BY_DAY_URI.buildUpon()
+            ContentUris.appendId(b, Gun.julian(ilkGun).toLong())
+            ContentUris.appendId(b, Gun.julian(sonGun).toLong())
+            c.contentResolver.query(
+                b.build(), arrayOf(Instances.EVENT_ID),
+                "${Calendars.VISIBLE}=1 AND ${Instances.SELF_ATTENDEE_STATUS}=${CalendarContract.Attendees.ATTENDEE_STATUS_INVITED}" +
+                    // Durumu boş (NULL) etkinlik de sayılır: SQL'de NULL != 2 doğru değildir.
+                    " AND (${Instances.STATUS} IS NULL OR ${Instances.STATUS}!=${Events.STATUS_CANCELED})",
+                null, null
+            )?.use { k -> while (k.moveToNext()) idler.add(k.getLong(0)) }
+        } catch (_: RuntimeException) {
+        }
+        return idler.size
     }
 
     fun etkinlik(c: Context, id: Long): Etkinlik? {
@@ -153,7 +175,7 @@ object TakvimDeposu {
                     Events.DTSTART, Events.DTEND, Events.DURATION, Events.ALL_DAY, Events.EVENT_TIMEZONE,
                     Events.RRULE, Events.ORIGINAL_ID, Events.EVENT_COLOR, Events.CALENDAR_COLOR,
                     Events.CALENDAR_ACCESS_LEVEL, Events.CALENDAR_DISPLAY_NAME, Events.STATUS,
-                    Events.ORGANIZER, Events.OWNER_ACCOUNT, Events.SELF_ATTENDEE_STATUS
+                    Events.ORGANIZER, Events.OWNER_ACCOUNT, Events.SELF_ATTENDEE_STATUS, Events.AVAILABILITY
                 ),
                 null, null, null
             )?.use { k ->
@@ -177,7 +199,8 @@ object TakvimDeposu {
                     yazilabilir = k.getInt(14) >= Calendars.CAL_ACCESS_CONTRIBUTOR,
                     takvimAdi = k.getString(15).orEmpty(), durum = k.getInt(16),
                     davetliler = davetliler(c, id), organizator = k.getString(17).orEmpty(),
-                    sahipHesap = k.getString(18).orEmpty(), benimDurumum = k.getInt(19)
+                    sahipHesap = k.getString(18).orEmpty(), benimDurumum = k.getInt(19),
+                    musaitlik = k.getInt(20)
                 )
             }
         } catch (_: RuntimeException) {
@@ -268,6 +291,7 @@ object TakvimDeposu {
         v.put(Events.EVENT_END_TIMEZONE, dilim)
         v.put(Events.ALL_DAY, if (e.tumGun) 1 else 0)
         v.put(Events.HAS_ALARM, if (e.hatirlaticilar.isEmpty()) 0 else 1)
+        v.put(Events.AVAILABILITY, e.musaitlik)
         if (e.ozelRenk != 0) v.put(Events.EVENT_COLOR, e.ozelRenk) else v.putNull(Events.EVENT_COLOR)
         if (e.kural != null) {
             v.put(Events.RRULE, e.kural)
@@ -366,6 +390,7 @@ object TakvimDeposu {
         v.put(Events.EVENT_TIMEZONE, if (e.tumGun) "UTC" else e.zamanDilimi.ifEmpty { TimeZone.getDefault().id })
         v.put(Events.ALL_DAY, if (e.tumGun) 1 else 0)
         v.put(Events.HAS_ALARM, if (e.hatirlaticilar.isEmpty()) 0 else 1)
+        v.put(Events.AVAILABILITY, e.musaitlik)
         return v
     }
 

@@ -14,6 +14,15 @@ class IcsTest {
         "u-$ad@t", ad, "", "", Gun.yerelAn(gun, bas, ist), Gun.yerelAn(gun, bit, ist), false, ist.id, kural, alarm
     )
 
+    @Test fun uygunTranspIleTasinir() {
+        val g = Gun.gun(2026, 10, 5)
+        val metin = Ics.yaz(listOf(saatli("Uygun", g, 600, 660).copy(uygun = true), saatli("Meşgul", g, 700, 760)), simdi)
+        assertTrue(metin.contains("TRANSP:TRANSPARENT"))
+        val oku = Ics.oku(metin, ist).associateBy { it.baslik }
+        assertTrue(oku.getValue("Uygun").uygun)
+        assertEquals(false, oku.getValue("Meşgul").uygun)
+    }
+
     @Test fun gidisDonusSaatli() {
         val g = Gun.gun(2026, 10, 4)
         val e = saatli("Toplantı", g, 540, 600, alarm = listOf(10, 60))

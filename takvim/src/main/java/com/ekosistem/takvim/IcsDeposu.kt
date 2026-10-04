@@ -17,7 +17,8 @@ object IcsDeposu {
             val idler = takvimIdleri.joinToString(",")
             class Satir(
                 val id: Long, val baslik: String, val aciklama: String, val konum: String, val bas: Long, val bit: Long?,
-                val sure: String?, val tumGun: Boolean, val dilim: String, val kural: String?, val asilId: Long?, val asilAn: Long?, val durum: Int
+                val sure: String?, val tumGun: Boolean, val dilim: String, val kural: String?, val asilId: Long?, val asilAn: Long?, val durum: Int,
+                val uygun: Boolean
             )
             val satirlar = ArrayList<Satir>()
             c.contentResolver.query(
@@ -25,7 +26,7 @@ object IcsDeposu {
                 arrayOf(
                     Events._ID, Events.TITLE, Events.DESCRIPTION, Events.EVENT_LOCATION, Events.DTSTART, Events.DTEND,
                     Events.DURATION, Events.ALL_DAY, Events.EVENT_TIMEZONE, Events.RRULE, Events.ORIGINAL_ID,
-                    Events.ORIGINAL_INSTANCE_TIME, Events.STATUS
+                    Events.ORIGINAL_INSTANCE_TIME, Events.STATUS, Events.AVAILABILITY
                 ),
                 "${Events.CALENDAR_ID} IN ($idler) AND ${Events.DELETED}=0", null, "${Events._ID} ASC"
             )?.use { k ->
@@ -35,7 +36,8 @@ object IcsDeposu {
                             k.getLong(0), k.getString(1).orEmpty(), k.getString(2).orEmpty(), k.getString(3).orEmpty(),
                             k.getLong(4), if (k.isNull(5)) null else k.getLong(5), k.getString(6), k.getInt(7) != 0,
                             k.getString(8).orEmpty(), k.getString(9)?.takeIf { it.isNotBlank() },
-                            if (k.isNull(10)) null else k.getLong(10), if (k.isNull(11)) null else k.getLong(11), k.getInt(12)
+                            if (k.isNull(10)) null else k.getLong(10), if (k.isNull(11)) null else k.getLong(11), k.getInt(12),
+                            k.getInt(13) == Events.AVAILABILITY_FREE
                         )
                     )
                 }
@@ -67,7 +69,8 @@ object IcsDeposu {
                         uid = uid(s.asilId ?: s.id), baslik = s.baslik, aciklama = s.aciklama, konum = s.konum,
                         baslangic = s.bas, bitis = bit, tumGun = s.tumGun, zamanDilimi = s.dilim.ifEmpty { TimeZone.getDefault().id },
                         kural = s.kural, hatirlaticilar = uyarilar[s.id].orEmpty().distinct().sorted(),
-                        muaf = muaf[s.id].orEmpty().sorted(), oncekiOrnek = if (s.asilId != null) s.asilAn else null
+                        muaf = muaf[s.id].orEmpty().sorted(), oncekiOrnek = if (s.asilId != null) s.asilAn else null,
+                        uygun = s.uygun
                     )
                 )
             }
@@ -126,14 +129,15 @@ object IcsDeposu {
     private fun forma(e: IcsEtkinlik, takvimId: Long) = Etkinlik(
         takvimId = takvimId, baslik = e.baslik, konum = e.konum, aciklama = e.aciklama,
         baslangic = e.baslangic, bitis = e.bitis, tumGun = e.tumGun,
-        zamanDilimi = if (e.tumGun) "UTC" else e.zamanDilimi, kural = e.kural, hatirlaticilar = e.hatirlaticilar
+        zamanDilimi = if (e.tumGun) "UTC" else e.zamanDilimi, kural = e.kural, hatirlaticilar = e.hatirlaticilar,
+        musaitlik = if (e.uygun) Etkinlik.UYGUN else Etkinlik.MESGUL
     )
 
     /** Tek etkinliği paylaşmak için `.ics` kaydı. */
     fun tek(c: Context, e: Etkinlik): IcsEtkinlik = IcsEtkinlik(
         uid = "${e.id}@takvim", baslik = e.baslik, aciklama = e.aciklama, konum = e.konum,
         baslangic = e.baslangic, bitis = e.bitis, tumGun = e.tumGun, zamanDilimi = e.zamanDilimi.ifEmpty { TimeZone.getDefault().id },
-        kural = e.kural, hatirlaticilar = e.hatirlaticilar
+        kural = e.kural, hatirlaticilar = e.hatirlaticilar, uygun = e.musaitlik == Etkinlik.UYGUN
     )
 
     @Suppress("unused")
