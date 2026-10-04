@@ -1,5 +1,7 @@
 # Project X
 
+![Notlar: offline, Google-free Markdown notes](gorseller/notlar-tanitim.png)
+
 A family of small, offline, Google-free Android apps. No internet permission, no accounts, no tracking, no cloud. Each app is small, runs on Android 5.0 and up, and keeps your data in plain, portable files.
 
 *Project X is a working name; the final name will come later.*
@@ -21,6 +23,8 @@ A family of small, offline, Google-free Android apps. No internet permission, no
 ## Notes
 
 A Markdown note app that stays out of your way.
+
+![Screens: note list, live Markdown, links, tasks, pure black theme, fonts](gorseller/notlar-ekranlar.png)
 
 - **Plain files.** Every note is a `.md` file in a folder you pick. You can open the same folder in Obsidian, sync it with Syncthing, or back it up however you like.
 - **Live Markdown.** Headings, bold, italic, strikethrough, code, quotes, lists, checkboxes and dividers are formatted as you type. The markers show only on the line you're editing.
@@ -88,6 +92,8 @@ Google'sız, çevrimdışı, küçük Android uygulamalarından oluşan bir aile
 | Başlatıcı (launcher) | Planlandı |
 
 ### Notlar
+
+![Ekranlar](gorseller/notlar-ekranlar.png)
 
 - Her not, seçtiğin klasörde düz bir `.md` dosyası. Aynı klasörü Obsidian ile açabilir, Syncthing ile eşitleyebilirsin.
 - Yazarken canlı Markdown: başlık, kalın, italik, üstü çizili, kod, alıntı, liste, onay kutusu. İşaretler yalnız düzenlediğin satırda görünür.
