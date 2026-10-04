@@ -2,6 +2,7 @@ package com.ekosistem.notlar
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.net.Uri
@@ -121,9 +122,20 @@ class EditorActivity : AppCompatActivity() {
             gorselleriEkle(secilenler)
         }
 
+    /** Kameranın fotoğrafı yazacağı dosya; ekran yeniden kurulursa da korunur. */
+    private var kameraAdresi: Uri? = null
+
+    private val kameraSonucu =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { cekildi ->
+            val adres = kameraAdresi
+            kameraAdresi = null
+            if (cekildi && adres != null) gorselleriEkle(listOf(adres))
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
+        kameraAdresi = savedInstanceState?.getString(KAMERA_ADRESI)?.let(Uri::parse)
         setContentView(R.layout.activity_editor)
         depo = NotDeposu(this)
         taslaklar = Taslaklar(this)
@@ -692,7 +704,7 @@ class EditorActivity : AppCompatActivity() {
             Arac(R.drawable.ic_bicim_liste, R.string.bicim_liste) { onekDegistir("- ") },
             Arac(R.drawable.ic_bicim_numarali, R.string.bicim_numarali) { onekDegistir("1. ") },
             Arac(R.drawable.ic_bicim_onay, R.string.bicim_onay) { onekDegistir("- [ ] ") },
-            Arac(R.drawable.ic_gorsel, R.string.gorsel_ekle) { gorselSec() },
+            Arac(R.drawable.ic_gorsel, R.string.gorsel_ekle) { gorselEkle() },
             Arac(R.drawable.ic_etiket, R.string.etiket_ekle) { etiketEkle() },
             Arac(R.drawable.ic_gunluk, R.string.tarih_ekle) { tarihEkle() },
             Arac(R.drawable.ic_girinti_arti, R.string.girinti_arti) { girintiDegistir(true) },
@@ -813,6 +825,40 @@ class EditorActivity : AppCompatActivity() {
     }
 
     // --- Görsel ekleme ---
+
+    /** Kamerası olan cihazda galeri ile kamera arasında seçtirir. */
+    private fun gorselEkle() {
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            gorselSec()
+            return
+        }
+        AltSayfa(this)
+            .baslik(getString(R.string.gorsel_ekle))
+            .madde(R.drawable.ic_gorsel, getString(R.string.galeriden_sec)) { gorselSec() }
+            .madde(R.drawable.ic_kamera, getString(R.string.fotograf_cek)) { fotografCek() }
+            .goster()
+    }
+
+    /**
+     * Çekimi cihazın kamera uygulaması yapar; bu yüzden kamera izni gerekmez.
+     * Fotoğraf önbellekteki dosyaya yazılır, oradan seçilen görsel gibi eklenir.
+     */
+    private fun fotografCek() {
+        val adres = Gorseller.kameraDosyasi(this)
+        if (adres == null) {
+            Toast.makeText(this, R.string.gorsel_hata, Toast.LENGTH_SHORT).show()
+            return
+        }
+        kameraAdresi = adres
+        Kilit.sistemAraciBekleniyor = true
+        try {
+            kameraSonucu.launch(adres)
+        } catch (_: ActivityNotFoundException) {
+            kameraAdresi = null
+            Kilit.sistemAraciBekleniyor = false
+            Toast.makeText(this, R.string.kamera_yok, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     /**
      * Android 11+ (güncel sistemlerde) sistemin fotoğraf seçicisi açılır, daha
@@ -1761,7 +1807,14 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        kameraAdresi?.let { outState.putString(KAMERA_ADRESI, it.toString()) }
+    }
+
     private companion object {
+        const val KAMERA_ADRESI = "kameraAdresi"
+
         /** Çubuğu gizleyip göstermek için gereken en küçük kaydırma (piksel). */
         const val ESIK = 12
 

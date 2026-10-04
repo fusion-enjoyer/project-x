@@ -16,10 +16,15 @@ import android.provider.OpenableColumns
 import android.util.LruCache
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Collections
+import java.util.Date
+import java.util.Locale
 
 /**
  * Not içindeki görseller. Dosyalar not klasörünün yanındaki `ekler/` klasörüne
@@ -87,6 +92,20 @@ object Gorseller {
         Intent(MediaStore.ACTION_PICK_IMAGES)
             .setType("image/*")
             .putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, MediaStore.getPickImagesMaxLimit())
+
+    /**
+     * Kamera uygulamasının fotoğrafı yazacağı geçici dosya. Önceki çekimlerden
+     * kalanlar silinir: görsel `ekler/`e kopyalandıktan sonra gerek kalmaz.
+     */
+    fun kameraDosyasi(context: Context): Uri? = try {
+        val klasor = File(context.cacheDir, "kamera")
+        klasor.listFiles()?.forEach { it.delete() }
+        klasor.mkdirs()
+        val ad = "foto-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".jpg"
+        FileProvider.getUriForFile(context, "${context.packageName}.dosyalar", File(klasor, ad))
+    } catch (_: Exception) {
+        null
+    }
 
     /** Fotoğraf seçicisi olmayan sürümlerde belge seçici (görsellerle süzülü). */
     fun belgeSeciciNiyeti(): Intent =

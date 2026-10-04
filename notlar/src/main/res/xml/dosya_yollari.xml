@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Başka uygulamalara geçici olarak açılan dosyalar; hepsi önbellekte. -->
+<paths>
+    <!-- Kamera uygulamasının çektiği fotoğrafı yazdığı yer -->
+    <cache-path name="kamera" path="kamera/" />
+</paths>

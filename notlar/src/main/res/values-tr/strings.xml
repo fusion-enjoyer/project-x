@@ -211,6 +211,9 @@
     <!-- Görseller -->
     <string name="gorsel_ekle">Görsel ekle</string>
     <string name="gorsel_hata">Görsel eklenemedi</string>
+    <string name="galeriden_sec">Galeriden seç</string>
+    <string name="fotograf_cek">Fotoğraf çek</string>
+    <string name="kamera_yok">Kamera uygulaması bulunamadı</string>
     <string name="gorsel_kucult">Eklenen görselleri küçült</string>
     <string name="gorsel_kucult_ozet">En fazla 2048 piksel; konum ve kamera bilgileri (EXIF) silinir</string>
 

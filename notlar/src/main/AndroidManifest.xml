@@ -146,6 +146,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Kamera uygulaması çektiği fotoğrafı buradan verilen dosyaya yazar. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.dosyalar"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/dosya_yollari" />
+        </provider>
+
         <!-- Bildirim panelinde "Yeni not" döşemesi (Android 7+). -->
         <service
             android:name=".YeniNotDosemesi"

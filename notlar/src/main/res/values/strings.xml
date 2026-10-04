@@ -211,6 +211,9 @@
     <!-- Images -->
     <string name="gorsel_ekle">Insert image</string>
     <string name="gorsel_hata">Couldn\'t add that image</string>
+    <string name="galeriden_sec">Choose from gallery</string>
+    <string name="fotograf_cek">Take photo</string>
+    <string name="kamera_yok">No camera app found</string>
     <string name="gorsel_kucult">Shrink added images</string>
     <string name="gorsel_kucult_ozet">Up to 2048 px; location and camera details (EXIF) are removed</string>
 
