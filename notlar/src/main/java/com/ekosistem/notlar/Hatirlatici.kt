@@ -116,6 +116,14 @@ object Hatirlatici {
     fun bildirimGoster(context: Context, uri: String) {
         val yonetici = context.getSystemService(Context.NOTIFICATION_SERVICE)
             as? NotificationManager ?: return
+        val depo = NotDeposu(context)
+        val adres = Uri.parse(uri)
+        // Silinmiş ya da çöpteki notun hatırlatıcısı çalmaz; tekrarlıysa da durur.
+        // (Çöpten zamanında geri alınan notun hatırlatıcısı yerinde kalır.)
+        if (depo.docGetir(adres)?.exists() != true || depo.copteMi(adres)) {
+            kaldir(context, uri)
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val kanal = NotificationChannel(
                 KANAL,
@@ -125,8 +133,7 @@ object Hatirlatici {
             yonetici.createNotificationChannel(kanal)
         }
 
-        val depo = NotDeposu(context)
-        val icerik = depo.oku(Uri.parse(uri), 512)
+        val icerik = depo.oku(adres, 512)
         val baslik = icerik.lines().firstOrNull { it.isNotBlank() }
             ?.trimStart('#', '-', '>', ' ')
             ?.take(60)

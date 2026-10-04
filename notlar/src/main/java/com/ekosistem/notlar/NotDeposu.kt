@@ -737,6 +737,7 @@ class NotDeposu(private val context: Context) {
 
     fun kaliciSil(uri: Uri): Boolean {
         sabitTemizle(uri)
+        Hatirlatici.kaldir(context, uri.toString())
         Prefs.copKaynagiSil(context, uri.toString())
         Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
         Taslaklar(context).sil(uri.toString())
@@ -753,6 +754,10 @@ class NotDeposu(private val context: Context) {
     }
 
     /** Notun bulunduğu dizin: ana klasör, bir alt klasör ya da çöp kutusu. */
+    /** Not çöp klasöründe mi (hatırlatıcı çöpteki not için çalmasın). */
+    fun copteMi(uri: Uri): Boolean =
+        copKlasoru(false)?.listFiles()?.any { it.uri == uri } == true
+
     private fun ustDizin(uri: Uri): DocumentFile? {
         val k = kok()
         if (k.listFiles().any { it.uri == uri }) return k

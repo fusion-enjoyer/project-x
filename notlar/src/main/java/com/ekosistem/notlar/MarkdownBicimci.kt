@@ -93,7 +93,7 @@ class MarkdownBicimci(private val context: Context) {
                 }
                 kodBlogunda -> kodSatiri(s, bas, son, cit = false)
                 callout != null -> {
-                    val renk = calloutRengi(callout.groupValues[1])
+                    val renk = turRengi(callout.groupValues[1])
                     calloutRengi = renk
                     calloutBasligi(s, bas, son, callout, renk, aktif)
                 }
@@ -130,7 +130,7 @@ class MarkdownBicimci(private val context: Context) {
 
     // --- Bilgi kutusu (callout) ---
 
-    private fun calloutRengi(tur: String): Int {
+    private fun turRengi(tur: String): Int {
         val sira = calloutRenkSirasi(tur) ?: return vurgu
         val secenek = Renkler.SECENEKLER[sira]
         return if (Renkler.geceMi(context)) secenek.koyu else secenek.acik

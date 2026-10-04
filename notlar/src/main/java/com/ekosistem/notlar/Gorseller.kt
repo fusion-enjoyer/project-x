@@ -330,9 +330,13 @@ object Gorseller {
                 ?.use { BitmapFactory.decodeStream(it, null, secenek) }
                 ?: return null
 
-            val exif = runCatching {
-                cozucu.openInputStream(kaynak)?.use { ExifInterface(it) }
-            }.getOrNull()
+            // Yön bilinmeden yeniden kodlanan fotoğraf yan dönebilir: okunamazsa
+            // (PNG dışında) küçültmeden vazgeçilir, dosya olduğu gibi kopyalanır.
+            val exif = exifOku(context, kaynak)
+            if (exif == null && tur != "image/png") {
+                ham.recycle()
+                return null
+            }
             val matris = Matrix()
             val uzun = maxOf(ham.width, ham.height)
             if (uzun > EN_UZUN_KENAR) {
@@ -364,6 +368,19 @@ object Gorseller {
         } catch (_: OutOfMemoryError) {
             null
         }
+    }
+
+    /**
+     * Dosya tanıtıcısından okumak HEIC gibi biçimlerde de çalışır (geri
+     * sarılabilir); sağlayıcı vermezse akıştan denenir.
+     */
+    private fun exifOku(context: Context, kaynak: Uri): ExifInterface? {
+        val cozucu = context.contentResolver
+        return runCatching {
+            cozucu.openFileDescriptor(kaynak, "r")?.use { ExifInterface(it.fileDescriptor) }
+        }.getOrNull() ?: runCatching {
+            cozucu.openInputStream(kaynak)?.use { ExifInterface(it) }
+        }.getOrNull()
     }
 
     private fun yaz(context: Context, bayt: ByteArray, hedef: Uri): Boolean = try {
