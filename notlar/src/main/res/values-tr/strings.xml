@@ -24,6 +24,7 @@
     <string name="sil">Sil</string>
     <string name="paylas">Paylaş</string>
     <string name="kart_paylas">Görsel olarak paylaş</string>
+    <string name="yazdir">Yazdır veya PDF kaydet</string>
     <string name="geri_yukle">Geri yükle</string>
     <string name="kalici_sil">Kalıcı olarak sil</string>
     <string name="not_kaydedildi">Not kaydedildi</string>

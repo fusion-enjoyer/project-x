@@ -1637,6 +1637,7 @@ class EditorActivity : AppCompatActivity() {
         sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
         sayfa.madde(R.drawable.ic_gorsel, getString(R.string.kart_paylas)) { kartOlarakPaylas() }
+        sayfa.madde(R.drawable.ic_yazdir, getString(R.string.yazdir)) { yazdir() }
 
         if (mevcutUri != null) {
             sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { sil() }
@@ -1963,6 +1964,35 @@ class EditorActivity : AppCompatActivity() {
                 startActivity(Intent.createChooser(intent, getString(R.string.kart_paylas)))
             }
         }.start()
+    }
+
+    /** Sistemin yazdırma ekranı; "PDF olarak kaydet" de oradan seçilir. */
+    private fun yazdir() {
+        val metin = metinAlani.text?.toString().orEmpty()
+        if (metin.isBlank()) return
+        val yonetici = getSystemService(PRINT_SERVICE) as? android.print.PrintManager ?: return
+        val ad = metin.lineSequence().firstOrNull { it.isNotBlank() }
+            ?.trimStart('#', ' ')
+            ?.replace(Regex("[\\\\/:*?\"<>|]"), "")
+            ?.take(60)
+            ?.ifBlank { null }
+            ?: getString(R.string.app_name)
+        val yazdirici = NotYazdirici(
+            this,
+            ad,
+            metin,
+            android.text.TextPaint(metinAlani.paint),
+            metinAlani.lineSpacingMultiplier,
+            metinAlani.lineSpacingExtra,
+            depo
+        )
+        Kilit.sistemAraciBekleniyor = true
+        try {
+            yonetici.print(ad, yazdirici, null)
+        } catch (_: Exception) {
+            Kilit.sistemAraciBekleniyor = false
+            Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun sil() {
