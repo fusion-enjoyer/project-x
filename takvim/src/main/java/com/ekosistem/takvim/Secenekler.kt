@@ -92,7 +92,7 @@ object Secenekler {
     }
 
     /** Seçilebilir çip (tekrar sayfası, hatırlatıcı…): seçiliyken vurgunun pastel zemini. */
-    fun cip(activity: Activity, metin: String, secili: Boolean, tikla: () -> Unit): TextView {
+    fun cip(activity: Activity, metin: String, secili: Boolean, beyazSayfada: Boolean = false, tikla: () -> Unit): TextView {
         val d = activity.resources.displayMetrics.density
         val t = TextView(activity)
         t.text = metin
@@ -105,7 +105,7 @@ object Secenekler {
         val vurgu = Tasarim.vurgu(activity)
         // Seçili değilken zemin rengi: kart renkli alt sayfada çip belirgin dursun.
         t.backgroundTintList = ColorStateList.valueOf(
-            if (secili) Tasarim.pastel(vurgu) else ContextCompat.getColor(activity, TR.color.zemin)
+            if (secili) Tasarim.pastel(vurgu) else ContextCompat.getColor(activity, if (beyazSayfada) TR.color.kart else TR.color.zemin)
         )
         t.setTextColor(if (secili) vurgu else ContextCompat.getColor(activity, TR.color.metin))
         t.setTypeface(null, if (secili) Typeface.BOLD else Typeface.NORMAL)

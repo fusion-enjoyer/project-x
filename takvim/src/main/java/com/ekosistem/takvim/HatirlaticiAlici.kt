@@ -54,11 +54,12 @@ class HatirlaticiAlici : BroadcastReceiver() {
         val baslik = intent.getStringExtra(EK_BASLIK).orEmpty()
         val konum = intent.getStringExtra(EK_KONUM).orEmpty()
         val tumGun = intent.getBooleanExtra(EK_TUM_GUN, false)
+        val baglanti = intent.getStringExtra(EK_BAGLANTI)?.takeIf { it.isNotEmpty() }
         Bildirimler.kaldir(c, e, b)
         uyariyiKapat(c, e, b)
         val an = System.currentTimeMillis() + Depo.ertelemeDk(c) * 60_000L
-        Depo.ertelemeEkle(c, e, b, n, an, baslik, konum, tumGun)
-        alarmKur(c, e, b, n, an, baslik, konum, tumGun)
+        Depo.ertelemeEkle(c, e, b, n, an, baslik, konum, tumGun, baglanti.orEmpty())
+        alarmKur(c, e, b, n, an, baslik, konum, tumGun, baglanti)
     }
 
     private fun ertelemeBitti(c: Context, intent: Intent) {
@@ -67,7 +68,8 @@ class HatirlaticiAlici : BroadcastReceiver() {
         Depo.ertelemeCikar(c, e, b)
         Bildirimler.goster(
             c, e, b, intent.getLongExtra(EK_BIT, 0), intent.getStringExtra(EK_BASLIK).orEmpty(),
-            intent.getStringExtra(EK_KONUM).orEmpty(), intent.getBooleanExtra(EK_TUM_GUN, false)
+            intent.getStringExtra(EK_KONUM).orEmpty(), intent.getBooleanExtra(EK_TUM_GUN, false),
+            intent.getStringExtra(EK_BAGLANTI)?.takeIf { it.isNotEmpty() }
         )
     }
 
@@ -81,19 +83,20 @@ class HatirlaticiAlici : BroadcastReceiver() {
         const val EK_BASLIK = "baslik"
         const val EK_KONUM = "konum"
         const val EK_TUM_GUN = "tum_gun"
+        const val EK_BAGLANTI = "baglanti"
 
         /** Zamanı gelmiş (SCHEDULED) uyarıları "tetiklendi" yapıp bildirimini gösterir. */
         fun uyarilariIsle(c: Context) {
             if (!TakvimDeposu.izinVar(c)) return
             try {
                 val simdi = System.currentTimeMillis()
-                data class Uyari(val id: Long, val etkinlik: Long, val bas: Long, val bit: Long, val baslik: String, val konum: String, val tumGun: Boolean)
+                data class Uyari(val id: Long, val etkinlik: Long, val bas: Long, val bit: Long, val baslik: String, val konum: String, val tumGun: Boolean, val baglanti: String?)
                 val liste = ArrayList<Uyari>()
                 c.contentResolver.query(
                     CalendarAlerts.CONTENT_URI,
                     arrayOf(
                         CalendarAlerts._ID, CalendarAlerts.EVENT_ID, CalendarAlerts.BEGIN, CalendarAlerts.END,
-                        CalendarAlerts.TITLE, CalendarAlerts.EVENT_LOCATION, CalendarAlerts.ALL_DAY
+                        CalendarAlerts.TITLE, CalendarAlerts.EVENT_LOCATION, CalendarAlerts.ALL_DAY, CalendarAlerts.DESCRIPTION
                     ),
                     "${CalendarAlerts.STATE}=? AND ${CalendarAlerts.ALARM_TIME}<=?",
                     arrayOf(CalendarAlerts.STATE_SCHEDULED.toString(), simdi.toString()), null
@@ -102,7 +105,8 @@ class HatirlaticiAlici : BroadcastReceiver() {
                         liste.add(
                             Uyari(
                                 k.getLong(0), k.getLong(1), k.getLong(2), k.getLong(3),
-                                k.getString(4).orEmpty(), k.getString(5).orEmpty(), k.getInt(6) != 0
+                                k.getString(4).orEmpty(), k.getString(5).orEmpty(), k.getInt(6) != 0,
+                                Baglanti.bul(k.getString(5), k.getString(7))
                             )
                         )
                     }
@@ -114,7 +118,7 @@ class HatirlaticiAlici : BroadcastReceiver() {
                         put(CalendarAlerts.NOTIFY_TIME, simdi)
                     }
                     c.contentResolver.update(ContentUris.withAppendedId(CalendarAlerts.CONTENT_URI, u.id), v, null, null)
-                    Bildirimler.goster(c, u.etkinlik, u.bas, u.bit, u.baslik, u.konum, u.tumGun)
+                    Bildirimler.goster(c, u.etkinlik, u.bas, u.bit, u.baslik, u.konum, u.tumGun, u.baglanti)
                 }
             } catch (_: RuntimeException) {
             }
@@ -134,13 +138,14 @@ class HatirlaticiAlici : BroadcastReceiver() {
             }
         }
 
-        private fun alarmKur(c: Context, e: Long, b: Long, n: Long, an: Long, baslik: String, konum: String, tumGun: Boolean) {
+        private fun alarmKur(c: Context, e: Long, b: Long, n: Long, an: Long, baslik: String, konum: String, tumGun: Boolean, baglanti: String? = null) {
             val am = c.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val islem = PendingIntent.getBroadcast(
                 c, Bildirimler.bildirimNo(e, b) + 2,
                 Intent(c, HatirlaticiAlici::class.java).setAction(ACTION_ERTELEME_BITTI)
                     .putExtra(EK_ETKINLIK, e).putExtra(EK_BAS, b).putExtra(EK_BIT, n)
-                    .putExtra(EK_BASLIK, baslik).putExtra(EK_KONUM, konum).putExtra(EK_TUM_GUN, tumGun),
+                    
+                    .putExtra(EK_BASLIK, baslik).putExtra(EK_KONUM, konum).putExtra(EK_TUM_GUN, tumGun).putExtra(EK_BAGLANTI, baglanti.orEmpty()),
                 PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0)
             )
             try {
@@ -159,7 +164,7 @@ class HatirlaticiAlici : BroadcastReceiver() {
             for (j in Depo.ertelemeler(c)) {
                 alarmKur(
                     c, j.optLong("e"), j.optLong("b"), j.optLong("n"), maxOf(j.optLong("a"), System.currentTimeMillis() + 2000L),
-                    j.optString("t"), j.optString("k"), j.optBoolean("g")
+                    j.optString("t"), j.optString("k"), j.optBoolean("g"), j.optString("l").takeIf { it.isNotEmpty() }
                 )
             }
         }

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.provider.CalendarContract
 import android.text.util.Linkify
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -123,6 +124,12 @@ class DetayActivity : AppCompatActivity() {
         if (e.konum.isNotBlank()) {
             satir(R.drawable.ic_konum, e.konum, tikla = { haritadaAc(e.konum) }, uzun = { panoyaKopyala(e.konum) })
         }
+        if (e.davetliler.size > 1 || (e.davetliler.isNotEmpty() && e.benimDurumum != 0)) {
+            val satirlar = e.davetliler.take(8).joinToString("\n") { d ->
+                (d.ad.ifBlank { d.eposta }) + " · " + davetDurumu(d.durum) + (if (d.eposta.equals(e.organizator, true)) " · " + getString(R.string.organizator) else "")
+            } + if (e.davetliler.size > 8) "\n" + getString(R.string.ozet_daha, e.davetliler.size - 8) else ""
+            satir(R.drawable.ic_kisi, getString(R.string.davetliler_n, e.davetliler.size), satirlar)
+        }
         if (e.hatirlaticilar.isNotEmpty()) {
             satir(R.drawable.ic_zil, e.hatirlaticilar.joinToString("\n") { Metinler.hatirlatici(this, it, e.tumGun) })
         }
@@ -135,9 +142,57 @@ class DetayActivity : AppCompatActivity() {
             }
         }
 
+        // Toplantı bağlantısı: konum ya da açıklamada Meet/Zoom/Teams… varsa tek dokunuşla katıl.
+        val katil = findViewById<TextView>(R.id.detayKatil)
+        val baglanti = Baglanti.bul(e.konum, e.aciklama)
+        if (baglanti != null) {
+            katil.text = getString(R.string.katil, Baglanti.hizmet(baglanti)).trim()
+            katil.backgroundTintList = ColorStateList.valueOf(com.ekosistem.tasarim.Tasarim.vurgu(this))
+            katil.setTextColor(com.ekosistem.tasarim.Tasarim.vurguUzeri(this))
+            katil.visibility = View.VISIBLE
+            katil.setOnClickListener { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(baglanti))) } }
+        } else {
+            katil.visibility = View.GONE
+        }
+        yanitiYaz(e)
+
         val yazilabilir = e.yazilabilir
         findViewById<View>(R.id.btnDuzenle).visibility = if (yazilabilir) View.VISIBLE else View.GONE
         findViewById<View>(R.id.btnSil).visibility = if (yazilabilir) View.VISIBLE else View.GONE
+    }
+
+    private fun davetDurumu(durum: Int) = getString(
+        when (durum) {
+            Davetli.KABUL -> R.string.durum_kabul
+            Davetli.RED -> R.string.durum_red
+            Davetli.BELKI -> R.string.durum_belki
+            else -> R.string.durum_bekliyor
+        }
+    )
+
+    /** Davetliyse ve organizatör değilsen "Katılacak mısın?" Evet / Belki / Hayır. */
+    private fun yanitiYaz(e: Etkinlik) {
+        val kutu = findViewById<View>(R.id.detayYanit)
+        val benDavetli = e.sahipHesap.isNotEmpty() && e.davetliler.any { it.eposta.equals(e.sahipHesap, true) }
+        val organizatorBen = e.organizator.equals(e.sahipHesap, true)
+        if (!benDavetli || organizatorBen || !e.yazilabilir) {
+            kutu.visibility = View.GONE
+            return
+        }
+        kutu.visibility = View.VISIBLE
+        val sira = findViewById<LinearLayout>(R.id.detayYanitCipleri)
+        sira.removeAllViews()
+        val d = resources.displayMetrics.density
+        val simdiki = e.davetliler.first { it.eposta.equals(e.sahipHesap, true) }.durum
+        for ((durum, ad) in listOf(Davetli.KABUL to R.string.yanit_evet, Davetli.BELKI to R.string.yanit_belki, Davetli.RED to R.string.yanit_hayir)) {
+            val cip = Secenekler.cip(this, getString(ad), simdiki == durum, beyazSayfada = true) {
+                yurutucu.execute {
+                    val tamam = TakvimDeposu.yanitla(this, e, durum)
+                    runOnUiThread { if (tamam) yukle() else Toast.makeText(this, R.string.kaydedilemedi, Toast.LENGTH_LONG).show() }
+                }
+            }
+            sira.addView(cip, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = (8 * d).toInt() })
+        }
     }
 
     private fun haritadaAc(konum: String) {

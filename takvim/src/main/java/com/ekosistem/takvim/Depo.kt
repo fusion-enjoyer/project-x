@@ -70,6 +70,10 @@ object Depo {
     fun ozetDk(c: Context) = p(c).getInt("ozet_dk", 7 * 60 + 30)
     fun ozetDkKaydet(c: Context, v: Int) = p(c).edit().putInt("ozet_dk", v).apply()
 
+    /** Davete "hayır" denen etkinlikleri de göster (varsayılan kapalı: listelerde görünmezler). */
+    fun reddedilenleriGoster(c: Context) = p(c).getBoolean("reddedilenleri_goster", false)
+    fun reddedilenleriGosterKaydet(c: Context, v: Boolean) = p(c).edit().putBoolean("reddedilenleri_goster", v).apply()
+
     fun bildirimIstendi(c: Context) = p(c).getBoolean("bildirim_istendi", false)
     fun bildirimIstendiKaydet(c: Context) = p(c).edit().putBoolean("bildirim_istendi", true).apply()
 
@@ -83,12 +87,12 @@ object Depo {
             runCatching { org.json.JSONObject(it) }.getOrNull()
         }
 
-    fun ertelemeEkle(c: Context, e: Long, b: Long, n: Long, a: Long, t: String, k: String, g: Boolean) {
+    fun ertelemeEkle(c: Context, e: Long, b: Long, n: Long, a: Long, t: String, k: String, g: Boolean, l: String = "") {
         ertelemeCikar(c, e, b)
         val yeni = HashSet(p(c).getStringSet("ertelemeler", emptySet()) ?: emptySet())
         yeni.add(
             org.json.JSONObject().put("e", e).put("b", b).put("n", n).put("a", a)
-                .put("t", t).put("k", k).put("g", g).toString()
+                .put("t", t).put("k", k).put("g", g).put("l", l).toString()
         )
         p(c).edit().putStringSet("ertelemeler", yeni).apply()
     }

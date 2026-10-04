@@ -37,7 +37,9 @@ data class Ornek(
     /** Son gündeki bitiş dakikası (tüm gün için 1440). */
     val bitisDk: Int,
     /** Yalnız aramada doldurulur (listeler için bellek harcanmasın). */
-    val aciklama: String = ""
+    val aciklama: String = "",
+    /** Davete "hayır" denmiş (ayarlardan gösterilmesi istenirse listelenir). */
+    val reddedildi: Boolean = false
 ) {
     /** [gun] günündeki dilimin başlangıç dakikası (zaman ızgarası için). */
     fun gunBaslangicDk(gun: Int): Int = if (gun == ilkGun) baslangicDk else 0
@@ -59,14 +61,15 @@ data class Ornek(
             renk: Int,
             tekrarli: Boolean,
             tz: TimeZone,
-            aciklama: String = ""
+            aciklama: String = "",
+            reddedildi: Boolean = false
         ): Ornek {
             if (tumGun) {
                 val ilk = Gun.utcGun(baslangic)
                 val son = if (bitis > baslangic) Gun.utcGun(bitis - 1) else ilk
                 return Ornek(
                     etkinlikId, takvimId, baslik, konum, baslangic, bitis, true, renk, tekrarli,
-                    ilk, maxOf(ilk, son), 0, 1440, aciklama
+                    ilk, maxOf(ilk, son), 0, 1440, aciklama, reddedildi
                 )
             }
             val ilk = Gun.yerelGun(baslangic, tz)
@@ -76,7 +79,7 @@ data class Ornek(
             val sonGun = maxOf(ilk, son)
             return Ornek(
                 etkinlikId, takvimId, baslik, konum, baslangic, bitis, false, renk, tekrarli,
-                ilk, sonGun, basDk, if (sonGun > ilk) bitDk else maxOf(bitDk, basDk), aciklama
+                ilk, sonGun, basDk, if (sonGun > ilk) bitDk else maxOf(bitDk, basDk), aciklama, reddedildi
             )
         }
     }
@@ -104,8 +107,24 @@ data class Etkinlik(
     val takvimAdi: String = "",
     val durum: Int = 0,
     /** Etkinliğe özel renk (EVENT_COLOR); 0 = takvimin rengi. */
-    val ozelRenk: Int = 0
+    val ozelRenk: Int = 0,
+    val davetliler: List<Davetli> = emptyList(),
+    /** Organizatör e-postası ve bu hesabın (takvim sahibinin) e-postası: davetiye yanıtı için. */
+    val organizator: String = "",
+    val sahipHesap: String = "",
+    /** Benim katılım durumum ([Davetli.KABUL] …); 0 = davet yok. */
+    val benimDurumum: Int = 0
 )
+
+/** Etkinliğin bir davetlisi (depodaki `Attendees` satırı). */
+data class Davetli(val ad: String, val eposta: String, val durum: Int) {
+    companion object {
+        const val KABUL = 1
+        const val RED = 2
+        const val BEKLIYOR = 3
+        const val BELKI = 4
+    }
+}
 
 /** Tekrarlayan etkinliği düzenlerken/silerken hangi kısmın değişeceği. */
 enum class Kapsam { BU, BUNDAN_SONRA, HEPSI }

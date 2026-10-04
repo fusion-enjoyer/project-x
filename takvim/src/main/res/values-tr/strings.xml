@@ -222,6 +222,21 @@
     <string name="renk">Renk</string>
     <string name="renk_takvim">Takvim rengi</string>
     <string name="gunde_daha">+%1$d etkinlik daha: tamamı için Gündem\'e bak.</string>
+    <string name="katil">Toplantıya katıl · %1$s</string>
+    <string name="davetliler_n">%1$d davetli</string>
+    <string name="organizator">organizatör</string>
+    <string name="durum_kabul">Evet</string>
+    <string name="durum_red">Hayır</string>
+    <string name="durum_belki">Belki</string>
+    <string name="durum_bekliyor">Yanıt yok</string>
+    <string name="katilacak_misin">Katılacak mısın?</string>
+    <string name="yanit_evet">Evet</string>
+    <string name="yanit_belki">Belki</string>
+    <string name="yanit_hayir">Hayır</string>
+    <string name="reddedildi">Reddedildi</string>
+    <string name="reddedilenleri_goster">Reddedilen davetleri göster</string>
+    <string name="reddedilenleri_ozet">Hayır dediğin etkinlikler listelerde gizlenir; açarsan \"Reddedildi\" etiketiyle görünür.</string>
+    <string name="katil_bildirim">Katıl</string>
     <string-array name="sira_adlari">
         <item>1.</item>
         <item>2.</item>

@@ -112,6 +112,10 @@ class AyarlarActivity : AppCompatActivity() {
         AyarSatiri.kur(ert, R.drawable.ic_zil, vurgu, getString(R.string.erteleme), Metinler.sure(this, Depo.ertelemeDk(this)))
         ert.setOnClickListener { ertelemeSec() }
 
+        val red = findViewById<View>(R.id.satirReddedilen)
+        AyarSatiri.kur(red, R.drawable.ic_kisi, vurgu, getString(R.string.reddedilenleri_goster), getString(R.string.reddedilenleri_ozet))
+        AyarSatiri.anahtar(red, Depo.reddedilenleriGoster(this)) { Depo.reddedilenleriGosterKaydet(this, it) }
+
         val bildirim = findViewById<View>(R.id.satirBildirim)
         val acik = NotificationManagerCompat.from(this).areNotificationsEnabled()
         AyarSatiri.kur(

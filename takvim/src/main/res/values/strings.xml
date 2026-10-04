@@ -222,6 +222,21 @@
     <string name="renk">Color</string>
     <string name="renk_takvim">Calendar color</string>
     <string name="gunde_daha">+%1$d more events: see them in Agenda.</string>
+    <string name="katil">Join meeting · %1$s</string>
+    <string name="davetliler_n">%1$d guests</string>
+    <string name="organizator">organizer</string>
+    <string name="durum_kabul">Yes</string>
+    <string name="durum_red">No</string>
+    <string name="durum_belki">Maybe</string>
+    <string name="durum_bekliyor">No reply</string>
+    <string name="katilacak_misin">Going?</string>
+    <string name="yanit_evet">Yes</string>
+    <string name="yanit_belki">Maybe</string>
+    <string name="yanit_hayir">No</string>
+    <string name="reddedildi">Declined</string>
+    <string name="reddedilenleri_goster">Show declined invitations</string>
+    <string name="reddedilenleri_ozet">Events you declined are hidden; turn on to see them tagged \"Declined\".</string>
+    <string name="katil_bildirim">Join</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>

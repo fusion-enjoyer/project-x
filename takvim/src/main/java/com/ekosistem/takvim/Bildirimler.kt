@@ -28,7 +28,7 @@ object Bildirimler {
     private fun bayrak(): Int = PendingIntent.FLAG_UPDATE_CURRENT or
         (if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0)
 
-    fun goster(c: Context, etkinlikId: Long, baslangic: Long, bitis: Long, baslik: String, konum: String, tumGun: Boolean) {
+    fun goster(c: Context, etkinlikId: Long, baslangic: Long, bitis: Long, baslik: String, konum: String, tumGun: Boolean, baglanti: String? = null) {
         kanalKur(c)
         val no = bildirimNo(etkinlikId, baslangic)
         val tz = java.util.TimeZone.getDefault()
@@ -50,7 +50,9 @@ object Bildirimler {
             Intent(c, HatirlaticiAlici::class.java).setAction(eylem)
                 .putExtra(HatirlaticiAlici.EK_ETKINLIK, etkinlikId).putExtra(HatirlaticiAlici.EK_BAS, baslangic)
                 .putExtra(HatirlaticiAlici.EK_BIT, bitis).putExtra(HatirlaticiAlici.EK_BASLIK, baslik)
-                .putExtra(HatirlaticiAlici.EK_KONUM, konum).putExtra(HatirlaticiAlici.EK_TUM_GUN, tumGun),
+                
+                .putExtra(HatirlaticiAlici.EK_KONUM, konum).putExtra(HatirlaticiAlici.EK_TUM_GUN, tumGun)
+                .putExtra(HatirlaticiAlici.EK_BAGLANTI, baglanti.orEmpty()),
             bayrak()
         )
         val dk = Depo.ertelemeDk(c)
@@ -66,6 +68,13 @@ object Bildirimler {
             .setContentIntent(ac)
             .setDeleteIntent(yayin(HatirlaticiAlici.ACTION_KAPATILDI, no))
             .addAction(0, c.getString(R.string.ertele_n, dk), yayin(HatirlaticiAlici.ACTION_ERTELE, no + 1))
+        if (baglanti != null) {
+            // Toplantı bağlantısı varsa bildirimden tek dokunuşla katıl.
+            val katil = PendingIntent.getActivity(
+                c, no + 3, Intent(Intent.ACTION_VIEW, android.net.Uri.parse(baglanti)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), bayrak()
+            )
+            b.addAction(0, c.getString(R.string.katil_bildirim) + " " + Baglanti.hizmet(baglanti), katil)
+        }
         if (!tumGun) b.setWhen(baslangic).setShowWhen(true)
         try {
             NotificationManagerCompat.from(c).notify(no, b.build())

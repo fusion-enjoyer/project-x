@@ -114,6 +114,45 @@
                 android:textColor="@color/metin_ikincil"
                 android:textSize="14sp" />
 
+            <TextView
+                android:id="@+id/detayKatil"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="26dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_pill_buton"
+                android:gravity="center"
+                android:paddingLeft="22dp"
+                android:paddingRight="22dp"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/detayYanit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="@string/katilacak_misin"
+                    android:textColor="@color/metin_ikincil"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/detayYanitCipleri"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal" />
+            </LinearLayout>
+
             <LinearLayout
                 android:id="@+id/detayKutu"
                 style="@style/AyarKutusu"

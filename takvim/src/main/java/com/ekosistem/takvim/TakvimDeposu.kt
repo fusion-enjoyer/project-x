@@ -104,6 +104,7 @@ object TakvimDeposu {
     fun ornekler(c: Context, ilkGun: Int, sonGun: Int, aciklamaDahil: Boolean = false): List<Ornek> {
         val liste = ArrayList<Ornek>()
         val tz = TimeZone.getDefault()
+        val gosterRed = Depo.reddedilenleriGoster(c)
         try {
             val b = Instances.CONTENT_BY_DAY_URI.buildUpon()
             ContentUris.appendId(b, Gun.julian(ilkGun).toLong())
@@ -120,7 +121,8 @@ object TakvimDeposu {
             )?.use { k ->
                 while (k.moveToNext()) {
                     if (k.getInt(10) == Events.STATUS_CANCELED) continue
-                    if (k.getInt(11) == CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED) continue
+                    val red = k.getInt(11) == CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED
+                    if (red && !gosterRed) continue
                     val renk = (if (!k.isNull(8)) k.getInt(8) else k.getInt(9)).opak()
                     liste.add(
                         Ornek.olustur(
@@ -130,7 +132,8 @@ object TakvimDeposu {
                             renk = renk,
                             tekrarli = !k.getString(7).isNullOrBlank() || !k.isNull(12),
                             tz = tz,
-                            aciklama = if (aciklamaDahil) k.getString(13).orEmpty() else ""
+                            aciklama = if (aciklamaDahil) k.getString(13).orEmpty() else "",
+                            reddedildi = red
                         )
                     )
                 }
@@ -149,7 +152,8 @@ object TakvimDeposu {
                     Events._ID, Events.CALENDAR_ID, Events.TITLE, Events.DESCRIPTION, Events.EVENT_LOCATION,
                     Events.DTSTART, Events.DTEND, Events.DURATION, Events.ALL_DAY, Events.EVENT_TIMEZONE,
                     Events.RRULE, Events.ORIGINAL_ID, Events.EVENT_COLOR, Events.CALENDAR_COLOR,
-                    Events.CALENDAR_ACCESS_LEVEL, Events.CALENDAR_DISPLAY_NAME, Events.STATUS
+                    Events.CALENDAR_ACCESS_LEVEL, Events.CALENDAR_DISPLAY_NAME, Events.STATUS,
+                    Events.ORGANIZER, Events.OWNER_ACCOUNT, Events.SELF_ATTENDEE_STATUS
                 ),
                 null, null, null
             )?.use { k ->
@@ -171,12 +175,46 @@ object TakvimDeposu {
                     ozelRenk = if (k.isNull(12)) 0 else k.getInt(12).opak(),
                     asilId = if (k.isNull(11)) 0 else k.getLong(11),
                     yazilabilir = k.getInt(14) >= Calendars.CAL_ACCESS_CONTRIBUTOR,
-                    takvimAdi = k.getString(15).orEmpty(), durum = k.getInt(16)
+                    takvimAdi = k.getString(15).orEmpty(), durum = k.getInt(16),
+                    davetliler = davetliler(c, id), organizator = k.getString(17).orEmpty(),
+                    sahipHesap = k.getString(18).orEmpty(), benimDurumum = k.getInt(19)
                 )
             }
         } catch (_: RuntimeException) {
         }
         return null
+    }
+
+    fun davetliler(c: Context, etkinlikId: Long): List<Davetli> {
+        val liste = ArrayList<Davetli>()
+        try {
+            c.contentResolver.query(
+                CalendarContract.Attendees.CONTENT_URI,
+                arrayOf(CalendarContract.Attendees.ATTENDEE_NAME, CalendarContract.Attendees.ATTENDEE_EMAIL, CalendarContract.Attendees.ATTENDEE_STATUS),
+                "${CalendarContract.Attendees.EVENT_ID}=?", arrayOf(etkinlikId.toString()), null
+            )?.use { k ->
+                while (k.moveToNext()) liste.add(Davetli(k.getString(0).orEmpty(), k.getString(1).orEmpty(), k.getInt(2)))
+            }
+        } catch (_: RuntimeException) {
+        }
+        return liste
+    }
+
+    /** Davete verilen yanıtı yazar (Evet/Belki/Hayır); senkronlu takvimde sunucuya gider. */
+    fun yanitla(c: Context, e: Etkinlik, durum: Int): Boolean {
+        return try {
+            val cr = c.contentResolver
+            val v = ContentValues().apply { put(CalendarContract.Attendees.ATTENDEE_STATUS, durum) }
+            cr.update(
+                CalendarContract.Attendees.CONTENT_URI, v,
+                "${CalendarContract.Attendees.EVENT_ID}=? AND ${CalendarContract.Attendees.ATTENDEE_EMAIL}=? COLLATE NOCASE",
+                arrayOf(e.id.toString(), e.sahipHesap)
+            )
+            val ev = ContentValues().apply { put(Events.SELF_ATTENDEE_STATUS, durum) }
+            cr.update(ContentUris.withAppendedId(Events.CONTENT_URI, e.id), ev, null, null) > 0
+        } catch (_: RuntimeException) {
+            false
+        }
     }
 
     fun hatirlaticilar(c: Context, etkinlikId: Long): List<Int> {
