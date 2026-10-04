@@ -4,7 +4,7 @@
 
 <h1 align="center">
 
-[🇺🇸]() [🇹🇷]()
+[🇺🇸](https://github.com/fusion-enjoyer/project-x/blob/main/README.md) [🇹🇷](https://github.com/fusion-enjoyer/project-x/blob/main/README.tr.md)
 
 </h1>
 
