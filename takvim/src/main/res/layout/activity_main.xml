@@ -92,7 +92,7 @@
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/gorunum_secenekleri"
-                android:src="@drawable/ic_gorunum"
+                android:src="@drawable/ic_yogun_kompakt"
                 app:tint="@color/metin" />
 
             <ImageButton

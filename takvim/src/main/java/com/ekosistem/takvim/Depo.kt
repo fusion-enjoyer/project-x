@@ -14,9 +14,8 @@ object Depo {
     /** Sekmesi yok: Ay sekmesinin üst katı (başlığa dokununca ya da Görünüm menüsünden). */
     const val GORUNUM_YIL = 4
 
-    /** Ay görünümünün yoğunluğu: tek nokta / her etkinliğe çubuk / hücrede başlıklar. */
+    /** Ay görünümünün yoğunluğu: noktalar / hücrede başlıklar. (1, kaldırılan "yığılı" idi; Kompakt sayılır.) */
     const val AY_KOMPAKT = 0
-    const val AY_YIGILI = 1
     const val AY_AYRINTILI = 2
 
     private fun p(c: Context) = c.getSharedPreferences(DOSYA, Context.MODE_PRIVATE)
@@ -56,7 +55,7 @@ object Depo {
     fun ertelemeDk(c: Context) = p(c).getInt("erteleme_dk", 10)
     fun ertelemeDkKaydet(c: Context, v: Int) = p(c).edit().putInt("erteleme_dk", v).apply()
 
-    fun ayYogunlugu(c: Context) = p(c).getInt("ay_yogunluk", AY_KOMPAKT).coerceIn(AY_KOMPAKT, AY_AYRINTILI)
+    fun ayYogunlugu(c: Context) = if (p(c).getInt("ay_yogunluk", AY_KOMPAKT) == AY_AYRINTILI) AY_AYRINTILI else AY_KOMPAKT
     fun ayYogunluguKaydet(c: Context, v: Int) = p(c).edit().putInt("ay_yogunluk", v).apply()
 
     /** Hafta sekmesinde kaç gün: 7 ya da 3. */

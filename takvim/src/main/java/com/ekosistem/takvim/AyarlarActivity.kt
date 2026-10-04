@@ -59,6 +59,14 @@ class AyarlarActivity : AppCompatActivity() {
         AyarSatiri.kur(haftaNo, R.drawable.ic_gun, vurgu, getString(R.string.hafta_numaralari), null)
         AyarSatiri.anahtar(haftaNo, Depo.haftaNumaralari(this)) { Depo.haftaNumaralariKaydet(this, it) }
 
+        val saatAraligi = findViewById<View>(R.id.satirSaatAraligi)
+        AyarSatiri.kur(saatAraligi, R.drawable.ic_saat, vurgu, getString(R.string.saat_araligi), saatAraligiAdi())
+        saatAraligi.setOnClickListener { saatAraligiSec() }
+
+        val isi = findViewById<View>(R.id.satirIsiHaritasi)
+        AyarSatiri.kur(isi, R.drawable.ic_isi, vurgu, getString(R.string.yil_isi_ayar), getString(R.string.yil_isi_ozet))
+        AyarSatiri.anahtar(isi, Depo.yilIsiHaritasi(this)) { Depo.yilIsiHaritasiKaydet(this, it) }
+
         takvimleriKur(vurgu)
 
         val dogum = findViewById<View>(R.id.satirDogum)
@@ -218,6 +226,27 @@ class AyarlarActivity : AppCompatActivity() {
             sayfa.madde(R.drawable.ic_ayar_gorunum, getString(ad), secili = Depo.tema(this) == i) {
                 Depo.temaKaydet(this, i)
                 TakvimApp.temaUygula(i)
+            }
+        }
+        sayfa.goster()
+    }
+
+    // ---- Saat aralığı (saat ızgarasında iki parmakla yakınlaştırmanın görünür karşılığı) ----
+
+    private val saatAraliklari = listOf(0.7f to R.string.saat_sik, 1f to R.string.saat_normal, 1.6f to R.string.saat_genis)
+
+    private fun saatAraligiAdi(): String {
+        val su = Depo.saatOlcegi(this)
+        return saatAraliklari.firstOrNull { kotlin.math.abs(it.first - su) < 0.01f }?.let { getString(it.second) }
+            ?: getString(R.string.saat_ozel)
+    }
+
+    private fun saatAraligiSec() {
+        val sayfa = AltSayfa(this).baslik(getString(R.string.saat_araligi_ozet_ipucu))
+        val su = Depo.saatOlcegi(this)
+        for ((carpan, ad) in saatAraliklari) {
+            sayfa.madde(R.drawable.ic_saat, getString(ad), secili = kotlin.math.abs(carpan - su) < 0.01f) {
+                Depo.saatOlcegiKaydet(this, carpan); satirlariKur()
             }
         }
         sayfa.goster()

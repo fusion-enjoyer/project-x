@@ -21,20 +21,19 @@ import com.ekosistem.tasarim.R as TR
 import kotlin.math.abs
 import kotlin.math.min
 
-/** Ayrıntılı ve yığılı ay görünümünde bir günün tek etkinliği. */
+/** Ayrıntılı ay görünümünde bir günün tek etkinliği. */
 class GunEtkinligi(val renk: Int, val baslik: String)
 
 /**
  * Ay ızgarasındaki bir günün özeti: nokta renkleri (en çok üç, farklı), etkinlik
- * sayısı ve sıralı etkinlikler (yığılı/ayrıntılı yoğunluk için).
+ * sayısı ve sıralı etkinlikler (ayrıntılı yoğunluk için).
  */
 class GunOzeti(val renkler: IntArray, val sayi: Int, val etkinlikler: List<GunEtkinligi> = emptyList())
 
 /**
  * Ay görünümünün ızgarası. Her gün bir sayı; bugün halka, seçili gün dolu daire.
- * Üç yoğunluk (Apple Takvim'deki gibi): Kompakt'ta altında en çok üç nokta,
- * Yığılı'da her etkinliğe ince renkli çubuk, Ayrıntılı'da hücrenin içinde
- * etkinlik başlıkları (ızgara ekranı doldurur). Tek View olarak çizilir (42 ayrı
+ * İki yoğunluk (Apple Takvim'deki gibi): Kompakt'ta altında en çok üç nokta,
+ * Ayrıntılı'da hücrenin içinde etkinlik başlıkları (ızgara ekranı doldurur). Tek View olarak çizilir (42 ayrı
  * görünüm eski telefonu yorardı); ekran okuyucu için sanal görünümler sunar.
  */
 class AyIzgarasi @JvmOverloads constructor(
@@ -73,7 +72,6 @@ class AyIzgarasi @JvmOverloads constructor(
     private val kucukDaire get() = 11f * d * olcek
     private val hapYuksekligi get() = 15f * d * olcek
     private val satirYuksekligi: Float get() = when (yogunluk) {
-        Depo.AY_YIGILI -> daireYaricap * 2 + 6f * d + YIGIN * 5f * d + 6f * d
         Depo.AY_AYRINTILI -> maxOf(if (satirSayisi > 0) hedefYukseklik / satirSayisi.toFloat() else 0f, 76f * d * olcek)
         else -> daireYaricap * 2 + 20f * d
     }
@@ -160,7 +158,6 @@ class AyIzgarasi @JvmOverloads constructor(
 
             val ozet = gunler[gun] ?: continue
             when (yogunluk) {
-                Depo.AY_YIGILI -> cubuklariCiz(canvas, i % 7, cy + r + 6f * d, ozet, buAy)
                 Depo.AY_AYRINTILI -> haplariCiz(canvas, i % 7, i / 7, cy + r + 4f * d, ozet, buAy)
                 else -> {
                     val adet = min(3, ozet.renkler.size)
@@ -182,21 +179,6 @@ class AyIzgarasi @JvmOverloads constructor(
                 canvas.drawText(Gun.isoHafta(pazartesi).toString(), kenar / 2f, cy - (kucukYazi.ascent() + kucukYazi.descent()) / 2f, kucukYazi)
             }
         }
-    }
-
-    /** Yığılı: her etkinliğe bir ince çubuk, en çok [YIGIN] tane. */
-    private fun cubuklariCiz(canvas: Canvas, sutun: Int, ust: Float, ozet: GunOzeti, buAy: Boolean) {
-        val sol = kenar + sutun * sutunGenisligi() + 6f * d
-        val sag = kenar + (sutun + 1) * sutunGenisligi() - 6f * d
-        var y = ust
-        for (e in ozet.etkinlikler.take(YIGIN)) {
-            dolgu.color = e.renk
-            dolgu.alpha = if (buAy) 255 else 110
-            alan.set(sol, y, sag, y + 3f * d)
-            canvas.drawRoundRect(alan, 1.5f * d, 1.5f * d, dolgu)
-            y += 5f * d
-        }
-        dolgu.alpha = 255
     }
 
     /** Ayrıntılı: hücreye sığdığı kadar etkinlik başlığı, gerisi "+N". */
@@ -322,5 +304,3 @@ class AyIzgarasi @JvmOverloads constructor(
     override fun dispatchHoverEvent(event: MotionEvent): Boolean =
         erisim.dispatchHoverEvent(event) || super.dispatchHoverEvent(event)
 }
-
-private const val YIGIN = 4
