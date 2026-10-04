@@ -44,7 +44,9 @@ data class Gorev(
     val notBasligi: String,
     val satirNo: Int,
     val metin: String,
-    val isaretli: Boolean
+    val isaretli: Boolean,
+    /** Son tarihin gün numarası ([SonTarih]); yoksa null. */
+    val sonGun: Long? = null
 )
 
 /**
@@ -421,12 +423,15 @@ class NotDeposu(private val context: Context) {
                 val eslesme = MarkdownBicimci.ONAY.find(satir) ?: return@forEachIndexed
                 val isaretli = !eslesme.groupValues[2].equals(" ", true)
                 if (isaretli && !tamamlananlar) return@forEachIndexed
-                val metin = satir.substring(eslesme.value.length).trim()
+                val ham = satir.substring(eslesme.value.length)
+                val metin = SonTarih.temizle(ham)
                 if (metin.isEmpty()) return@forEachIndexed
-                sonuc.add(Gorev(not.uri, not.baslik, indeks, metin, isaretli))
+                sonuc.add(Gorev(not.uri, not.baslik, indeks, metin, isaretli, SonTarih.gun(ham)))
             }
         }
-        return sonuc
+        // Açık görevler önce; aralarında tarihliler en yakın tarihten başlar.
+        // Sıralama kararlı: aynı tarihtekiler not sırasını korur.
+        return sonuc.sortedWith(compareBy<Gorev>({ it.isaretli }, { it.sonGun ?: Long.MAX_VALUE }))
     }
 
     /** Bir görev satırının işaretini değiştirir. */

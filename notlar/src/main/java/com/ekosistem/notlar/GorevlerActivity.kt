@@ -1,9 +1,16 @@
 package com.ekosistem.notlar
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.format.DateFormat
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +21,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 /** Tüm notlardaki onay kutularını tek listede toplar. */
 class GorevlerActivity : AppCompatActivity() {
@@ -33,6 +43,7 @@ class GorevlerActivity : AppCompatActivity() {
         adapter = GorevAdapter(
             vurgu = Renkler.vurgu(this),
             soluk = ContextCompat.getColor(this, R.color.metin_ikincil),
+            gecikmis = ContextCompat.getColor(this, R.color.fark_silindi),
             onKutu = { gorev -> gorevDegistir(gorev) },
             onSatir = { gorev ->
                 startActivity(
@@ -103,6 +114,8 @@ class GorevlerActivity : AppCompatActivity() {
 class GorevAdapter(
     private val vurgu: Int,
     private val soluk: Int,
+    /** Tarihi geçmiş açık görevin etiket rengi. */
+    private val gecikmis: Int,
     private val onKutu: (Gorev) -> Unit,
     private val onSatir: (Gorev) -> Unit
 ) : RecyclerView.Adapter<GorevAdapter.Tutucu>() {
@@ -131,7 +144,7 @@ class GorevAdapter(
         val gorev = gorevler[pozisyon]
         t.metin.typeface = YaziTipleri.yazi(t.itemView.context)
         t.metin.text = gorev.metin
-        t.not.text = gorev.notBasligi
+        t.not.text = altSatir(t.itemView.context, gorev)
 
         if (gorev.isaretli) {
             t.kutu.setImageResource(R.drawable.ic_kutu_dolu)
@@ -149,5 +162,45 @@ class GorevAdapter(
 
         t.kutu.setOnClickListener { onKutu(gorev) }
         t.itemView.setOnClickListener { onSatir(gorev) }
+    }
+
+    /** "3 gün gecikti · Not başlığı": tarih etiketi renkli, not adı soluk. */
+    private fun altSatir(context: Context, gorev: Gorev): CharSequence {
+        val gun = gorev.sonGun ?: return gorev.notBasligi
+        val fark = (gun - SonTarih.bugun()).toInt()
+        val etiket = tarihEtiketi(context, gun, fark)
+        val renk = when {
+            gorev.isaretli -> soluk
+            fark < 0 -> gecikmis
+            fark == 0 -> vurgu
+            else -> soluk
+        }
+        val s = SpannableStringBuilder(etiket)
+        s.setSpan(ForegroundColorSpan(renk), 0, etiket.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        if (!gorev.isaretli && fark <= 0) {
+            s.setSpan(StyleSpan(Typeface.BOLD), 0, etiket.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        return s.append(" · ").append(gorev.notBasligi)
+    }
+
+    private fun tarihEtiketi(context: Context, gun: Long, fark: Int): String {
+        val r = context.resources
+        return when {
+            fark == 0 -> r.getString(R.string.bugun)
+            fark == 1 -> r.getString(R.string.yarin)
+            fark < 0 -> r.getQuantityString(R.plurals.gun_gecikti, -fark, -fark)
+            fark < 7 -> r.getQuantityString(R.plurals.gun_kaldi, fark, fark)
+            else -> {
+                val (yil, ay, g) = SonTarih.tarih(gun)
+                val takvim = Calendar.getInstance().apply { clear(); set(yil, ay - 1, g) }
+                // Bu yılın tarihinde yıl yazılmaz.
+                val buYil = yil == Calendar.getInstance().get(Calendar.YEAR)
+                val bicim = DateFormat.getBestDateTimePattern(
+                    Locale.getDefault(),
+                    if (buYil) "MMMd" else "yMMMd"
+                )
+                SimpleDateFormat(bicim, Locale.getDefault()).format(takvim.time)
+            }
+        }
     }
 }

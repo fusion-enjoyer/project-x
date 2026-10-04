@@ -664,6 +664,14 @@ class EditorActivity : AppCompatActivity() {
             android.text.format.DateFormat.getTimeFormat(this).format(simdi)
         ).distinct()
         val sayfa = AltSayfa(this).baslik(getString(R.string.tarih_ekle))
+        // Görev satırındayken önce son tarih: Görevler ekranı buna göre sıralar.
+        val (satirBasi, satirSonu) = satirSinirlari()
+        val satir = metinAlani.text?.subSequence(satirBasi, satirSonu)?.toString().orEmpty()
+        if (MarkdownBicimci.ONAY.containsMatchIn(satir)) {
+            sayfa.madde(R.drawable.ic_bicim_onay, getString(R.string.son_tarih_sec)) {
+                sonTarihSec(satirBasi, satir)
+            }
+        }
         for (metin in secenekler) {
             sayfa.madde(R.drawable.ic_gunluk, metin) {
                 val alan = metinAlani.text ?: return@madde
@@ -673,6 +681,28 @@ class EditorActivity : AppCompatActivity() {
             }
         }
         sayfa.goster()
+    }
+
+    /** Görev satırına `📅 yyyy-aa-gg` yazar; satırda tarih varsa değiştirir. */
+    private fun sonTarihSec(satirBasi: Int, satir: String) {
+        val takvim = java.util.Calendar.getInstance()
+        SonTarih.gun(satir)?.let { gun ->
+            val (yil, ay, g) = SonTarih.tarih(gun)
+            takvim.set(yil, ay - 1, g)
+        }
+        android.app.DatePickerDialog(
+            this,
+            { _, yil, ay, gun ->
+                val s = metinAlani.text ?: return@DatePickerDialog
+                val son = satirBasi + satir.length
+                // Diyalog açıkken satır değiştiyse yanlış yere yazılmasın.
+                if (son > s.length || s.substring(satirBasi, son) != satir) return@DatePickerDialog
+                s.replace(satirBasi, son, SonTarih.yaz(satir, yil, ay + 1, gun))
+            },
+            takvim.get(java.util.Calendar.YEAR),
+            takvim.get(java.util.Calendar.MONTH),
+            takvim.get(java.util.Calendar.DAY_OF_MONTH)
+        ).show()
     }
 
     /**

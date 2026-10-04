@@ -22,6 +22,7 @@ class MarkdownBicimci(private val context: Context) {
 
     private val soluk = ContextCompat.getColor(context, R.color.metin_ikincil)
     private val kodZemin = ContextCompat.getColor(context, R.color.kart)
+    private val gecikmis = ContextCompat.getColor(context, R.color.fark_silindi)
     private val yogunluk = context.resources.displayMetrics.density
     private var vurgu = Renkler.vurgu(context)
     private var vurguUzeri = Renkler.vurguUzeri(context)
@@ -300,8 +301,17 @@ class MarkdownBicimci(private val context: Context) {
             s.setSpan(ForegroundColorSpan(soluk), kutuSon, son, EE)
         } else if (kutuSon < son) {
             satirIci(s, kutuSon, son, false)
+            sonTarihBoya(s, kutuSon, son)
         }
         return true
+    }
+
+    /** Açık görevin son tarihi: geçmişse kırmızı, değilse soluk. */
+    private fun sonTarihBoya(s: Editable, bas: Int, son: Int) {
+        val m = SonTarih.DESEN.find(s.subSequence(bas, son)) ?: return
+        val gun = SonTarih.gun(m.value) ?: return
+        val renk = if (gun < SonTarih.bugun()) gecikmis else soluk
+        s.setSpan(ForegroundColorSpan(renk), bas + m.range.first, bas + m.range.last + 1, EE)
     }
 
     /** Satır içi işaretler: görsel, kod, kalın, italik, üstü çizili. */

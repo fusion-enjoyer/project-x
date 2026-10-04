@@ -299,6 +299,14 @@
         <item quantity="one">Tag added to %d note</item>
         <item quantity="other">Tag added to %d notes</item>
     </plurals>
+    <plurals name="gun_gecikti">
+        <item quantity="one">%d day overdue</item>
+        <item quantity="other">%d days overdue</item>
+    </plurals>
+    <plurals name="gun_kaldi">
+        <item quantity="one">In %d day</item>
+        <item quantity="other">In %d days</item>
+    </plurals>
     <plurals name="keep_not_sayisi">
         <item quantity="one">%d note imported from Keep</item>
         <item quantity="other">%d notes imported from Keep</item>
@@ -331,5 +339,8 @@
     <string name="kopyalandi">Copied</string>
     <string name="not_bagla">Link a note</string>
     <string name="tarih_ekle">Insert date</string>
+    <string name="son_tarih_sec">Set due date</string>
+    <string name="bugun">Today</string>
+    <string name="yarin">Tomorrow</string>
     <string name="pin_bekle">Too many attempts. Try again in %d s</string>
 </resources>
