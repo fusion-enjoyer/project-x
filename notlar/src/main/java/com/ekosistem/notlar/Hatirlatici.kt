@@ -133,11 +133,15 @@ object Hatirlatici {
             yonetici.createNotificationChannel(kanal)
         }
 
-        val icerik = depo.oku(adres, 512)
-        val baslik = icerik.lines().firstOrNull { it.isNotBlank() }
-            ?.trimStart('#', '-', '>', ' ')
-            ?.take(60)
-            ?: context.getString(R.string.app_name)
+        // Kilitli notun başlığı bildirim panelinde de görünmez (widget'taki gibi).
+        val baslik = if (Kilit.notKilitli(context, uri)) {
+            context.getString(R.string.kilitli)
+        } else {
+            depo.oku(adres, 512).lines().firstOrNull { it.isNotBlank() }
+                ?.trimStart('#', '-', '>', ' ')
+                ?.take(60)
+                ?: context.getString(R.string.app_name)
+        }
 
         val acNiyeti = PendingIntent.getActivity(
             context,
