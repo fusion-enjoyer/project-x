@@ -391,6 +391,7 @@ class AyarlarActivity : AppCompatActivity() {
             ipucuVer(ornek)
             ornek.setOnClickListener {
                 Prefs.vurguKaydet(this, indeks)
+                NotWidget.renkleriGuncelle(applicationContext)
                 renkSayfasi?.kapat()
                 recreate()
             }
@@ -408,6 +409,7 @@ class AyarlarActivity : AppCompatActivity() {
                 secili = seciliIndeks == Renkler.SISTEM
             ) {
                 Prefs.vurguKaydet(this, Renkler.SISTEM)
+                NotWidget.renkleriGuncelle(applicationContext)
                 recreate()
             }
         }

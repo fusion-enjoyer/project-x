@@ -40,6 +40,23 @@ object NotWidget {
         }
     }
 
+    /**
+     * Vurgu rengi değişince widget'lar yeniden çizilir. [hepsiniGuncelle] yalnızca
+     * içeriği tazeler; hızlı not widget'ı ve listenin "+" düğmesi orada boyanmaz.
+     */
+    fun renkleriGuncelle(context: Context) {
+        val yonetici = AppWidgetManager.getInstance(context) ?: return
+        try {
+            // Tek not widget'ında vurgu yok; onu yeniden çizmek boşuna disk okur.
+            val saglayicilar = listOf(HizliNotWidget(), ListeWidget())
+            for (saglayici in saglayicilar) {
+                val ids = yonetici.getAppWidgetIds(ComponentName(context, saglayici::class.java))
+                if (ids != null && ids.isNotEmpty()) saglayici.onUpdate(context, yonetici, ids)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     /** Not kaydedildikten/silindikten sonra tüm widget'ları tazeler. */
     fun hepsiniGuncelle(context: Context) {
         val yonetici = AppWidgetManager.getInstance(context) ?: return
