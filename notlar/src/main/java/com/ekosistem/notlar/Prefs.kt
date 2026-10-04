@@ -85,6 +85,13 @@ object Prefs {
      * eklenirse bir kez daha kurulur; kullanıcının sildiği şablonlar bunun
      * dışında geri getirilmez.
      */
+    /** "Hoş geldin" notu bir kez denenir; silinen not geri gelmez. */
+    fun hosgeldinDenendi(c: Context): Boolean = sp(c).getBoolean("hosgeldin", false)
+
+    fun hosgeldinDenendiKaydet(c: Context) {
+        sp(c).edit().putBoolean("hosgeldin", true).apply()
+    }
+
     fun sablonSurumu(c: Context): Int = sp(c).getInt("sablon_surumu", 0)
 
     fun sablonSurumuKaydet(c: Context, surum: Int) {

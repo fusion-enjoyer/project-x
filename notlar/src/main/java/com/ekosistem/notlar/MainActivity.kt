@@ -107,6 +107,7 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, geriTusu)
         sablonlariHazirla()
+        hosgeldinHazirla()
         if (savedInstanceState == null) yeniNotuKurtar()
 
         intent?.getStringExtra("etiket")?.let { etiket ->
@@ -1091,6 +1092,27 @@ class MainActivity : AppCompatActivity() {
             Sablonlar.ornekleriOlustur(this, depo)
             Prefs.sablonSurumuKaydet(this, Sablonlar.ORNEK_SURUMU)
             runOnUiThread { yenile() }
+        }.start()
+    }
+
+    /**
+     * İlk açılışta, klasörde hiç not yoksa "Hoş geldin" notu konur. Yalnızca bir
+     * kez denenir: kullanıcı silerse geri gelmez; dolu bir klasöre (Obsidian
+     * kasası gibi) ya da güncelleme alan kullanıcının notlarının arasına girmez.
+     * Şablon klasörü listeye karışmadığı için örnek şablonlar boşluğu bozmaz.
+     */
+    private fun hosgeldinHazirla() {
+        if (Prefs.hosgeldinDenendi(this)) return
+        Prefs.hosgeldinDenendiKaydet(this)
+        Thread {
+            val bos = try {
+                depo.notlariListele(null).isEmpty()
+            } catch (_: Exception) {
+                false
+            }
+            if (!bos) return@Thread
+            val metin = resources.openRawResource(R.raw.hosgeldin).bufferedReader().use { it.readText() }
+            if (depo.notOlustur(metin, null) != null) runOnUiThread { yenile() }
         }.start()
     }
 
