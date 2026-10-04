@@ -261,13 +261,13 @@
             android:paddingRight="8dp">
 
             <ImageButton
-                android:id="@+id/navAra"
+                android:id="@+id/navGorevler"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/ara"
-                android:src="@drawable/ic_ara" />
+                android:contentDescription="@string/gorevler"
+                android:src="@drawable/ic_gorevler" />
 
             <ImageButton
                 android:id="@+id/navGunluk"

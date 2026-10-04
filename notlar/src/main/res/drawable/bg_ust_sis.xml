@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Editördeki üst ikonların arkası: kutu değil, sayfanın kendi zemininden
+  saydama inen geçiş. İkonlar sayfanın üstünde durur, altından kayan yazı
+  ikonların arasında okunmaz.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:bottom="24dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/zemin" />
+        </shape>
+    </item>
+    <!-- Kap 80 dp: 56 dp düz zemin + 24 dp geçiş (gravity/height API 23 ister). -->
+    <item android:top="56dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:endColor="@color/zemin_saydam"
+                android:startColor="@color/zemin" />
+        </shape>
+    </item>
+</layer-list>

@@ -199,11 +199,8 @@ class AyarlarActivity : AppCompatActivity() {
         return getString(Renkler.SECENEKLER[indeks].adKaynagi)
     }
 
-    private fun yaziTipiAdi(): String = when (Prefs.yaziTipi(this)) {
-        1 -> getString(R.string.yazi_serif)
-        2 -> getString(R.string.yazi_mono)
-        else -> getString(R.string.yazi_sistem)
-    }
+    private fun yaziTipiAdi(): String =
+        getString(YaziTipleri.secenek(Prefs.yaziTipi(this)).adKaynagi)
 
     private fun yaziBoyuAdi(): String = getString(
         when (Prefs.yaziBoyu(this)) {
@@ -214,13 +211,18 @@ class AyarlarActivity : AppCompatActivity() {
         }
     )
 
+    /** Her seçenek kendi yazı tipiyle yazılır: kullanıcı seçmeden önce görür. */
     private fun yaziTipiSec() {
-        val adlar = listOf(R.string.yazi_sistem, R.string.yazi_serif, R.string.yazi_mono)
-        val secili = Prefs.yaziTipi(this)
+        val secili = YaziTipleri.secenek(Prefs.yaziTipi(this)).kimlik
         val sayfa = AltSayfa(this).baslik(getString(R.string.yazi_tipi))
-        adlar.forEachIndexed { indeks, ad ->
-            sayfa.madde(R.drawable.ic_ayar_gorunum_koyu, getString(ad), secili = indeks == secili) {
-                Prefs.yaziTipiKaydet(this, indeks)
+        for (secenek in YaziTipleri.SECENEKLER) {
+            sayfa.madde(
+                R.drawable.ic_ayar_gorunum_koyu,
+                getString(secenek.adKaynagi),
+                secili = secenek.kimlik == secili,
+                yaziTipi = YaziTipleri.tip(secenek.kimlik)
+            ) {
+                Prefs.yaziTipiKaydet(this, secenek.kimlik)
                 ozetGuncelle(satirYaziTipi, yaziTipiAdi())
             }
         }
@@ -357,17 +359,22 @@ class AyarlarActivity : AppCompatActivity() {
         val seciliIndeks = Prefs.vurguIndeksi(this)
         val gece = Renkler.geceMi(this)
 
+        // Renkler beşerli satırlarda, her örnek eşit genişlikte bir hücrenin
+        // ortasında durur; eksik kalan son satır da ortalanır (sola yapışmaz).
+        val satirBasina = 5
+        val hucre = (56 * yogunluk).toInt()
         var satir: LinearLayout? = null
         Renkler.SECENEKLER.forEachIndexed { indeks, secenek ->
-            if (indeks % 5 == 0) {
+            if (indeks % satirBasina == 0) {
                 satir = LinearLayout(this)
                 satir?.orientation = LinearLayout.HORIZONTAL
+                satir?.gravity = Gravity.CENTER_HORIZONTAL
                 kutu.addView(
                     satir,
                     LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply { bottomMargin = (12 * yogunluk).toInt() }
+                    ).apply { bottomMargin = (8 * yogunluk).toInt() }
                 )
             }
             val renk = if (gece) secenek.koyu else secenek.acik
@@ -380,15 +387,17 @@ class AyarlarActivity : AppCompatActivity() {
             }
             ornek.background = sekil
             ornek.contentDescription = getString(secenek.adKaynagi)
-            val boyut = (44 * yogunluk).toInt()
-            val lp = LinearLayout.LayoutParams(boyut, boyut)
-            lp.rightMargin = (10 * yogunluk).toInt()
+            ipucuVer(ornek)
             ornek.setOnClickListener {
                 Prefs.vurguKaydet(this, indeks)
                 renkSayfasi?.kapat()
                 recreate()
             }
-            satir?.addView(ornek, lp)
+            // 44 dp daire, 56 dp dokunma hücresinin ortasında.
+            val hucreKap = FrameLayout(this)
+            val boyut = (44 * yogunluk).toInt()
+            hucreKap.addView(ornek, FrameLayout.LayoutParams(boyut, boyut, Gravity.CENTER))
+            satir?.addView(hucreKap, LinearLayout.LayoutParams(hucre, hucre))
         }
         renkSayfasi = sayfa
         sayfa.goster()

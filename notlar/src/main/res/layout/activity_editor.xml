@@ -2,84 +2,89 @@
 <!--
   Obsidian'daki gibi: metin tam ekranı kaplar, üstteki ikonlar ve biçim çubuğu
   onun üzerinde yüzer. Aşağı kaydırınca ikonlar kaçar, yukarı kaydırınca döner.
+  İkonların ve çubuğun kendi kutusu yok: sayfanın zemininden saydama inen bir
+  geçişin üstünde dururlar, not iki kutunun arasına sıkışmış gibi görünmez.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <com.ekosistem.notlar.NotEditText
-        android:id="@+id/metinAlani"
+    <!-- Kaydırmayı (ve parmak kalkınca savrulmayı) metin değil bu alan yapar. -->
+    <com.ekosistem.notlar.NotKaydirici
+        android:id="@+id/kaydirici"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@null"
-        android:gravity="top"
-        android:inputType="textMultiLine|textCapSentences"
-        android:lineSpacingExtra="4dp"
-        android:paddingLeft="20dp"
-        android:paddingTop="64dp"
-        android:paddingRight="20dp"
-        android:paddingBottom="96dp"
+        android:defaultFocusHighlightEnabled="false"
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls"
         android:scrollbars="none"
-        android:textColor="@color/metin"
-        android:textColorHint="@color/metin_ikincil"
-        android:textSize="16sp" />
+        tools:targetApi="o">
 
-    <!-- Üstte yüzen ikonlar -->
+        <!-- Donanım klavyesiyle gezinirken sistemin gri odak örtüsü metni kaplamasın. -->
+        <com.ekosistem.notlar.NotEditText
+            android:id="@+id/metinAlani"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:defaultFocusHighlightEnabled="false"
+            android:gravity="top"
+            android:includeFontPadding="false"
+            android:inputType="textMultiLine|textCapSentences"
+            android:lineSpacingExtra="4dp"
+            android:paddingLeft="20dp"
+            android:paddingTop="72dp"
+            android:paddingRight="20dp"
+            android:paddingBottom="112dp"
+            android:textColor="@color/metin"
+            android:textColorHint="@color/metin_ikincil"
+            android:textCursorDrawable="@drawable/imlec_gizli"
+            android:textSize="16sp"
+            tools:targetApi="o" />
+    </com.ekosistem.notlar.NotKaydirici>
+
+    <!-- Üstte yüzen ikonlar: 80 dp'lik kap, arkası zeminden saydama iner. -->
     <LinearLayout
         android:id="@+id/ustCubuk"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_height="80dp"
+        android:background="@drawable/bg_ust_sis"
         android:baselineAligned="false"
-        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp">
+        android:paddingLeft="8dp"
+        android:paddingTop="8dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="24dp">
 
-        <FrameLayout
+        <ImageButton
+            android:id="@+id/btnGeri"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/bg_ucan_hap">
-
-            <ImageButton
-                android:id="@+id/btnGeri"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/geri"
-                android:src="@drawable/ic_geri" />
-        </FrameLayout>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/geri"
+            android:src="@drawable/ic_geri" />
 
         <View
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <ImageButton
+            android:id="@+id/btnOkuma"
+            android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/bg_ucan_hap"
-            android:orientation="horizontal"
-            android:paddingLeft="4dp"
-            android:paddingRight="4dp">
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/okuma_gorunumu"
+            android:src="@drawable/ic_okuma" />
 
-            <ImageButton
-                android:id="@+id/btnOkuma"
-                android:layout_width="44dp"
-                android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/okuma_gorunumu"
-                android:src="@drawable/ic_okuma" />
-
-            <ImageButton
-                android:id="@+id/btnEditorMenu"
-                android:layout_width="44dp"
-                android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/menu"
-                android:src="@drawable/ic_menu" />
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/btnEditorMenu"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/menu"
+            android:src="@drawable/ic_menu" />
     </LinearLayout>
 
     <!-- Bul ve değiştir: açıldığında üstteki ikonların yerini alır -->
@@ -90,13 +95,14 @@
         android:background="@color/zemin"
         android:orientation="vertical"
         android:paddingLeft="16dp"
+        android:paddingTop="8dp"
         android:paddingRight="8dp"
         android:paddingBottom="8dp"
         android:visibility="gone">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -128,8 +134,8 @@
 
             <ImageButton
                 android:id="@+id/bulOnceki"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/onceki"
                 android:rotation="90"
@@ -137,8 +143,8 @@
 
             <ImageButton
                 android:id="@+id/bulSonraki"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/sonraki"
                 android:rotation="-90"
@@ -146,8 +152,8 @@
 
             <ImageButton
                 android:id="@+id/bulKapat"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/kapat"
                 android:src="@drawable/ic_kapat" />
@@ -155,7 +161,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -178,7 +184,7 @@
             <TextView
                 android:id="@+id/btnDegistir"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:gravity="center"
@@ -191,7 +197,7 @@
             <TextView
                 android:id="@+id/btnTumunuDegistir"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="44dp"
                 android:background="?attr/selectableItemBackground"
                 android:gravity="center"
                 android:paddingLeft="10dp"
@@ -202,28 +208,34 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Altta yüzen biçim çubuğu -->
-    <HorizontalScrollView
+    <!--
+      Altta yüzen biçim çubuğu: kutusu yok, sayfanın zemini üstünde durur.
+      Kap 72 dp: üstteki 20 dp, altından kayan yazının yumuşakça kaybolduğu geçiş.
+    -->
+    <FrameLayout
         android:id="@+id/bicimKaydirici"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="72dp"
         android:layout_gravity="bottom"
-        android:layout_marginLeft="12dp"
-        android:layout_marginRight="12dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/bg_arac_cubugu"
-        android:fadingEdgeLength="28dp"
-        android:requiresFadingEdge="horizontal"
-        android:scrollbars="none">
+        android:background="@drawable/bg_bicim_sis"
+        android:paddingTop="20dp">
 
-        <LinearLayout
-            android:id="@+id/bicimCubugu"
-            android:layout_width="wrap_content"
-            android:layout_height="52dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingLeft="4dp"
-            android:paddingRight="4dp" />
-    </HorizontalScrollView>
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fadingEdgeLength="28dp"
+            android:requiresFadingEdge="horizontal"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/bicimCubugu"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp" />
+        </HorizontalScrollView>
+    </FrameLayout>
 
 </FrameLayout>

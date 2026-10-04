@@ -27,6 +27,7 @@ class AltSayfa(private val activity: Activity) {
         val baslik: String,
         val secili: Boolean,
         val tehlikeli: Boolean,
+        val yaziTipi: android.graphics.Typeface?,
         val tikla: () -> Unit
     )
 
@@ -86,9 +87,10 @@ class AltSayfa(private val activity: Activity) {
         baslik: String,
         secili: Boolean = false,
         tehlikeli: Boolean = false,
+        yaziTipi: android.graphics.Typeface? = null,
         tikla: () -> Unit
     ): AltSayfa {
-        maddeler.add(Madde(ikon, baslik, secili, tehlikeli, tikla))
+        maddeler.add(Madde(ikon, baslik, secili, tehlikeli, yaziTipi, tikla))
         return this
     }
 
@@ -152,7 +154,7 @@ class AltSayfa(private val activity: Activity) {
             alan.textSize = 16f
             alan.setTextColor(metinRengi)
             alan.setHintTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
-            alan.setBackgroundResource(R.drawable.bg_arama_pill)
+            alan.setBackgroundResource(R.drawable.bg_girdi)
             alan.setPadding((16 * y).toInt(), 0, (16 * y).toInt(), 0)
             val alanLp = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -223,6 +225,8 @@ class AltSayfa(private val activity: Activity) {
             val tv = TextView(activity)
             tv.text = madde.baslik
             tv.textSize = 16f
+            // Yazı tipi seçicide her ad kendi yazı tipiyle görünür.
+            madde.yaziTipi?.let { tv.typeface = it }
             tv.setTextColor(renk)
             val tvLp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             tvLp.leftMargin = (18 * y).toInt()
@@ -292,12 +296,30 @@ class AltSayfa(private val activity: Activity) {
         dialog.show()
         girdiAlani?.let { alan ->
             alan.requestFocus()
-            // ADJUST_RESIZE olmadan sayfa klavyenin altında kalıyor ve onay
-            // düğmesine ulaşılamıyordu.
-            dialog.window?.setSoftInputMode(
-                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
-                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            )
+            val pencere = dialog.window ?: return@let
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                // Android 15 ve sonrası kenardan kenara çalışır: ADJUST_RESIZE artık
+                // sayfayı klavyenin üstüne almıyor, metin kutusu klavyenin altında
+                // kalıyordu. Klavye yüksekliğini kendimiz alt boşluk yaparız.
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(pencere, false)
+                androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sarmal) { v, kenarlar ->
+                    val klavye = kenarlar.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+                    val cubuk = kenarlar.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom
+                    v.setPadding(0, 0, 0, maxOf(klavye, cubuk))
+                    kenarlar
+                }
+                sarmal.requestApplyInsets()
+                pencere.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                )
+            } else {
+                // Eski sürümlerde ADJUST_RESIZE olmadan sayfa klavyenin altında kalıyordu.
+                pencere.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                )
+            }
         }
     }
 

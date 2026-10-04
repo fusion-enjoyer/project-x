@@ -64,7 +64,10 @@
     <string name="sonraki">Sonraki</string>
     <string name="kapat">Kapat</string>
     <string name="bulunamadi">Bulunamadı</string>
-    <string name="degistirildi">%d yerde değiştirildi</string>
+    <plurals name="degistirildi">
+        <item quantity="one">%d yerde değiştirildi</item>
+        <item quantity="other">%d yerde değiştirildi</item>
+    </plurals>
 
     <!-- Ayarlar -->
     <string name="ayarlar">Ayarlar</string>
@@ -188,14 +191,16 @@
     <string name="surume_don">Bu sürüme dön</string>
     <string name="gecmis_fark_yok">Güncel notla aynı</string>
     <string name="gecmis_yok_ozet">Henüz eski sürüm yok.\nNot her kaydedildiğinde bir sürüm saklanır.</string>
-    <string name="gecmis_aciklama">Yeşil satırlar geri gelir, kırmızılar silinir.</string>
+    <string name="gecmis_aciklama">Bu sürüme dönersen yeşil satırlar geri gelir, üstü çizili satırlar silinir.</string>
+    <string name="gecmis_degisiklikler">Değişiklikler</string>
+    <string name="gecmis_tam_metin">Sürümün tamamı</string>
     <plurals name="fark_eklenen">
-        <item quantity="one">+%d satır</item>
-        <item quantity="other">+%d satır</item>
+        <item quantity="one">%d satır geri gelir</item>
+        <item quantity="other">%d satır geri gelir</item>
     </plurals>
     <plurals name="fark_silinen">
-        <item quantity="one">\u2212%d satır</item>
-        <item quantity="other">\u2212%d satır</item>
+        <item quantity="one">%d satır silinir</item>
+        <item quantity="other">%d satır silinir</item>
     </plurals>
     <plurals name="fark_degismeyen">
         <item quantity="one">%d satır değişmedi</item>
@@ -236,6 +241,11 @@
     <string name="yazi_sistem">Sistem</string>
     <string name="yazi_serif">Serif</string>
     <string name="yazi_mono">Eş aralıklı</string>
+    <string name="yazi_ince">İnce</string>
+    <string name="yazi_dar">Dar</string>
+    <string name="yazi_daktilo">Daktilo</string>
+    <string name="yazi_el">El yazısı</string>
+    <string name="yazi_kaligrafi">Kaligrafi</string>
     <string name="yazi_boyu">Yazı boyutu</string>
     <string name="boy_kucuk">Küçük</string>
     <string name="boy_normal">Normal</string>

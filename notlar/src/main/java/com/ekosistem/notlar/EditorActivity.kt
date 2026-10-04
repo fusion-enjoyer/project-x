@@ -28,6 +28,7 @@ class EditorActivity : AppCompatActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var metinAlani: NotEditText
+    private lateinit var kaydirici: NotKaydirici
     private lateinit var bicimci: MarkdownBicimci
     private lateinit var bicimCubugu: LinearLayout
     private lateinit var bicimKaydirici: View
@@ -87,6 +88,7 @@ class EditorActivity : AppCompatActivity() {
         taslaklar = Taslaklar(this)
         bicimci = MarkdownBicimci(this)
         metinAlani = findViewById(R.id.metinAlani)
+        kaydirici = findViewById(R.id.kaydirici)
         bicimCubugu = findViewById(R.id.bicimCubugu)
         bicimKaydirici = findViewById(R.id.bicimKaydirici)
         btnOkuma = findViewById(R.id.btnOkuma)
@@ -140,7 +142,13 @@ class EditorActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { menuGoster() }
         ipucuVer(findViewById(R.id.btnGeri), findViewById(R.id.btnEditorMenu), btnOkuma)
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
+        onBackPressedDispatcher.addCallback(this, bulGeriTusu)
         dugmeleriGuncelle()
+    }
+
+    /** Bul çubuğu açıkken geri tuşu önce çubuğu kapatır, notu değil. */
+    private val bulGeriTusu = object : androidx.activity.OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = bulCubuguKapat()
     }
 
     /**
@@ -148,7 +156,10 @@ class EditorActivity : AppCompatActivity() {
      * yazarken ekranın tamamı metne kalsın diye (Obsidian'daki davranış).
      */
     private fun kaydirmaKur() {
-        metinAlani.kaydirildi = { yeni, onceki ->
+        val yog = resources.displayMetrics.density
+        // Yazılan satır biçim çubuğunun arkasında kalmasın.
+        kaydirici.altPay = (BICIM_PAYI_DP * yog).toInt()
+        kaydirici.kaydirildi = { yeni, onceki ->
             val fark = yeni - onceki
             when {
                 // Notun en başındayken çubuk her zaman açık kalır.
@@ -157,6 +168,21 @@ class EditorActivity : AppCompatActivity() {
                 fark < -ESIK -> ustCubuguGoster(true)
             }
         }
+        /*
+         * Klavye açılınca kaydırma alanı küçülür. Metin artık kendi içinde
+         * kaydırmadığı için imleci görünür kılmak kaydırma alanına düşer;
+         * dokunulan satır klavyenin altında kalmasın.
+         */
+        kaydirici.addOnLayoutChangeListener { _, _, ust, _, alt, _, eskiUst, _, eskiAlt ->
+            if (alt - ust < eskiAlt - eskiUst && metinAlani.hasFocus()) {
+                metinAlani.post { imleciGoster() }
+            }
+        }
+    }
+
+    private fun imleciGoster() {
+        val konum = metinAlani.selectionEnd
+        if (konum >= 0) satiriGoster(konum)
     }
 
     private fun ustCubuguGoster(acik: Boolean) {
@@ -179,11 +205,12 @@ class EditorActivity : AppCompatActivity() {
     private fun tipografiUygula() {
         bicimci.boyutlariYenile()
         metinAlani.textSize = bicimci.govdeSp.toFloat()
-        metinAlani.typeface = when (Prefs.yaziTipi(this)) {
-            1 -> Typeface.SERIF
-            2 -> Typeface.MONOSPACE
-            else -> Typeface.DEFAULT
-        }
+        metinAlani.typeface = YaziTipleri.yazi(this)
+        metinAlani.baslikPx = android.util.TypedValue.applyDimension(
+            android.util.TypedValue.COMPLEX_UNIT_SP,
+            bicimci.baslikSp().toFloat(),
+            resources.displayMetrics
+        )
         ipucuKur()
     }
 
@@ -289,6 +316,7 @@ class EditorActivity : AppCompatActivity() {
         val vurgu = Renkler.vurgu(this)
         findViewById<TextView>(R.id.btnDegistir).setTextColor(vurgu)
         findViewById<TextView>(R.id.btnTumunuDegistir).setTextColor(vurgu)
+        metinAlani.imlecRengi = vurgu
     }
 
     // --- Metin değişikliği ---
@@ -312,6 +340,7 @@ class EditorActivity : AppCompatActivity() {
             bicimleniyor = true
             if (satirEklendi) {
                 satirEklendi = false
+                kapanisiSatirdaTut(s)
                 listeyiSurdur(s)
             }
             aktifSatirBasi = satirBasiBul(metinAlani.selectionStart)
@@ -333,7 +362,7 @@ class EditorActivity : AppCompatActivity() {
             }
             sonDurum = Durum(s.toString(), metinAlani.selectionStart)
 
-            if (bulCubugu.visibility == View.VISIBLE) eslesmeleriBul(false)
+            if (bulCubugu.visibility == View.VISIBLE) eslesmeleriBul(git = false)
 
             metinAlani.removeCallbacks(taslakYazici)
             metinAlani.postDelayed(taslakYazici, TASLAK_MS)
@@ -371,12 +400,41 @@ class EditorActivity : AppCompatActivity() {
         val ipucu = SpannableString("$baslik\n$govde")
         ipucu.setSpan(StyleSpan(Typeface.BOLD), 0, baslik.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         ipucu.setSpan(
-            AbsoluteSizeSpan(bicimci.govdeSp + 8, true),
+            AbsoluteSizeSpan(bicimci.baslikSp(), true),
             0,
             baslik.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
+        // Gövde satırı tabanla aynı boyda; yazı tipi değişince de ipucu uyumlu kalsın.
+        ipucu.setSpan(
+            AbsoluteSizeSpan(bicimci.govdeSp, true),
+            baslik.length,
+            ipucu.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
         metinAlani.hint = ipucu
+    }
+
+    /**
+     * İtalik/kalın düğmesi imleci iki işaretin arasına koyar. Yazıp Enter'a
+     * basınca kapanış işareti alt satıra kayıyor (`*eğik` / `yazı*`), biçim
+     * de bozuluyordu. Enter, imlecin hemen ardında yalnız kapanış işareti
+     * kaldıysa onu satırda bırakır; yeni satır işaretin arkasından başlar.
+     */
+    private fun kapanisiSatirdaTut(s: Editable) {
+        val imlec = metinAlani.selectionStart
+        if (imlec <= 0 || imlec > s.length || s[imlec - 1] != '\n') return
+        var son = imlec
+        while (son < s.length && s[son] in KAPANIS_ISARETLERI) son++
+        if (son == imlec || (son < s.length && s[son] != '\n')) return
+        val isaret = s.subSequence(imlec, son).toString()
+        val satirBasi = s.toString().lastIndexOf('\n', imlec - 2) + 1
+        val onceki = s.subSequence(satirBasi, imlec - 1).toString()
+        // Satırda açılışı olmayan işaret (ör. tek başına "---") kendi yerinde kalır.
+        if (!onceki.contains(isaret)) return
+        s.delete(imlec, son)
+        s.insert(imlec - 1, isaret)
+        metinAlani.setSelection((imlec + isaret.length).coerceAtMost(s.length))
     }
 
     /** Enter'a basınca liste/onay/numaralı madde satırını kendiliğinden sürdürür. */
@@ -713,6 +771,15 @@ class EditorActivity : AppCompatActivity() {
         val s = metinAlani.text ?: return
         var bas = metinAlani.selectionStart.coerceAtLeast(0)
         var son = metinAlani.selectionEnd.coerceAtLeast(0)
+        // İmleç kapanış işaretinin hemen önündeyse ikinci basış biçimden çıkar:
+        // imleç işaretin ardına geçer, yazmaya düz yazıyla devam edilir.
+        if (bas == son && bas + isaret.length <= s.length &&
+            s.subSequence(bas, bas + isaret.length).toString() == isaret &&
+            s.subSequence(satirBasiBul(bas), bas).contains(isaret)
+        ) {
+            metinAlani.setSelection(bas + isaret.length)
+            return
+        }
         if (bas == son) {
             val kelime = imlectekiKelime(s, bas)
             if (kelime != null) {
@@ -835,6 +902,8 @@ class EditorActivity : AppCompatActivity() {
     private var gorselUzunBasti = false
     private val gorselUzunBasma = Runnable {
         gorselUzunBasti = true
+        // Basılı tutunca parmak görseli taşır; kaydırma alanı dokunuşu almasın.
+        kaydirici.requestDisallowInterceptTouchEvent(true)
         metinAlani.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
     }
     private var duzenleBalonu: android.widget.PopupWindow? = null
@@ -874,23 +943,15 @@ class EditorActivity : AppCompatActivity() {
                 } else if (!gorselUzunBasti) {
                     /*
                      * Uzun basmadan parmak kaydıysa bu bir sayfa kaydırmasıdır.
-                     * Dokunuşu DOWN'da biz yuttuğumuz için EditText kaydıramaz;
-                     * kaydırmayı kendimiz yapıyoruz, yoksa geniş bir görselin
-                     * üstünden not kaydırılamazdı.
+                     * Kaydırma alanı genelde dokunuşu kendisi devralır (bize
+                     * CANCEL gelir); devralmadıysa kaydırmayı biz iletiriz,
+                     * yoksa geniş bir görselin üstünden not kaydırılamazdı.
                      */
                     if (!gorselKaydiriyor && kayma > SURUKLEME_ESIGI) {
                         gorselKaydiriyor = true
                         metinAlani.removeCallbacks(gorselUzunBasma)
                     }
-                    if (gorselKaydiriyor) {
-                        val fark = (gorselSonY - olay.y).toInt()
-                        val enFazla = (metinAlani.layout?.height ?: 0) -
-                            (metinAlani.height - metinAlani.totalPaddingTop -
-                                metinAlani.totalPaddingBottom)
-                        val hedefScroll = (metinAlani.scrollY + fark)
-                            .coerceIn(0, maxOf(0, enFazla))
-                        metinAlani.scrollTo(0, hedefScroll)
-                    }
+                    if (gorselKaydiriyor) kaydirici.scrollBy(0, (gorselSonY - olay.y).toInt())
                 }
                 gorselSonY = olay.y
                 return true
@@ -1072,7 +1133,7 @@ class EditorActivity : AppCompatActivity() {
         metinAlani.isFocusable = !okumaModu
         metinAlani.isFocusableInTouchMode = !okumaModu
         metinAlani.isCursorVisible = !okumaModu
-        bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
+        bicimKaydirici.visibility = if (okumaModu || bulCubugu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         btnOkuma.setImageResource(
             if (okumaModu) R.drawable.ic_duzenle else R.drawable.ic_okuma
         )
@@ -1099,6 +1160,12 @@ class EditorActivity : AppCompatActivity() {
 
     // --- Bul ve değiştir ---
 
+    /*
+     * Eşleşmeler metnin içinde vurgulanır; imlece ve seçime dokunulmaz.
+     * Önceki hâlde eşleşme metin seçilerek gösteriliyordu: odak bul kutusundayken
+     * seçim çizilmediği için eşleşme görünmüyor, notta yazarken de her harfte
+     * imleç eşleşmeye zıplıyordu.
+     */
     private fun bulCubuguKur() {
         bulCubugu = findViewById(R.id.bulCubugu)
         bulAlani = findViewById(R.id.bulAlani)
@@ -1108,64 +1175,115 @@ class EditorActivity : AppCompatActivity() {
         bulAlani.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun afterTextChanged(s: Editable?) = eslesmeleriBul(true)
+            override fun afterTextChanged(s: Editable?) = eslesmeleriBul(git = true)
         })
+        // Klavyedeki "ara" tuşu sonraki eşleşmeye geçer.
+        bulAlani.setOnEditorActionListener { _, _, _ ->
+            eslesmeyeGit(1)
+            true
+        }
 
         findViewById<ImageButton>(R.id.bulSonraki).setOnClickListener { eslesmeyeGit(1) }
         findViewById<ImageButton>(R.id.bulOnceki).setOnClickListener { eslesmeyeGit(-1) }
         findViewById<ImageButton>(R.id.bulKapat).setOnClickListener { bulCubuguKapat() }
         findViewById<TextView>(R.id.btnDegistir).setOnClickListener { degistir() }
         findViewById<TextView>(R.id.btnTumunuDegistir).setOnClickListener { tumunuDegistir() }
+        ipucuVer(
+            findViewById(R.id.bulSonraki),
+            findViewById(R.id.bulOnceki),
+            findViewById(R.id.bulKapat)
+        )
     }
 
     private fun bulCubuguAc() {
         bulCubugu.visibility = View.VISIBLE
         // Bul çubuğu üst ikonların yerini alır; ikisi üst üste binmesin.
         ustCubuk.visibility = View.GONE
+        // Klavye ve bul çubuğu zaten yer kaplıyor; biçim çubuğu metne yer bıraksın.
+        bicimKaydirici.visibility = View.GONE
+        kaydirici.altPay = 0
+        bulGeriTusu.isEnabled = true
+        // Seçili bir kelime varsa aranacak ifade odur.
+        val s = metinAlani.text
+        val bas = minOf(metinAlani.selectionStart, metinAlani.selectionEnd)
+        val son = maxOf(metinAlani.selectionStart, metinAlani.selectionEnd)
+        if (s != null && bas in 0 until son && son <= s.length) {
+            val secim = s.subSequence(bas, son).toString()
+            if ('\n' !in secim) bulAlani.setText(secim)
+        }
         bulAlani.requestFocus()
+        bulAlani.selectAll()
+        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+            .showSoftInput(bulAlani, 0)
+        // Eşleşme, bul çubuğunun arkasında kalacak yere kaydırılmasın.
+        bulCubugu.post { kaydirici.ustPay = bulCubugu.height }
+        eslesmeleriBul(git = true)
     }
 
     private fun bulCubuguKapat() {
         bulCubugu.visibility = View.GONE
         ustCubuk.visibility = View.VISIBLE
+        ustCubuk.translationY = 0f
+        ustCubuk.alpha = 1f
+        ustCubukAcik = true
+        bulGeriTusu.isEnabled = false
+        kaydirici.ustPay = 0
+        if (!okumaModu) {
+            bicimKaydirici.visibility = View.VISIBLE
+            kaydirici.altPay = (BICIM_PAYI_DP * resources.displayMetrics.density).toInt()
+        }
+        // Kullanıcı son bakılan eşleşmeden yazmaya devam edebilsin.
+        val sonBakilan = eslesmeler.getOrNull(eslesmeSirasi)
         eslesmeler = emptyList()
         eslesmeSirasi = -1
+        vurgulariYenile()
         metinAlani.requestFocus()
+        if (sonBakilan != null) {
+            metinAlani.setSelection(sonBakilan.coerceIn(0, metinAlani.length()))
+        }
     }
 
-    private fun eslesmeleriBul(ilkineGit: Boolean) {
-        val aranan = bulAlani.text.toString()
-        val metin = metinAlani.text?.toString() ?: ""
+    /**
+     * Eşleşmeleri baştan bulur. [git] doğruysa (aranan ifade değişti) imlecin
+     * ardındaki ilk eşleşmeye gidilir; değilse (notun metni değişti) sıra korunur
+     * ve sayfa kaydırılmaz. Büyük/küçük harf ve Türkçe karakter fark etmez.
+     */
+    private fun eslesmeleriBul(git: Boolean) {
+        val aranan = Arama.sadelestir(bulAlani.text.toString())
+        val s = metinAlani.text ?: return
         if (aranan.isEmpty()) {
             eslesmeler = emptyList()
             eslesmeSirasi = -1
             bulSayac.text = ""
+            vurgulariYenile()
             return
         }
-        val kucukMetin = metin.lowercase(TR)
-        val kucukAranan = aranan.lowercase(TR)
+        val metin = Arama.sadelestir(s.toString())
         val bulunan = mutableListOf<Int>()
-        var i = kucukMetin.indexOf(kucukAranan)
+        var i = metin.indexOf(aranan)
         while (i >= 0) {
             bulunan.add(i)
-            i = kucukMetin.indexOf(kucukAranan, i + kucukAranan.length)
+            i = metin.indexOf(aranan, i + aranan.length)
         }
         eslesmeler = bulunan
-        if (bulunan.isEmpty()) {
-            eslesmeSirasi = -1
-            bulSayac.text = getString(R.string.bulunamadi)
-            return
+        eslesmeSirasi = when {
+            bulunan.isEmpty() -> -1
+            git -> {
+                val imlec = metinAlani.selectionStart.coerceAtLeast(0)
+                bulunan.indexOfFirst { it >= imlec }.let { if (it < 0) 0 else it }
+            }
+            else -> eslesmeSirasi.coerceIn(0, bulunan.size - 1)
         }
-        if (ilkineGit || eslesmeSirasi !in bulunan.indices) eslesmeSirasi = 0
         sayaciGuncelle()
-        eslesmeyiSec()
+        vurgulariYenile()
+        if (git) eslesmeyiGoster()
     }
 
     private fun sayaciGuncelle() {
-        bulSayac.text = if (eslesmeler.isEmpty()) {
-            getString(R.string.bulunamadi)
-        } else {
-            "${eslesmeSirasi + 1}/${eslesmeler.size}"
+        bulSayac.text = when {
+            bulAlani.text.isEmpty() -> ""
+            eslesmeler.isEmpty() -> getString(R.string.bulunamadi)
+            else -> "${eslesmeSirasi + 1}/${eslesmeler.size}"
         }
     }
 
@@ -1173,38 +1291,93 @@ class EditorActivity : AppCompatActivity() {
         if (eslesmeler.isEmpty()) return
         eslesmeSirasi = (eslesmeSirasi + yon + eslesmeler.size) % eslesmeler.size
         sayaciGuncelle()
-        eslesmeyiSec()
+        vurgulariYenile()
+        eslesmeyiGoster()
     }
 
-    private fun eslesmeyiSec() {
-        val bas = eslesmeler.getOrNull(eslesmeSirasi) ?: return
-        val uzunluk = bulAlani.text.length
+    /** Bütün eşleşmeler soluk, sıradaki belirgin zeminle işaretlenir. */
+    private fun vurgulariYenile() {
         val s = metinAlani.text ?: return
-        metinAlani.setSelection(bas.coerceIn(0, s.length), (bas + uzunluk).coerceIn(0, s.length))
+        for (span in s.getSpans(0, s.length, BulVurguSpan::class.java)) s.removeSpan(span)
+        if (eslesmeler.isEmpty()) return
+        val uzunluk = bulAlani.text.length
+        val vurgu = Renkler.vurgu(this)
+        val soluk = (vurgu and 0x00FFFFFF) or 0x33000000
+        val belirgin = (vurgu and 0x00FFFFFF) or 0x8C000000.toInt()
+        eslesmeler.forEachIndexed { sira, bas ->
+            val son = (bas + uzunluk).coerceAtMost(s.length)
+            if (bas < son) {
+                s.setSpan(
+                    BulVurguSpan(if (sira == eslesmeSirasi) belirgin else soluk),
+                    bas,
+                    son,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+    }
+
+    /**
+     * Eşleşmenin satırını görünür kılar. bringPointIntoView burada işe yaramaz:
+     * metin alanı odakta değilken (odak bul kutusunda) sayfayı kaydırmıyor.
+     */
+    private fun eslesmeyiGoster() {
+        val bas = eslesmeler.getOrNull(eslesmeSirasi) ?: return
+        satiriGoster(bas)
+    }
+
+    private fun satiriGoster(konum: Int) {
+        val duzen = metinAlani.layout ?: return
+        val s = metinAlani.text ?: return
+        val satir = duzen.getLineForOffset(konum.coerceIn(0, s.length))
+        val x = duzen.getPrimaryHorizontal(konum.coerceIn(0, s.length)).toInt() + metinAlani.totalPaddingLeft
+        val ust = duzen.getLineTop(satir) + metinAlani.totalPaddingTop
+        val alt = duzen.getLineBottom(satir) + metinAlani.totalPaddingTop
+        metinAlani.requestRectangleOnScreen(android.graphics.Rect(x, ust, x + 1, alt))
     }
 
     private fun degistir() {
         val bas = eslesmeler.getOrNull(eslesmeSirasi) ?: return
-        val aranan = bulAlani.text.toString()
-        if (aranan.isEmpty()) return
+        val uzunluk = bulAlani.text.length
+        if (uzunluk == 0) return
         val s = metinAlani.text ?: return
-        val son = (bas + aranan.length).coerceAtMost(s.length)
-        s.replace(bas, son, degistirAlani.text.toString())
-        eslesmeleriBul(false)
+        val yeni = degistirAlani.text.toString()
+        // Değişiklik metin izleyicisinden geçer: geri alınabilir, eşleşmeler tazelenir.
+        s.replace(bas, (bas + uzunluk).coerceAtMost(s.length), yeni)
+        // Sıradaki, değiştirilen yerin ardındaki ilk eşleşme (yeni metnin içindeki değil).
+        val sonraki = eslesmeler.indexOfFirst { it >= bas + yeni.length }
+        eslesmeSirasi = when {
+            eslesmeler.isEmpty() -> -1
+            sonraki >= 0 -> sonraki
+            else -> 0
+        }
+        sayaciGuncelle()
+        vurgulariYenile()
+        eslesmeyiGoster()
     }
 
+    /**
+     * Tek seferde değiştirilir: tek bir geri alma adımı olur ve uzun notta her
+     * eşleşme için not baştan biçimlenmez.
+     */
     private fun tumunuDegistir() {
-        val aranan = bulAlani.text.toString()
-        if (aranan.isEmpty() || eslesmeler.isEmpty()) return
+        val uzunluk = bulAlani.text.length
+        if (uzunluk == 0 || eslesmeler.isEmpty()) return
         val yeni = degistirAlani.text.toString()
         val sayi = eslesmeler.size
         val s = metinAlani.text ?: return
-        for (bas in eslesmeler.asReversed()) {
-            val son = (bas + aranan.length).coerceAtMost(s.length)
-            s.replace(bas, son, yeni)
+        val sonuc = StringBuilder(s.length)
+        var son = 0
+        for (bas in eslesmeler) {
+            sonuc.append(s, son, bas).append(yeni)
+            son = (bas + uzunluk).coerceAtMost(s.length)
         }
-        Toast.makeText(this, getString(R.string.degistirildi, sayi), Toast.LENGTH_SHORT).show()
-        eslesmeleriBul(true)
+        sonuc.append(s, son, s.length)
+        val imlec = metinAlani.selectionStart
+        s.replace(0, s.length, sonuc)
+        metinAlani.setSelection(imlec.coerceIn(0, s.length))
+        Toast.makeText(this, resources.getQuantityString(R.plurals.degistirildi, sayi, sayi), Toast.LENGTH_SHORT).show()
+        eslesmeleriBul(git = true)
     }
 
     // --- Kayıt ve menü ---
@@ -1591,6 +1764,9 @@ class EditorActivity : AppCompatActivity() {
         const val SURUKLEME_ESIGI = 24f
         const val BIRLESTIRME_MS = 700L
 
+        /** Biçim çubuğunun (geçişiyle) kapladığı yükseklik; imleç bunun üstünde kalır. */
+        const val BICIM_PAYI_DP = 72
+
         /** Yazma bu kadar durunca taslak alınır. */
         const val TASLAK_MS = 1500L
 
@@ -1600,6 +1776,7 @@ class EditorActivity : AppCompatActivity() {
         val TR: Locale = Locale.forLanguageTag("tr-TR")
         val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- |(\\d+)\\. )")
         val NUMARA = Regex("^\\d+\\. ")
+        const val KAPANIS_ISARETLERI = "*~`_"
         val ONEKLER = listOf("- [ ] ", "- [x] ", "- [X] ", "- ", "### ", "## ", "# ", "> ")
     }
 }

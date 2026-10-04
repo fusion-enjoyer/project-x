@@ -257,3 +257,14 @@ class KodBlokSpan(
         p.color = eski
     }
 }
+
+/**
+ * Bul ve değiştirde eşleşmenin zemini. BackgroundColorSpan'dan türemez:
+ * biçimlendirici her harfte o türü siler, vurgu yazarken kaybolurdu.
+ */
+class BulVurguSpan(private val renk: Int) : android.text.style.CharacterStyle(),
+    android.text.style.UpdateAppearance {
+    override fun updateDrawState(tp: android.text.TextPaint) {
+        tp.bgColor = renk
+    }
+}

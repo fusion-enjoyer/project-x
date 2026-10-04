@@ -54,6 +54,10 @@ class NotAdapter(
 
     override fun onBindViewHolder(t: Tutucu, pozisyon: Int) {
         val not = notlar[pozisyon]
+        // Notun yazı tipi kartta da aynı: editörde seçilen yazı listede de görünür.
+        val yazi = YaziTipleri.yazi(t.itemView.context)
+        t.baslik.setTypeface(yazi, Typeface.BOLD)
+        t.ozet.typeface = yazi
         t.baslik.text = vurgula(not.baslik)
 
         // Kilitli notta içerik yerine "Kilitli" yazar; önizleme sızdırmaz.

@@ -6,8 +6,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.style.BackgroundColorSpan
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.text.style.ForegroundColorSpan
+import android.text.style.LeadingMarginSpan
+import android.text.style.LineBackgroundSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StrikethroughSpan
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -42,6 +47,10 @@ class GecmisActivity : AppCompatActivity() {
     private var metinDevralindi = false
     private var seciliSurum: NotDeposu.Surum? = null
 
+    /** Açık sürümün iki görünümü: değişiklikler ya da sürümün tamamı. */
+    private var farkYazisi: CharSequence = ""
+    private var surumMetni = ""
+
     private var yesil = 0
     private var kirmizi = 0
     private var ikincilRenk = 0
@@ -61,6 +70,10 @@ class GecmisActivity : AppCompatActivity() {
         farkOzet = findViewById(R.id.farkOzet)
         farkMetin = findViewById(R.id.farkMetin)
         bosDurum = findViewById(R.id.bosDurum)
+        // Not, kendi yazı tipiyle okunur; kod gibi eş aralıklı yazıyla değil.
+        farkMetin.typeface = YaziTipleri.yazi(this)
+        findViewById<TextView>(R.id.secDegisiklik).setOnClickListener { gorunumuSec(false) }
+        findViewById<TextView>(R.id.secTamMetin).setOnClickListener { gorunumuSec(true) }
 
         yesil = ContextCompat.getColor(this, R.color.fark_eklendi)
         kirmizi = ContextCompat.getColor(this, R.color.fark_silindi)
@@ -95,6 +108,8 @@ class GecmisActivity : AppCompatActivity() {
             listeKaydirici.visibility = View.VISIBLE
             findViewById<TextView>(R.id.ekranBaslik).setText(R.string.gecmis)
             seciliSurum = null
+            surumMetni = ""
+            farkYazisi = ""
             return
         }
         finish()
@@ -182,16 +197,19 @@ class GecmisActivity : AppCompatActivity() {
 
     private fun surumuAc(surum: NotDeposu.Surum) {
         Thread {
-            val fark = Fark.hesapla(guncelMetin.lines(), depo.oku(surum.uri).lines())
+            val metin = depo.oku(surum.uri)
+            val fark = Fark.hesapla(guncelMetin.lines(), metin.lines())
             val (eklenen, silinen) = Fark.sayac(fark)
             val yazi = farkiBicimle(fark)
             runOnUiThread {
                 seciliSurum = surum
+                farkYazisi = yazi
+                surumMetni = metin
                 farkBaslik.text = tarihBicimi.format(Date(surum.zaman))
                 farkOzet.text = SpannableStringBuilder(sayacMetni(eklenen, silinen))
                     .append("\n")
                     .append(getString(R.string.gecmis_aciklama))
-                farkMetin.text = yazi
+                gorunumuSec(false)
                 listeKaydirici.visibility = View.GONE
                 farkKap.visibility = View.VISIBLE
                 findViewById<TextView>(R.id.ekranBaslik).setText(R.string.gecmis_karsilastir)
@@ -199,9 +217,26 @@ class GecmisActivity : AppCompatActivity() {
         }.start()
     }
 
+    /** Değişiklikler ya da sürümün kendisi; seçili olan vurgunun soluk tonunda. */
+    private fun gorunumuSec(tamMetin: Boolean) {
+        farkMetin.text = if (tamMetin) surumMetni.ifEmpty { " " } else farkYazisi
+        val vurgu = Renkler.vurgu(this)
+        val kart = ContextCompat.getColor(this, R.color.kart)
+        for ((id, secili) in listOf(R.id.secDegisiklik to !tamMetin, R.id.secTamMetin to tamMetin)) {
+            val cip = findViewById<TextView>(id)
+            cip.backgroundTintList = ColorStateList.valueOf(
+                if (secili) (vurgu and 0x00FFFFFF) or 0x26000000 else kart
+            )
+            cip.setTypeface(null, if (secili) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+            cip.isSelected = secili
+        }
+    }
+
     /**
      * Değişmeyen uzun bloklar kısaltılır; ekranda asıl görülmesi gereken,
-     * geri dönüşün neyi değiştireceği.
+     * geri dönüşün neyi değiştireceği. Kod farkı gibi "+/−" işaretleri yok:
+     * geri gelecek satır yeşil zeminde, silinecek satır kırmızı zeminde ve
+     * üstü çizili durur.
      */
     private fun farkiBicimle(fark: List<Fark.Satir>): CharSequence {
         val yazi = SpannableStringBuilder()
@@ -220,7 +255,7 @@ class GecmisActivity : AppCompatActivity() {
             } else {
                 for (k in i until i + BAGLAM) satirEkle(yazi, fark[k])
                 val bas = yazi.length
-                yazi.append("⋯ ")
+                yazi.append("⋯  ")
                 yazi.append(
                     resources.getQuantityString(
                         R.plurals.fark_degismeyen,
@@ -229,12 +264,9 @@ class GecmisActivity : AppCompatActivity() {
                     )
                 )
                 yazi.append("\n")
-                yazi.setSpan(
-                    ForegroundColorSpan(ikincilRenk),
-                    bas,
-                    yazi.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+                yazi.setSpan(ForegroundColorSpan(ikincilRenk), bas, yazi.length, EE)
+                yazi.setSpan(RelativeSizeSpan(0.85f), bas, yazi.length, EE)
+                yazi.setSpan(LeadingMarginSpan.Standard(icPay()), bas, yazi.length, EE)
                 for (k in son - BAGLAM until son) satirEkle(yazi, fark[k])
             }
             i = son
@@ -245,32 +277,40 @@ class GecmisActivity : AppCompatActivity() {
 
     private fun satirEkle(yazi: SpannableStringBuilder, satir: Fark.Satir) {
         val bas = yazi.length
-        val onek = when (satir.tur) {
-            Fark.EKLENEN -> "+ "
-            Fark.SILINEN -> "− "
-            else -> "  "
-        }
-        yazi.append(onek).append(satir.metin).append("\n")
+        // Boş satırın da zemini görünsün diye en az bir boşluk yazılır.
+        yazi.append(satir.metin.ifEmpty { " " }).append("\n")
+        yazi.setSpan(LeadingMarginSpan.Standard(icPay()), bas, yazi.length, EE)
         when (satir.tur) {
-            Fark.EKLENEN -> boya(yazi, bas, yesil)
-            Fark.SILINEN -> boya(yazi, bas, kirmizi)
-            else -> yazi.setSpan(
-                ForegroundColorSpan(ikincilRenk),
-                bas,
-                yazi.length,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+            Fark.EKLENEN -> {
+                yazi.setSpan(SatirZemini(soluklastir(yesil)), bas, yazi.length, EE)
+            }
+            Fark.SILINEN -> {
+                yazi.setSpan(SatirZemini(soluklastir(kirmizi)), bas, yazi.length, EE)
+                yazi.setSpan(ForegroundColorSpan(kirmizi), bas, yazi.length, EE)
+                yazi.setSpan(StrikethroughSpan(), bas, yazi.length - 1, EE)
+            }
+            else -> yazi.setSpan(ForegroundColorSpan(ikincilRenk), bas, yazi.length, EE)
         }
     }
 
-    private fun boya(yazi: SpannableStringBuilder, bas: Int, renk: Int) {
-        yazi.setSpan(ForegroundColorSpan(renk), bas, yazi.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        yazi.setSpan(
-            BackgroundColorSpan((renk and 0x00FFFFFF) or 0x1F000000),
-            bas,
-            yazi.length,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+    private fun icPay(): Int = (10 * resources.displayMetrics.density).toInt()
+
+    private fun soluklastir(renk: Int): Int = (renk and 0x00FFFFFF) or 0x24000000
+
+    /** Satırın tüm genişliğini boyayan yumuşak zemin (yalnız harflerin arkasını değil). */
+    private class SatirZemini(private val renk: Int) : LineBackgroundSpan {
+        override fun drawBackground(
+            c: Canvas, p: Paint, sol: Int, sag: Int, ust: Int, taban: Int, alt: Int,
+            metin: CharSequence, bas: Int, son: Int, satirNo: Int
+        ) {
+            val onceki = p.color
+            val stil = p.style
+            p.color = renk
+            p.style = Paint.Style.FILL
+            c.drawRect(sol.toFloat(), ust.toFloat(), sag.toFloat(), alt.toFloat(), p)
+            p.color = onceki
+            p.style = stil
+        }
     }
 
     private fun geriYuklemeyiOnayla() {
@@ -285,5 +325,6 @@ class GecmisActivity : AppCompatActivity() {
         var gecerliMetin: String? = null
 
         private const val BAGLAM = 3
+        private const val EE = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
     }
 }

@@ -129,6 +129,7 @@ class GorevAdapter(
 
     override fun onBindViewHolder(t: Tutucu, pozisyon: Int) {
         val gorev = gorevler[pozisyon]
+        t.metin.typeface = YaziTipleri.yazi(t.itemView.context)
         t.metin.text = gorev.metin
         t.not.text = gorev.notBasligi
 

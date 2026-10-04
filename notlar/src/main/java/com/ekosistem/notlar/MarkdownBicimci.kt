@@ -42,7 +42,7 @@ class MarkdownBicimci(private val context: Context) {
         govdeSp = Prefs.yaziBoyu(context)
     }
 
-    private fun baslikSp(): Int = govdeSp + 8
+    fun baslikSp(): Int = govdeSp + 8
 
     /** Kaynak modunda hiçbir biçim uygulanmaz; ham Markdown görünür. */
     var kaynakModu = Prefs.kaynakModu(context)
@@ -144,6 +144,11 @@ class MarkdownBicimci(private val context: Context) {
             if (son > bas) {
                 s.setSpan(StyleSpan(Typeface.BOLD), bas, son, EE)
                 s.setSpan(AbsoluteSizeSpan(baslikSp(), true), bas, son, EE)
+            } else if (son < s.length) {
+                // Boş başlık satırı da başlık boyunda dursun: boyut satır sonu
+                // karakterine verilir. Yoksa satır gövde boyuna iner, imleç
+                // küçülür ve başlığı yazmaya başlayınca satır zıplar.
+                s.setSpan(AbsoluteSizeSpan(baslikSp(), true), son, son + 1, EE)
             }
             if (onayKutusu(s, bas, son, satir)) return
             // Başlık satırında da kalın/italik/kod gibi işaretler çalışsın.

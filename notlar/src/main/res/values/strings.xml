@@ -64,7 +64,10 @@
     <string name="sonraki">Next</string>
     <string name="kapat">Close</string>
     <string name="bulunamadi">No matches</string>
-    <string name="degistirildi">Replaced in %d places</string>
+    <plurals name="degistirildi">
+        <item quantity="one">Replaced in %d place</item>
+        <item quantity="other">Replaced in %d places</item>
+    </plurals>
 
     <!-- Settings -->
     <string name="ayarlar">Settings</string>
@@ -188,14 +191,16 @@
     <string name="surume_don">Restore this version</string>
     <string name="gecmis_fark_yok">Same as the current note</string>
     <string name="gecmis_yok_ozet">No older versions yet.\nA version is kept every time the note is saved.</string>
-    <string name="gecmis_aciklama">Green lines come back, red lines go away.</string>
+    <string name="gecmis_aciklama">If you go back to this version, green lines come back and crossed-out lines go away.</string>
+    <string name="gecmis_degisiklikler">Changes</string>
+    <string name="gecmis_tam_metin">Whole version</string>
     <plurals name="fark_eklenen">
-        <item quantity="one">+%d line</item>
-        <item quantity="other">+%d lines</item>
+        <item quantity="one">%d line comes back</item>
+        <item quantity="other">%d lines come back</item>
     </plurals>
     <plurals name="fark_silinen">
-        <item quantity="one">\u2212%d line</item>
-        <item quantity="other">\u2212%d lines</item>
+        <item quantity="one">%d line goes away</item>
+        <item quantity="other">%d lines go away</item>
     </plurals>
     <plurals name="fark_degismeyen">
         <item quantity="one">%d unchanged line</item>
@@ -236,6 +241,11 @@
     <string name="yazi_sistem">System</string>
     <string name="yazi_serif">Serif</string>
     <string name="yazi_mono">Monospace</string>
+    <string name="yazi_ince">Light</string>
+    <string name="yazi_dar">Condensed</string>
+    <string name="yazi_daktilo">Typewriter</string>
+    <string name="yazi_el">Handwriting</string>
+    <string name="yazi_kaligrafi">Calligraphy</string>
     <string name="yazi_boyu">Text size</string>
     <string name="boy_kucuk">Small</string>
     <string name="boy_normal">Normal</string>

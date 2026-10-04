@@ -39,6 +39,8 @@ class KilitActivity : AppCompatActivity() {
         baslik = findViewById(R.id.kilitBaslik)
         aciklama = findViewById(R.id.kilitAciklama)
         noktalar = findViewById(R.id.noktalar)
+        findViewById<android.widget.ImageView>(R.id.kilitIkon).imageTintList =
+            android.content.res.ColorStateList.valueOf(Renkler.vurgu(this))
 
         baslik.setText(
             when (kip) {
@@ -82,8 +84,18 @@ class KilitActivity : AppCompatActivity() {
 
     // --- Tuş takımı ---
 
+    /**
+     * Tuşlar ekrana göre boyutlanır: sabit 72 dp geniş telefonda ekranın ortasında
+     * küçük bir ada gibi kalıyordu. Genişliğin ve yüksekliğin izin verdiği kadar
+     * büyür (en çok 88 dp, telefon kilit ekranı ölçüsü), küçük ekranda 64'e iner.
+     */
     private fun tuslariKur() {
         val y = resources.displayMetrics.density
+        val genislikDp = resources.displayMetrics.widthPixels / y
+        val yukseklikDp = resources.displayMetrics.heightPixels / y
+        val boslukDp = 14f
+        val tusDp = minOf((genislikDp - 64f) / 3f - boslukDp * 2, yukseklikDp * 0.1f)
+            .coerceIn(64f, 88f)
         val kap = findViewById<LinearLayout>(R.id.tuslar)
         val satirlar = listOf(
             listOf("1", "2", "3"),
@@ -97,8 +109,10 @@ class KilitActivity : AppCompatActivity() {
             for (tus in satir) {
                 val dugme = TextView(this)
                 dugme.text = tus
-                dugme.textSize = 24f
+                dugme.textSize = if (tus == "⌫") 24f else 32f
+                dugme.typeface = android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL)
                 dugme.gravity = Gravity.CENTER
+                if (tus.isNotEmpty()) dugme.contentDescription = if (tus == "⌫") getString(R.string.sil) else tus
                 dugme.setTextColor(ContextCompat.getColor(this, R.color.metin))
                 if (tus.isNotEmpty()) {
                     val sekil = GradientDrawable()
@@ -107,8 +121,8 @@ class KilitActivity : AppCompatActivity() {
                     dugme.background = sekil
                     dugme.setOnClickListener { tusaBasildi(tus) }
                 }
-                val lp = LinearLayout.LayoutParams((72 * y).toInt(), (72 * y).toInt())
-                lp.setMargins((10 * y).toInt(), (8 * y).toInt(), (10 * y).toInt(), (8 * y).toInt())
+                val lp = LinearLayout.LayoutParams((tusDp * y).toInt(), (tusDp * y).toInt())
+                lp.setMargins((boslukDp * y).toInt(), (8 * y).toInt(), (boslukDp * y).toInt(), (8 * y).toInt())
                 yatay.addView(dugme, lp)
             }
             kap.addView(
@@ -149,8 +163,8 @@ class KilitActivity : AppCompatActivity() {
             sekil.shape = GradientDrawable.OVAL
             sekil.setColor(if (i < girilen.length) vurgu else bos)
             nokta.background = sekil
-            val lp = LinearLayout.LayoutParams((14 * y).toInt(), (14 * y).toInt())
-            lp.setMargins((9 * y).toInt(), 0, (9 * y).toInt(), 0)
+            val lp = LinearLayout.LayoutParams((16 * y).toInt(), (16 * y).toInt())
+            lp.setMargins((11 * y).toInt(), 0, (11 * y).toInt(), 0)
             noktalar.addView(nokta, lp)
         }
     }

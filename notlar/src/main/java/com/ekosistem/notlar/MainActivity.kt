@@ -272,6 +272,12 @@ class MainActivity : AppCompatActivity() {
             recreate()
             return
         }
+        // Ayarlarda yazı tipi değiştiyse kartlar yeni yazıyla yeniden çizilir.
+        val yaziTipi = Prefs.yaziTipi(this)
+        if (yaziTipi != sonYaziTipi) {
+            sonYaziTipi = yaziTipi
+            adapter.notifyDataSetChanged()
+        }
         donusZamani = SystemClock.elapsedRealtime()
         // Editörden dönüş: düzenlenen kart hemen, tam tarama arkadan.
         NotDeposu.sonDuzenleme?.let { d ->
@@ -284,6 +290,9 @@ class MainActivity : AppCompatActivity() {
     /** Hız ölçümü için: ekrana son dönüş anı. */
     private var donusZamani = 0L
 
+    /** Kartların çizildiği yazı tipi; ayarlardan dönünce karşılaştırılır. */
+    private var sonYaziTipi = -1
+
     /** Seçim modundayken geri tuşu seçimi kapatır, ekrandan çıkmaz. */
     private val geriTusu = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
@@ -291,7 +300,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Yüzen gezinme çubuğu: arama, günlük not, yeni not, şablonlar, menü. */
+    /**
+     * Yüzen gezinme çubuğu: görevler, günlük not, yeni not, şablonlar, menü.
+     * Arama düğmesi yoktu artık: arama kutusu zaten ekranın üstünde duruyor.
+     */
     private fun yeniNotDugmesiKur() {
         val yeni = findViewById<ImageButton>(R.id.navYeni)
         yeni.backgroundTintList = ColorStateList.valueOf(vurgu)
@@ -301,12 +313,14 @@ class MainActivity : AppCompatActivity() {
             seciliKlasor?.let { k -> i.putExtra("klasor", k) }
             startActivity(i)
         }
-        findViewById<ImageButton>(R.id.navAra).setOnClickListener { aramaOdakla() }
+        findViewById<ImageButton>(R.id.navGorevler).setOnClickListener {
+            startActivity(Intent(this, GorevlerActivity::class.java))
+        }
         findViewById<ImageButton>(R.id.navGunluk).setOnClickListener { bugununNotu() }
         findViewById<ImageButton>(R.id.navSablon).setOnClickListener { sablonSec() }
         findViewById<ImageButton>(R.id.navMenu).setOnClickListener { menuGoster() }
         ipucuVer(
-            findViewById(R.id.navAra),
+            findViewById(R.id.navGorevler),
             findViewById(R.id.navGunluk),
             yeni,
             findViewById(R.id.navSablon),
@@ -924,9 +938,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun menuGoster() {
         AltSayfa(this)
-            .madde(R.drawable.ic_bicim_onay, getString(R.string.gorevler)) {
-                startActivity(Intent(this, GorevlerActivity::class.java))
-            }
             .madde(R.drawable.ic_sil, getString(R.string.cop_kutusu)) {
                 startActivity(Intent(this, TrashActivity::class.java))
             }
