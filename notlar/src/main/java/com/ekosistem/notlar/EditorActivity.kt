@@ -1774,7 +1774,7 @@ class EditorActivity : AppCompatActivity() {
         val kelime = metin.split(Regex("\\s+")).count { it.isNotBlank() }
         val sayfa = AltSayfa(this).baslik(
             getString(R.string.kelime_karakter, kelime, metin.length)
-        )
+        ).aranabilir()
 
         if (mevcutUri != null) {
             val sabit = Prefs.sabitler(this).contains(mevcutUri.toString())

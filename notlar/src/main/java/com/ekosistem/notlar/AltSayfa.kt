@@ -40,6 +40,7 @@ class AltSayfa(private val activity: Activity) {
     private var girdiDugmesi: String? = null
     private var girdiParola = false
     private var ozelIcerik: View? = null
+    private var aramaAcik = false
     private var kapanisEylemi: (() -> Unit)? = null
 
     /** Sayfanın üstüne metin alanı ve onay düğmesi ekler (klasör adı gibi). */
@@ -77,6 +78,16 @@ class AltSayfa(private val activity: Activity) {
     /** Hazır satırlar yerine kendi görünümünü koymak için (renk seçici gibi). */
     fun icerik(gorunum: View): AltSayfa {
         ozelIcerik = gorunum
+        return this
+    }
+
+    /**
+     * Uzun menünün üstüne arama kutusu koyar: yazdıkça maddeler süzülür
+     * (Türkçe karakterden bağımsız), klavyedeki "Git" ilk eşleşeni açar.
+     * Kutu kendiliğinden odaklanmaz; menü her açıldığında klavye çıkmasın.
+     */
+    fun aranabilir(): AltSayfa {
+        aramaAcik = true
         return this
     }
 
@@ -209,6 +220,29 @@ class AltSayfa(private val activity: Activity) {
             kok.addView(gorunum, lp)
         }
 
+        var aramaAlani: EditText? = null
+        if (aramaAcik && girdiIpucu == null && maddeler.size >= ARAMA_ESIGI) {
+            val alan = EditText(activity)
+            alan.hint = activity.getString(R.string.menude_ara)
+            alan.setSingleLine()
+            alan.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_GO
+            alan.textSize = 16f
+            alan.setTextColor(metinRengi)
+            alan.setHintTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
+            alan.setBackgroundResource(R.drawable.bg_girdi)
+            alan.setPadding((16 * y).toInt(), 0, (16 * y).toInt(), 0)
+            val alanLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (44 * y).toInt())
+            alanLp.leftMargin = (24 * y).toInt()
+            alanLp.rightMargin = (24 * y).toInt()
+            alanLp.bottomMargin = (8 * y).toInt()
+            kok.addView(alan, alanLp)
+            aramaAlani = alan
+            // Pencere açılınca odak kutuya gitmesin (klavye kapalıyken liste kısalırdı).
+            kok.isFocusableInTouchMode = true
+        }
+        // Arama için her satır, süzülecek adının sadeleşmiş hâliyle tutulur.
+        val satirlar = mutableListOf<Pair<View, String>>()
+
         // Uzun listeler ([[ önerisi gibi) ekranı taşırmasın: maddeler kaydırılır.
         val maddeKutusu = LinearLayout(activity)
         maddeKutusu.orientation = LinearLayout.VERTICAL
@@ -262,10 +296,40 @@ class AltSayfa(private val activity: Activity) {
                     (56 * y).toInt()
                 )
             )
+            satirlar.add(satir to Arama.sadelestir(madde.baslik.trim()))
         }
         val toplam = (maddeler.size * 56 * y).toInt()
         val sinir = (activity.resources.displayMetrics.heightPixels * 0.6f).toInt()
-        if (toplam > sinir) {
+        val alan = aramaAlani
+        if (alan != null) {
+            // Aramada liste hep kaydırılır; klavye açılınca kısalır ki kutu ekranda kalsın.
+            val kaydirici = ScrollView(activity)
+            kaydirici.addView(maddeKutusu)
+            val tamBoy = minOf(toplam, sinir)
+            val klavyeliBoy = minOf(tamBoy, (activity.resources.displayMetrics.heightPixels * 0.28f).toInt())
+            kok.addView(kaydirici, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, tamBoy))
+            alan.setOnFocusChangeListener { _, odakta ->
+                kaydirici.layoutParams = kaydirici.layoutParams.apply {
+                    height = if (odakta) klavyeliBoy else tamBoy
+                }
+            }
+            alan.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun afterTextChanged(s: android.text.Editable?) {
+                    val ifade = Arama.ifade(s?.toString())
+                    for ((gorunum, ad) in satirlar) {
+                        gorunum.visibility =
+                            if (ifade == null || ad.contains(ifade)) View.VISIBLE else View.GONE
+                    }
+                    kaydirici.scrollTo(0, 0)
+                }
+            })
+            alan.setOnEditorActionListener { _, _, _ ->
+                satirlar.firstOrNull { it.first.visibility == View.VISIBLE }?.first?.performClick()
+                true
+            }
+        } else if (toplam > sinir) {
             val kaydirici = ScrollView(activity)
             kaydirici.isVerticalScrollBarEnabled = true
             kaydirici.addView(maddeKutusu)
@@ -303,6 +367,31 @@ class AltSayfa(private val activity: Activity) {
             kapanisEylemi?.invoke()
         }
         dialog.show()
+        aramaAlani?.let { _ ->
+            if (girdiAlani != null) return@let
+            // Klavye ancak kutuya dokununca açılır; açılınca sayfa üstünde kalsın.
+            val pencere = dialog.window ?: return@let
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(pencere, false)
+                androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sarmal) { v, kenarlar ->
+                    val klavye = kenarlar.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+                    val cubuk = kenarlar.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom
+                    v.setPadding(0, 0, 0, maxOf(klavye, cubuk))
+                    kenarlar
+                }
+                sarmal.requestApplyInsets()
+                pencere.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN or
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                )
+            } else {
+                pencere.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN or
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                )
+            }
+            kok.requestFocus()
+        }
         girdiAlani?.let { alan ->
             alan.requestFocus()
             val pencere = dialog.window ?: return@let
@@ -330,6 +419,11 @@ class AltSayfa(private val activity: Activity) {
                 )
             }
         }
+    }
+
+    private companion object {
+        /** Bundan kısa menüde arama kutusu yer kaplamaya değmez. */
+        const val ARAMA_ESIGI = 8
     }
 
     private fun secilebilirZemin(): Int {

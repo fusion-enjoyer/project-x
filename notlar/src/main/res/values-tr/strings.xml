@@ -59,6 +59,7 @@
 
     <!-- Bul ve değiştir -->
     <string name="bul_degistir">Bul ve değiştir</string>
+    <string name="menude_ara">Menüde ara</string>
     <string name="bul">Bul</string>
     <string name="degistir">Değiştir</string>
     <string name="tumu_degistir">Tümü</string>

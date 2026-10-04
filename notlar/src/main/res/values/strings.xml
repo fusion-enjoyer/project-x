@@ -59,6 +59,7 @@
 
     <!-- Find and replace -->
     <string name="bul_degistir">Find and replace</string>
+    <string name="menude_ara">Search the menu</string>
     <string name="bul">Find</string>
     <string name="degistir">Replace</string>
     <string name="tumu_degistir">All</string>
