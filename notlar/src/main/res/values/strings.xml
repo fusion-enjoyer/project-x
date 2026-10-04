@@ -167,6 +167,7 @@
     <string name="etiketler">Tags</string>
     <string name="etiket_yok">No tags yet</string>
     <string name="geri_baglantilar">Linked from</string>
+    <string name="icindekiler">Contents</string>
     <string name="baglanti_yok">No links</string>
     <string name="gecmis">Version history</string>
     <string name="gecmis_yok">No versions yet</string>

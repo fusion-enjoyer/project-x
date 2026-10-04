@@ -1542,6 +1542,13 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
+        val basliklar = Icindekiler.basliklar(metin)
+        if (basliklar.isNotEmpty()) {
+            sayfa.madde(R.drawable.ic_bicim_baslik, getString(R.string.icindekiler)) {
+                icindekileriGoster(basliklar)
+            }
+        }
+
         sayfa.madde(
             R.drawable.ic_kaynak,
             getString(R.string.kaynak_modu),
@@ -1652,6 +1659,22 @@ class EditorActivity : AppCompatActivity() {
                 Toast.makeText(this, R.string.not_kilitlendi, Toast.LENGTH_SHORT).show()
             }
             .goster()
+    }
+
+    /** Başlığa dokununca imleç oraya gider, satır ekrana kaydırılır. */
+    private fun icindekileriGoster(basliklar: List<Icindekiler.Baslik>) {
+        val sayfa = AltSayfa(this).baslik(getString(R.string.icindekiler))
+        for (b in basliklar) {
+            // Alt başlıklar girintili: AltSayfa satırı düz metin aldığı için boşlukla.
+            val girinti = "\u2003".repeat(b.seviye - 1)
+            sayfa.madde(R.drawable.ic_bicim_baslik, girinti + b.metin) {
+                val s = metinAlani.text ?: return@madde
+                val konum = b.konum.coerceIn(0, s.length)
+                if (!okumaModu) metinAlani.setSelection(konum)
+                metinAlani.post { satiriGoster(konum) }
+            }
+        }
+        sayfa.goster()
     }
 
     private fun geriBaglantilariGoster() {
