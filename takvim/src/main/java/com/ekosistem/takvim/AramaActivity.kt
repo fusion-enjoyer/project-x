@@ -111,7 +111,7 @@ class AramaActivity : AppCompatActivity() {
         val inflater = LayoutInflater.from(this)
         for (o in ornekler) {
             val v = inflater.inflate(R.layout.item_etkinlik, liste, false)
-            v.findViewById<View>(R.id.etkRenk).backgroundTintList = android.content.res.ColorStateList.valueOf(o.renk)
+            v.findViewById<View>(R.id.etkRenk).backgroundTintList = android.content.res.ColorStateList.valueOf(Renk.yuzey(this, o.renk))
             v.findViewById<TextView>(R.id.etkBaslik).text = o.baslik.ifBlank { getString(R.string.basliksiz) }
             val gun = Metinler.widgetGunuUzun(this, o.ilkGun, bugun)
             v.findViewById<TextView>(R.id.etkAlt).text = gun + " · " + Metinler.ornekAltYazisi(this, o, o.ilkGun) +

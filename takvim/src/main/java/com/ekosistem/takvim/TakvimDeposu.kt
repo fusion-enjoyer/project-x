@@ -168,6 +168,7 @@ object TakvimDeposu {
                     zamanDilimi = k.getString(9).orEmpty().ifEmpty { TimeZone.getDefault().id },
                     kural = k.getString(10)?.takeIf { it.isNotBlank() },
                     hatirlaticilar = hatirlaticilar(c, id), renk = renk,
+                    ozelRenk = if (k.isNull(12)) 0 else k.getInt(12).opak(),
                     asilId = if (k.isNull(11)) 0 else k.getLong(11),
                     yazilabilir = k.getInt(14) >= Calendars.CAL_ACCESS_CONTRIBUTOR,
                     takvimAdi = k.getString(15).orEmpty(), durum = k.getInt(16)
@@ -229,6 +230,7 @@ object TakvimDeposu {
         v.put(Events.EVENT_END_TIMEZONE, dilim)
         v.put(Events.ALL_DAY, if (e.tumGun) 1 else 0)
         v.put(Events.HAS_ALARM, if (e.hatirlaticilar.isEmpty()) 0 else 1)
+        if (e.ozelRenk != 0) v.put(Events.EVENT_COLOR, e.ozelRenk) else v.putNull(Events.EVENT_COLOR)
         if (e.kural != null) {
             v.put(Events.RRULE, e.kural)
             v.put(Events.DURATION, Tekrar.sureYaz(e.baslangic, e.bitis, e.tumGun))

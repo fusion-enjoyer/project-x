@@ -218,6 +218,9 @@
     <string name="ozet_daha">+%1$d more</string>
     <string name="kanal_ozet">Daily summary</string>
     <string name="kanal_ozet_ozet">Summary of today\'s events each morning</string>
+    <string name="etkinlik_var">has events</string>
+    <string name="renk">Color</string>
+    <string name="renk_takvim">Calendar color</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>

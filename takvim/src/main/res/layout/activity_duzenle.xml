@@ -140,6 +140,14 @@
 
                 <View style="@style/AyarAyraci" />
 
+                <include
+                    android:id="@+id/satirRenk"
+                    layout="@layout/item_ayar" />
+
+                <View
+                    android:id="@+id/ayracRenk"
+                    style="@style/AyarAyraci" />
+
                 <LinearLayout
                     android:id="@+id/hatirlaticiListesi"
                     android:layout_width="match_parent"

@@ -1,0 +1,4 @@
+<resources>
+    <dimen name="baslik_ust_bosluk">4dp</dimen>
+    <dimen name="baslik_en_buyuk">24sp</dimen>
+</resources>

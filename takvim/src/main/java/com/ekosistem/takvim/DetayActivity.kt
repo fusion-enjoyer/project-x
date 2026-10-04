@@ -80,7 +80,7 @@ class DetayActivity : AppCompatActivity() {
 
     private fun ciz(e: Etkinlik) {
         val ornek = Ornek.olustur(e.id, e.takvimId, e.baslik, e.konum, ornekBas, ornekBit, e.tumGun, e.renk, e.kural != null, tz)
-        findViewById<View>(R.id.detayRenk).backgroundTintList = ColorStateList.valueOf(e.renk)
+        findViewById<View>(R.id.detayRenk).backgroundTintList = ColorStateList.valueOf(Renk.yuzey(this, e.renk))
         findViewById<TextView>(R.id.detayBaslik).text = e.baslik.ifBlank { getString(R.string.basliksiz) }
 
         val zaman = findViewById<TextView>(R.id.detayZaman)

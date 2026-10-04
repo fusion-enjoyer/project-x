@@ -73,7 +73,9 @@ class HaftaBasligi @JvmOverloads constructor(
     private val daire get() = 17f * d * olcek
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (daire * 2 + 30f * d).toInt())
+        // Gün adı + boşluk + sayı dairesi + alt pay; büyük yazıda daire şeritle çakışmasın diye yazı yüksekliğinden hesaplanır.
+        val adYuksekligi = gunAdi.descent() - gunAdi.ascent()
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (8f * d + adYuksekligi + 6f * d + daire * 2 + 8f * d).toInt())
     }
 
     private fun sutun() = (width - ZamanOlcusu.kenar(d)) / gunSayisi
@@ -115,6 +117,42 @@ class HaftaBasligi @JvmOverloads constructor(
     }
 
     override fun performClick(): Boolean = super.performClick()
+
+    // Ekran okuyucu: her gün ayrı düğüm ("Pazartesi, 5 Ekim, bugün"); çift dokunma o günün görünümünü açar.
+    private val erisim = object : ExploreByTouchHelper(this) {
+        override fun getVirtualViewAt(x: Float, y: Float): Int {
+            val kenar = ZamanOlcusu.kenar(d)
+            if (x < kenar) return INVALID_ID
+            return ((x - kenar) / sutun()).toInt().coerceIn(0, gunSayisi - 1)
+        }
+
+        override fun getVisibleVirtualViews(ids: MutableList<Int>) {
+            for (i in 0 until gunSayisi) ids.add(i)
+        }
+
+        override fun onPopulateNodeForVirtualView(id: Int, node: AccessibilityNodeInfoCompat) {
+            val gun = ilkGun + id
+            node.contentDescription = Metinler.gunBaslik(gun) + if (gun == bugun) ", " + context.getString(R.string.bugun) else ""
+            val kenar = ZamanOlcusu.kenar(d)
+            node.setBoundsInParent(Rect((kenar + id * sutun()).toInt(), 0, (kenar + (id + 1) * sutun()).toInt(), height))
+            node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
+        }
+
+        override fun onPerformActionForVirtualView(id: Int, action: Int, args: Bundle?): Boolean {
+            if (action == AccessibilityNodeInfoCompat.ACTION_CLICK) {
+                gunSecildi?.invoke(ilkGun + id)
+                return true
+            }
+            return false
+        }
+    }
+
+    init {
+        ViewCompat.setAccessibilityDelegate(this, erisim)
+    }
+
+    override fun dispatchHoverEvent(event: MotionEvent): Boolean =
+        erisim.dispatchHoverEvent(event) || super.dispatchHoverEvent(event)
 }
 
 /**
@@ -139,7 +177,7 @@ class TumGunSeridi @JvmOverloads constructor(
     private val olcek get() = resources.configuration.fontScale.coerceIn(1f, 1.3f)
     private val haplar = ArrayList<Hap>()
     private val tasan = HashMap<Int, Int>()
-    private val satirYuksekligi get() = 22f * d * olcek
+    private val satirYuksekligi get() = 24f * d * olcek
     private val yazi = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 12f * d * olcek }
     private val dolgu = Paint(Paint.ANTI_ALIAS_FLAG)
     private val soluk = ContextCompat.getColor(context, TR.color.metin_ikincil)
@@ -182,6 +220,7 @@ class TumGunSeridi @JvmOverloads constructor(
             if (satir < MAKS) haplar.add(Hap(o, i0, i1, satir))
             else for (k in i0..i1) tasan[k] = (tasan[k] ?: 0) + 1
         }
+        erisim.invalidateRoot()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -200,9 +239,10 @@ class TumGunSeridi @JvmOverloads constructor(
                 kenar + h.ilk * sutun() + 2f * d, h.satir * satirYuksekligi + 2f * d,
                 kenar + (h.son + 1) * sutun() - 2f * d, (h.satir + 1) * satirYuksekligi
             )
-            dolgu.color = h.ornek.renk
+            val pil = Renk.yuzey(h.ornek.renk, gece)
+            dolgu.color = pil
             canvas.drawRoundRect(rect, 6f * d, 6f * d, dolgu)
-            yazi.color = Tasarim.uzerindekiRenk(h.ornek.renk)
+            yazi.color = Tasarim.uzerindekiRenk(pil)
             yazi.typeface = Typeface.DEFAULT_BOLD
             val yer = rect.width() - 10f * d
             if (yer > 0) {
@@ -237,6 +277,50 @@ class TumGunSeridi @JvmOverloads constructor(
     }
 
     override fun performClick(): Boolean = super.performClick()
+
+    // Ekran okuyucu: her tüm gün etkinliği ayrı düğüm.
+    private val erisim = object : ExploreByTouchHelper(this) {
+        override fun getVirtualViewAt(x: Float, y: Float): Int {
+            val kenar = ZamanOlcusu.kenar(d)
+            val i = haplar.indexOfFirst {
+                x >= kenar + it.ilk * sutun() && x <= kenar + (it.son + 1) * sutun() &&
+                    y >= it.satir * satirYuksekligi && y <= (it.satir + 1) * satirYuksekligi
+            }
+            return if (i < 0) INVALID_ID else i
+        }
+
+        override fun getVisibleVirtualViews(ids: MutableList<Int>) {
+            for (i in haplar.indices) ids.add(i)
+        }
+
+        override fun onPopulateNodeForVirtualView(id: Int, node: AccessibilityNodeInfoCompat) {
+            val h = haplar[id]
+            node.contentDescription = h.ornek.baslik.ifBlank { context.getString(R.string.basliksiz) } + ", " + context.getString(R.string.tum_gun)
+            val kenar = ZamanOlcusu.kenar(d)
+            node.setBoundsInParent(
+                Rect(
+                    (kenar + h.ilk * sutun()).toInt(), (h.satir * satirYuksekligi).toInt(),
+                    (kenar + (h.son + 1) * sutun()).toInt(), ((h.satir + 1) * satirYuksekligi).toInt()
+                )
+            )
+            node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
+        }
+
+        override fun onPerformActionForVirtualView(id: Int, action: Int, args: Bundle?): Boolean {
+            if (action == AccessibilityNodeInfoCompat.ACTION_CLICK) {
+                ornekTiklandi?.invoke(haplar[id].ornek)
+                return true
+            }
+            return false
+        }
+    }
+
+    init {
+        ViewCompat.setAccessibilityDelegate(this, erisim)
+    }
+
+    override fun dispatchHoverEvent(event: MotionEvent): Boolean =
+        erisim.dispatchHoverEvent(event) || super.dispatchHoverEvent(event)
 
     private companion object {
         const val MAKS = 3
@@ -358,13 +442,14 @@ class ZamanIzgarasi @JvmOverloads constructor(
         val r = b.alan
         if (r.width() <= 0 || r.height() <= 0) return
         val yaricap = 6f * d
-        dolgu.color = ZamanOlcusu.blokZemini(b.ornek.renk, gece)
+        val ana = Renk.yuzey(b.ornek.renk, gece)
+        dolgu.color = ZamanOlcusu.blokZemini(ana, gece)
         canvas.drawRoundRect(r, yaricap, yaricap, dolgu)
         canvas.save()
         yol.reset()
         yol.addRoundRect(r, yaricap, yaricap, Path.Direction.CW)
         canvas.clipPath(yol)
-        dolgu.color = b.ornek.renk
+        dolgu.color = ana
         canvas.drawRect(r.left, r.top, r.left + 3.5f * d, r.bottom, dolgu)
         canvas.restore()
 
@@ -376,6 +461,13 @@ class ZamanIzgarasi @JvmOverloads constructor(
         yazi.textSize = 12f * d * olcek
         yazi.typeface = Typeface.DEFAULT_BOLD
         val baslik = b.ornek.baslik.ifBlank { context.getString(R.string.basliksiz) }
+        if (ic.width() < 64f * d) {
+            // Dar sütun (hafta görünümü, büyük yazı): başlık tek satır, sonu "…"; sözcük ortadan bölünmesin.
+            canvas.translate(ic.left, ic.top)
+            canvas.drawText(TextUtils.ellipsize(baslik, yazi, ic.width(), TextUtils.TruncateAt.END).toString(), 0f, -yazi.ascent(), yazi)
+            canvas.restore()
+            return
+        }
         @Suppress("DEPRECATION")
         val bas = StaticLayout(baslik, yazi, ic.width().toInt().coerceAtLeast(1), Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false)
         canvas.translate(ic.left, ic.top)

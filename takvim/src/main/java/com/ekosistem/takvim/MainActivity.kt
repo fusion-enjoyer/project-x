@@ -160,7 +160,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnAra).setOnClickListener { startActivity(Intent(this, AramaActivity::class.java)) }
         // Dar ekranda ve büyük yazıda "Ekim 2026" üç düğmenin yanında kesilmesin: yazı küçülür.
         androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
-            baslik, 22, 32, 1, android.util.TypedValue.COMPLEX_UNIT_SP
+            baslik, 20, (resources.getDimension(R.dimen.baslik_en_buyuk) / resources.displayMetrics.scaledDensity).toInt(), 1,
+            android.util.TypedValue.COMPLEX_UNIT_SP
         )
         btnOnceki.setOnClickListener { git(-1) }
         btnSonraki.setOnClickListener { git(1) }
@@ -495,7 +496,7 @@ class MainActivity : AppCompatActivity() {
         val ozetler = HashMap<Int, GunOzeti>()
         for ((g, liste) in gunler) {
             val sirali = liste.sortedWith(::gunSirasi)
-            ozetler[g] = GunOzeti(sirali.map { it.renk }.distinct().take(3).toIntArray(), liste.size)
+            ozetler[g] = GunOzeti(sirali.map { Renk.yuzey(this, it.renk) }.distinct().take(3).toIntArray(), liste.size)
         }
         ayIzgara.haftaBasi = Depo.haftaBasi(this)
         ayIzgara.haftaNumaralari = Depo.haftaNumaralari(this)
@@ -522,7 +523,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun kartEkle(kap: ViewGroup, o: Ornek, gun: Int) {
         val v = LayoutInflater.from(this).inflate(R.layout.item_etkinlik, kap, false)
-        v.findViewById<View>(R.id.etkRenk).backgroundTintList = ColorStateList.valueOf(o.renk)
+        v.findViewById<View>(R.id.etkRenk).backgroundTintList = ColorStateList.valueOf(Renk.yuzey(this, o.renk))
         v.findViewById<TextView>(R.id.etkBaslik).text = o.baslik.ifBlank { getString(R.string.basliksiz) }
         v.findViewById<TextView>(R.id.etkAlt).text = Metinler.ornekAltYazisi(this, o, gun)
         v.setOnClickListener { ornekAc(o) }
@@ -739,7 +740,7 @@ class MainActivity : AppCompatActivity() {
                 yazi,
                 LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = (6 * d).toInt() }
             )
-            kutu.addView(kapsayici, LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f))
+            kutu.addView(kapsayici, LinearLayout.LayoutParams(0, (48 * d).toInt(), 1f))
             haplar.add(Hap(no, kapsayici, simge, yazi))
             ipucuVer(kapsayici)
         }
@@ -766,9 +767,9 @@ class MainActivity : AppCompatActivity() {
             h.kutu.isSelected = secili
             h.yazi.visibility = if (secili) View.VISIBLE else View.GONE
             h.kutu.layoutParams = if (secili) {
-                LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (44 * d).toInt())
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (48 * d).toInt())
             } else {
-                LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f)
+                LinearLayout.LayoutParams(0, (48 * d).toInt(), 1f)
             }
             h.kutu.backgroundTintList = ColorStateList.valueOf(if (secili) pastel else (pastel and 0x00FFFFFF))
             h.ikon.imageTintList = ColorStateList.valueOf(if (secili) vurgu else pasif)

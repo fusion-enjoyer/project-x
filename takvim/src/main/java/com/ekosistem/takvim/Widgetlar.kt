@@ -171,7 +171,7 @@ class GundemWidget : TakvimWidgetSaglayici() {
                 } else {
                     g.setTextViewText(gunEt, "")
                 }
-                g.setInt(WidgetKimlikleri.gb[i], "setBackgroundColor", s.ornek.renk)
+                g.setInt(WidgetKimlikleri.gb[i], "setBackgroundColor", Renk.yuzey(context, s.ornek.renk))
                 g.setTextViewText(WidgetKimlikleri.gad[i], s.ornek.baslik.ifBlank { context.getString(R.string.basliksiz) })
                 g.setTextViewText(WidgetKimlikleri.gsaat[i], Metinler.ornekAltYazisi(context, s.ornek, s.gun))
                 g.setOnClickPendingIntent(satir, Widgetlar.ayrinti(context, 73_000 + widgetId * 10 + i, s.ornek))
@@ -260,10 +260,15 @@ class AyWidget : TakvimWidgetSaglayici() {
                 val renk = noktalar[gun]
                 if (renk != null) {
                     g.setViewVisibility(nokta, View.VISIBLE)
-                    g.setInt(nokta, "setColorFilter", if (bu) vurguUzeri else renk)
+                    g.setInt(nokta, "setColorFilter", if (bu) vurguUzeri else Renk.yuzey(context, renk))
                 } else {
                     g.setViewVisibility(nokta, View.INVISIBLE)
                 }
+                g.setContentDescription(
+                    hucre,
+                    Metinler.gunBaslik(gun) + (if (bu) ", " + context.getString(R.string.bugun) else "") +
+                        (if (renk != null) ", " + context.getString(R.string.etkinlik_var) else "")
+                )
                 g.setOnClickPendingIntent(hucre, Widgetlar.uygulamayiAc(context, 75_000 + i, gun))
             }
             return g
@@ -304,7 +309,7 @@ class SiradakiWidget : TakvimWidgetSaglayici() {
             }
             g.setTextViewText(R.id.widgetSiradakiBaslik, o.baslik.ifBlank { context.getString(R.string.basliksiz) })
             g.setTextViewText(R.id.widgetSiradakiZaman, Metinler.siradakiZamani(context, o, simdi, bugun))
-            g.setInt(R.id.widgetSiradakiRenk, "setBackgroundColor", o.renk)
+            g.setInt(R.id.widgetSiradakiRenk, "setBackgroundColor", Renk.yuzey(context, o.renk))
             g.setOnClickPendingIntent(R.id.widgetKok, Widgetlar.ayrinti(context, 76_001, o))
             return g
         }

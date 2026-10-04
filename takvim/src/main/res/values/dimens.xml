@@ -1,0 +1,5 @@
+<resources>
+    <!-- Ana ekran başlık satırı; yatay ekranda alan kazanmak için küçülür (values-land). -->
+    <dimen name="baslik_ust_bosluk">24dp</dimen>
+    <dimen name="baslik_en_buyuk">32sp</dimen>
+</resources>

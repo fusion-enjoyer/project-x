@@ -102,7 +102,9 @@ data class Etkinlik(
     val asilId: Long = 0,
     val yazilabilir: Boolean = true,
     val takvimAdi: String = "",
-    val durum: Int = 0
+    val durum: Int = 0,
+    /** Etkinliğe özel renk (EVENT_COLOR); 0 = takvimin rengi. */
+    val ozelRenk: Int = 0
 )
 
 /** Tekrarlayan etkinliği düzenlerken/silerken hangi kısmın değişeceği. */
