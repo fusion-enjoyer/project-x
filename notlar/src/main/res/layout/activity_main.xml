@@ -98,6 +98,14 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/sil"
                     android:src="@drawable/ic_sil" />
+
+                <ImageButton
+                    android:id="@+id/secimDiger"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/diger"
+                    android:src="@drawable/ic_menu" />
             </LinearLayout>
         </FrameLayout>
 

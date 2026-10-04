@@ -1588,6 +1588,7 @@ class EditorActivity : AppCompatActivity() {
             sayfa.madde(R.drawable.ic_arti_koyu, getString(R.string.notu_cogalt)) {
                 notuCogalt()
             }
+            sayfa.madde(R.drawable.ic_bol, getString(R.string.notu_bol)) { bolmeOnayi() }
         }
         sayfa.madde(R.drawable.ic_sablon, getString(R.string.sablon_olarak_kaydet)) {
             sablonOlarakKaydet()
@@ -1798,6 +1799,53 @@ class EditorActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
                 }
+            }
+        }.start()
+    }
+
+    /** Bölme geri alınamayan iki dosya işi; önce ne olacağı söylenir. */
+    private fun bolmeOnayi() {
+        val s = metinAlani.text ?: return
+        val (satirBasi, _) = satirSinirlari()
+        if (s.substring(0, satirBasi).isBlank() || s.substring(satirBasi).isBlank()) {
+            Toast.makeText(this, R.string.bol_bos, Toast.LENGTH_LONG).show()
+            return
+        }
+        AltSayfa(this)
+            .mesaj(getString(R.string.bol_ozet))
+            .madde(R.drawable.ic_bol, getString(R.string.notu_bol)) { buradanBol(satirBasi) }
+            .goster()
+    }
+
+    /**
+     * İmlecin satırı ve sonrası yeni not olur (o satır yeni notun başlığıdır),
+     * üst kısım bu notta kalır. Bu nottaki silme geri al yığınına girer.
+     */
+    private fun buradanBol(satirBasi: Int) {
+        val s = metinAlani.text ?: return
+        if (satirBasi > s.length) return
+        val ust = s.substring(0, satirBasi).trimEnd()
+        val alt = s.substring(satirBasi).trim()
+        if (ust.isEmpty() || alt.isEmpty()) return
+        val mevcut = uri
+        Thread {
+            val klasor = hedefKlasor ?: mevcut?.let { depo.notunKlasoru(it) }
+            val yeni = depo.notOlustur(alt + "\n", klasor)
+            runOnUiThread {
+                if (yeni == null) {
+                    Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                val guncel = metinAlani.text ?: return@runOnUiThread
+                // Bu arada yazılmış olabilir: yalnızca üst kısım aynıysa kesilir.
+                if (guncel.length >= ust.length && guncel.substring(0, ust.length) == ust) {
+                    guncel.delete(ust.length, guncel.length)
+                    guncel.append("\n")
+                }
+                NotWidget.hepsiniGuncelle(applicationContext)
+                startActivity(
+                    Intent(this, EditorActivity::class.java).putExtra("uri", yeni.toString())
+                )
             }
         }.start()
     }

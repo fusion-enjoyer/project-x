@@ -248,6 +248,14 @@
     <string name="duzenle">Düzenle</string>
     <string name="kelime_karakter">%1$d kelime \u00b7 %2$d karakter</string>
     <string name="notu_cogalt">Notu çoğalt</string>
+    <string name="notu_bol">Buradan böl</string>
+    <string name="bol_ozet">İmlecin bulunduğu satır ve altı yeni bir not olur. Üst kısım bu notta kalır.</string>
+    <string name="bol_bos">Bölmek için imleci notun ortasında bir satıra koy</string>
+    <string name="diger">Diğer</string>
+    <string name="birlestir">Birleştir</string>
+    <string name="birlestir_ozet">%1$d not listedeki sırayla “%2$s” notunda birleşir. Diğerleri çöpe taşınır; ilk notun önceki hâli geçmişinde kalır.</string>
+    <string name="birlestirildi">Notlar birleştirildi</string>
+    <string name="kilitli_secili">Kilitli notlar bu şekilde değiştirilemez; önce seçimden çıkar</string>
     <string name="sablonlari_duzenle">Şablonları düzenle</string>
     <string name="yazi_tipi">Yazı tipi</string>
     <string name="yazi_sistem">Sistem</string>
@@ -282,6 +290,10 @@
     <plurals name="yedek_yuklendi">
         <item quantity="one">%d not geri yüklendi</item>
         <item quantity="other">%d not geri yüklendi</item>
+    </plurals>
+    <plurals name="etiket_eklendi">
+        <item quantity="one">%d nota etiket eklendi</item>
+        <item quantity="other">%d nota etiket eklendi</item>
     </plurals>
     <plurals name="keep_not_sayisi">
         <item quantity="one">Keep\'ten %d not aktarıldı</item>

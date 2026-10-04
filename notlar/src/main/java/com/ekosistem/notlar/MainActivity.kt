@@ -703,12 +703,14 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.secimTasi).setOnClickListener { tasiDialog(secilenNotlar()) }
         findViewById<ImageButton>(R.id.secimPaylas).setOnClickListener { secilileriPaylas() }
         findViewById<ImageButton>(R.id.secimSil).setOnClickListener { silmeyiYap(secilenNotlar()) }
+        findViewById<ImageButton>(R.id.secimDiger).setOnClickListener { secimDigerMenu() }
         ipucuVer(
             findViewById(R.id.secimKapat),
             findViewById(R.id.secimSabitle),
             findViewById(R.id.secimTasi),
             findViewById(R.id.secimPaylas),
-            findViewById(R.id.secimSil)
+            findViewById(R.id.secimSil),
+            findViewById(R.id.secimDiger)
         )
     }
 
@@ -768,6 +770,100 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent.createChooser(intent, getString(R.string.paylas)))
             }
         }.start()
+    }
+
+    /** Seçim çubuğuna sığmayan işler: birleştirme ve toplu etiket. */
+    private fun secimDigerMenu() {
+        val notlar = secilenNotlar()
+        if (notlar.isEmpty()) return
+        val sayfa = AltSayfa(this)
+        if (notlar.size >= 2) {
+            sayfa.madde(R.drawable.ic_birlestir, getString(R.string.birlestir)) {
+                birlestirmeOnayi(notlar)
+            }
+        }
+        sayfa.madde(R.drawable.ic_etiket, getString(R.string.etiket_ekle)) { topluEtiketSec(notlar) }
+        sayfa.goster()
+    }
+
+    /** Kilitli notun içeriği görülmeden değiştirilmesin. */
+    private fun kilitliVarMi(notlar: List<Not>): Boolean {
+        if (notlar.none { Kilit.notKilitli(this, it.uri.toString()) }) return false
+        Toast.makeText(this, R.string.kilitli_secili, Toast.LENGTH_LONG).show()
+        return true
+    }
+
+    private fun birlestirmeOnayi(notlar: List<Not>) {
+        if (kilitliVarMi(notlar)) return
+        AltSayfa(this)
+            .mesaj(getString(R.string.birlestir_ozet, notlar.size, notlar.first().baslik))
+            .madde(R.drawable.ic_birlestir, getString(R.string.birlestir)) { birlestir(notlar) }
+            .goster()
+    }
+
+    /**
+     * Notlar listedeki sırayla ilk notta toplanır. İlk notun önceki hâli
+     * geçmişe, diğerleri çöpe gider: ikisi de geri alınabilir.
+     */
+    private fun birlestir(notlar: List<Not>) {
+        secimBitir()
+        val ana = notlar.first()
+        NotDeposu.yazici.execute {
+            val metinler = notlar.map { depo.oku(it.uri) }
+            val onceki = metinler.first()
+            if (onceki.isNotBlank()) depo.gecmiseYaz(ana.uri, onceki)
+            val oldu = depo.yaz(ana.uri, TopluIslem.birlestir(metinler))
+            if (oldu) notlar.drop(1).forEach { depo.copeTasi(it.uri) }
+            NotWidget.hepsiniGuncelle(applicationContext)
+            runOnUiThread {
+                yenile()
+                Toast.makeText(
+                    this,
+                    if (oldu) R.string.birlestirildi else R.string.yedek_hata,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun topluEtiketSec(notlar: List<Not>) {
+        if (kilitliVarMi(notlar)) return
+        Thread {
+            val etiketler = depo.etiketleriListele()
+            runOnUiThread {
+                val sayfa = AltSayfa(this).baslik(getString(R.string.etiket_ekle))
+                sayfa.girdi(
+                    ipucu = getString(R.string.yeni_etiket),
+                    dugmeMetni = getString(R.string.ekle)
+                ) { ad -> topluEtiketle(notlar, ad) }
+                for (etiket in etiketler) {
+                    sayfa.madde(R.drawable.ic_etiket, "#$etiket") { topluEtiketle(notlar, etiket) }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    /** Etiketi zaten taşıyan nota dokunulmaz. */
+    private fun topluEtiketle(notlar: List<Not>, ham: String) {
+        val etiket = TopluIslem.etiketTemizle(ham)
+        if (etiket.isEmpty()) return
+        secimBitir()
+        NotDeposu.yazici.execute {
+            var sayi = 0
+            for (not in notlar) {
+                val yeni = TopluIslem.etiketEkle(depo.oku(not.uri), etiket) ?: continue
+                if (depo.yaz(not.uri, yeni)) sayi++
+            }
+            runOnUiThread {
+                yenile()
+                Toast.makeText(
+                    this,
+                    resources.getQuantityString(R.plurals.etiket_eklendi, sayi, sayi),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     // --- Kaydırma hareketleri ---
