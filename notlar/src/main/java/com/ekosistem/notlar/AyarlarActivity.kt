@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
@@ -34,6 +35,52 @@ class AyarlarActivity : AppCompatActivity() {
     private lateinit var satirYaziTipi: View
     private lateinit var satirYaziBoyu: View
     private var renkSayfasi: AltSayfa? = null
+
+    // Sistem araçlarından dönen sonuçlar. Kayıt, ekran kurulmadan yapılmalı.
+
+    private val kilitSonucu = sonucIste { recreate() }
+
+    private val klasorSonucu = adresIste { uri ->
+        try {
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            Prefs.klasorUriKaydet(this, uri.toString())
+            ozetGuncelle(satirKlasor, klasorOzeti())
+        } catch (_: Exception) {
+        }
+    }
+
+    private val disaAktarmaSonucu = adresIste { uri ->
+        Thread {
+            val sayi = Yedekleme.disaAktar(this, depo, uri)
+            runOnUiThread { bilgi(sayi >= 0, getString(R.string.yedek_alindi)) }
+        }.start()
+    }
+
+    private val iceAktarmaSonucu = adresIste { uri -> iceAktar(uri) }
+
+    private val keepSonucu = sonucIste { veri ->
+        val secilenler = mutableListOf<Uri>()
+        val coklu = veri?.clipData
+        if (coklu != null) {
+            for (i in 0 until coklu.itemCount) coklu.getItemAt(i).uri?.let { secilenler.add(it) }
+        } else {
+            veri?.data?.let { secilenler.add(it) }
+        }
+        if (secilenler.isNotEmpty()) keepAktar(secilenler)
+    }
+
+    /** Açılan ekran "tamam" derse [islem] dönen veriyle çağrılır. */
+    private fun sonucIste(islem: (Intent?) -> Unit) =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { sonuc ->
+            if (sonuc.resultCode == RESULT_OK) islem(sonuc.data)
+        }
+
+    /** Tek bir adres (klasör, yedek dosyası) seçtiren sistem aracı için. */
+    private fun adresIste(islem: (Uri) -> Unit) = sonucIste { veri -> veri?.data?.let(islem) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
@@ -334,11 +381,7 @@ class AyarlarActivity : AppCompatActivity() {
     }
 
     private fun kilitEkraniAc(kip: Int) {
-        @Suppress("DEPRECATION")
-        startActivityForResult(
-            Intent(this, KilitActivity::class.java).putExtra("kip", kip),
-            ISTEK_KILIT
-        )
+        kilitSonucu.launch(Intent(this, KilitActivity::class.java).putExtra("kip", kip))
     }
 
     private fun temaSec() {
@@ -455,8 +498,7 @@ class AyarlarActivity : AppCompatActivity() {
                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
         )
         Kilit.sistemAraciBekleniyor = true
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, ISTEK_KLASOR)
+        klasorSonucu.launch(intent)
     }
 
     // --- Yedekleme ---
@@ -466,8 +508,7 @@ class AyarlarActivity : AppCompatActivity() {
             .setType("application/zip")
             .putExtra(Intent.EXTRA_TITLE, Yedekleme.dosyaAdi())
         Kilit.sistemAraciBekleniyor = true
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, ISTEK_DISA)
+        disaAktarmaSonucu.launch(intent)
     }
 
     private fun iceAktarmayiBaslat() {
@@ -475,8 +516,7 @@ class AyarlarActivity : AppCompatActivity() {
             .setType("application/zip")
             .addCategory(Intent.CATEGORY_OPENABLE)
         Kilit.sistemAraciBekleniyor = true
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, ISTEK_ICE)
+        iceAktarmaSonucu.launch(intent)
     }
 
     // --- Google Keep ---
@@ -500,8 +540,7 @@ class AyarlarActivity : AppCompatActivity() {
             .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             .addCategory(Intent.CATEGORY_OPENABLE)
         Kilit.sistemAraciBekleniyor = true
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, ISTEK_KEEP)
+        keepSonucu.launch(intent)
     }
 
     private fun keepAktar(kaynaklar: List<Uri>) {
@@ -533,62 +572,23 @@ class AyarlarActivity : AppCompatActivity() {
         }.joinToString("\n")
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(istek: Int, sonuc: Int, veri: Intent?) {
-        super.onActivityResult(istek, sonuc, veri)
-        if (sonuc != RESULT_OK) return
-        if (istek == ISTEK_KILIT) {
-            recreate()
-            return
-        }
-        if (istek == ISTEK_KEEP) {
-            val secilenler = mutableListOf<Uri>()
-            val coklu = veri?.clipData
-            if (coklu != null) {
-                for (i in 0 until coklu.itemCount) coklu.getItemAt(i).uri?.let { secilenler.add(it) }
+    private fun iceAktar(uri: Uri) {
+        // Kullanıcı ayarlardan çıksa da iş bitsin, sonuç yine gösterilsin.
+        val uygulama = applicationContext
+        NotDeposu.yazici.execute {
+            val s = Yedekleme.iceAktar(uygulama, NotDeposu(uygulama), uri)
+            val mesaj = if (s == null) {
+                getString(R.string.yedek_hata)
             } else {
-                veri?.data?.let { secilenler.add(it) }
+                listOfNotNull(
+                    resources.getQuantityString(R.plurals.yedek_yuklendi, s.yeni, s.yeni),
+                    s.zatenVardi.takeIf { it > 0 }?.let {
+                        resources.getQuantityString(R.plurals.keep_zaten_vardi, it, it)
+                    },
+                    getString(R.string.yedek_yarim).takeIf { s.yarim }
+                ).joinToString("\n")
             }
-            if (secilenler.isNotEmpty()) keepAktar(secilenler)
-            return
-        }
-        val uri = veri?.data ?: return
-        when (istek) {
-            ISTEK_KLASOR -> {
-                try {
-                    contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-                    Prefs.klasorUriKaydet(this, uri.toString())
-                    ozetGuncelle(satirKlasor, klasorOzeti())
-                } catch (_: Exception) {
-                }
-            }
-            ISTEK_DISA -> Thread {
-                val sayi = Yedekleme.disaAktar(this, depo, uri)
-                runOnUiThread { bilgi(sayi >= 0, getString(R.string.yedek_alindi)) }
-            }.start()
-            ISTEK_ICE -> {
-                // Kullanıcı ayarlardan çıksa da iş bitsin, sonuç yine gösterilsin.
-                val uygulama = applicationContext
-                NotDeposu.yazici.execute {
-                    val s = Yedekleme.iceAktar(uygulama, NotDeposu(uygulama), uri)
-                    val mesaj = if (s == null) {
-                        getString(R.string.yedek_hata)
-                    } else {
-                        listOfNotNull(
-                            resources.getQuantityString(R.plurals.yedek_yuklendi, s.yeni, s.yeni),
-                            s.zatenVardi.takeIf { it > 0 }?.let {
-                                resources.getQuantityString(R.plurals.keep_zaten_vardi, it, it)
-                            },
-                            getString(R.string.yedek_yarim).takeIf { s.yarim }
-                        ).joinToString("\n")
-                    }
-                    runOnUiThread { sonucGoster(mesaj) }
-                }
-            }
+            runOnUiThread { sonucGoster(mesaj) }
         }
     }
 
@@ -610,11 +610,6 @@ class AyarlarActivity : AppCompatActivity() {
     }
 
     private companion object {
-        const val ISTEK_KLASOR = 42
-        const val ISTEK_DISA = 43
-        const val ISTEK_ICE = 44
-        const val ISTEK_KILIT = 45
-        const val ISTEK_KEEP = 46
         val KIRMIZI = 0xFFA32D2D.toInt()
         val NOTR = 0xFF5F5E5A.toInt()
         val YESIL = 0xFF0F6E56.toInt()

@@ -21,6 +21,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import java.util.Locale
@@ -81,6 +82,45 @@ class EditorActivity : AppCompatActivity() {
 
     private data class Durum(val metin: String, val imlec: Int)
 
+    // Açılan ekranlardan dönen sonuçlar. Kayıt, ekran kurulmadan yapılmalı.
+
+    /** Not kilidi açılmazsa not da açılmaz, editör kapanır. */
+    private val kilitSonucu =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { sonuc ->
+            if (sonuc.resultCode != RESULT_OK) {
+                finish()
+                return@registerForActivityResult
+            }
+            kilitBekliyor = false
+            metinAlani.visibility = View.VISIBLE
+            bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
+            uri?.let { notuYukle(it) }
+        }
+
+    private val gecmisSonucu =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { sonuc ->
+            if (sonuc.resultCode != RESULT_OK) return@registerForActivityResult
+            val surum = sonuc.data?.getStringExtra("surum")?.let(Uri::parse)
+                ?: return@registerForActivityResult
+            surumuGeriYukle(surum)
+        }
+
+    private val gorselSonucu =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { sonuc ->
+            val veri = sonuc.data
+            if (sonuc.resultCode != RESULT_OK || veri == null) return@registerForActivityResult
+            val secilenler = mutableListOf<Uri>()
+            val coklu = veri.clipData
+            if (coklu != null) {
+                for (i in 0 until coklu.itemCount) {
+                    coklu.getItemAt(i).uri?.let { secilenler.add(it) }
+                }
+            } else {
+                veri.data?.let { secilenler.add(it) }
+            }
+            gorselleriEkle(secilenler)
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Renkler.temaStili(this))
         super.onCreate(savedInstanceState)
@@ -129,11 +169,9 @@ class EditorActivity : AppCompatActivity() {
                 kilitBekliyor = true
                 metinAlani.visibility = View.INVISIBLE
                 bicimKaydirici.visibility = View.GONE
-                @Suppress("DEPRECATION")
-                startActivityForResult(
+                kilitSonucu.launch(
                     Intent(this, KilitActivity::class.java)
-                        .putExtra("kip", KilitActivity.KIP_NOT),
-                    ISTEK_KILIT
+                        .putExtra("kip", KilitActivity.KIP_NOT)
                 )
             }
             else -> notuYukle(acilacak)
@@ -276,41 +314,6 @@ class EditorActivity : AppCompatActivity() {
         geriAliniyor = false
         sonDurum = Durum(metin, 0)
         metinAlani.post { bicimlendir() }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(istek: Int, sonuc: Int, veri: Intent?) {
-        super.onActivityResult(istek, sonuc, veri)
-        when (istek) {
-            ISTEK_KILIT -> {
-                if (sonuc != RESULT_OK) {
-                    finish()
-                    return
-                }
-                kilitBekliyor = false
-                metinAlani.visibility = View.VISIBLE
-                bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
-                uri?.let { notuYukle(it) }
-            }
-            ISTEK_GECMIS -> {
-                if (sonuc != RESULT_OK) return
-                val surum = veri?.getStringExtra("surum")?.let(Uri::parse) ?: return
-                surumuGeriYukle(surum)
-            }
-            ISTEK_GORSEL -> {
-                if (sonuc != RESULT_OK || veri == null) return
-                val secilenler = mutableListOf<Uri>()
-                val coklu = veri.clipData
-                if (coklu != null) {
-                    for (i in 0 until coklu.itemCount) {
-                        coklu.getItemAt(i).uri?.let { secilenler.add(it) }
-                    }
-                } else {
-                    veri.data?.let { secilenler.add(it) }
-                }
-                gorselleriEkle(secilenler)
-            }
-        }
     }
 
     private fun vurguRengiUygula() {
@@ -820,15 +823,13 @@ class EditorActivity : AppCompatActivity() {
         Kilit.sistemAraciBekleniyor = true
         if (Gorseller.fotoSeciciVar()) {
             try {
-                @Suppress("DEPRECATION")
-                startActivityForResult(Gorseller.fotoSeciciNiyeti(), ISTEK_GORSEL)
+                gorselSonucu.launch(Gorseller.fotoSeciciNiyeti())
                 return
             } catch (_: ActivityNotFoundException) {
                 // Seçici devre dışı bırakılmışsa belge seçiciye düş.
             }
         }
-        @Suppress("DEPRECATION")
-        startActivityForResult(Gorseller.belgeSeciciNiyeti(), ISTEK_GORSEL)
+        gorselSonucu.launch(Gorseller.belgeSeciciNiyeti())
     }
 
     /**
@@ -1639,10 +1640,8 @@ class EditorActivity : AppCompatActivity() {
     private fun gecmisiAc() {
         val mevcut = uri ?: return
         GecmisActivity.gecerliMetin = metinAlani.text?.toString() ?: ""
-        @Suppress("DEPRECATION")
-        startActivityForResult(
-            Intent(this, GecmisActivity::class.java).putExtra("uri", mevcut.toString()),
-            ISTEK_GECMIS
+        gecmisSonucu.launch(
+            Intent(this, GecmisActivity::class.java).putExtra("uri", mevcut.toString())
         )
     }
 
@@ -1763,10 +1762,6 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private companion object {
-        const val ISTEK_KILIT = 9
-        const val ISTEK_GECMIS = 10
-        const val ISTEK_GORSEL = 11
-
         /** Çubuğu gizleyip göstermek için gereken en küçük kaydırma (piksel). */
         const val ESIK = 12
 
