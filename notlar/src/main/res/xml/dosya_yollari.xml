@@ -3,4 +3,6 @@
 <paths>
     <!-- Kamera uygulamasının çektiği fotoğrafı yazdığı yer -->
     <cache-path name="kamera" path="kamera/" />
+    <!-- Görsel olarak paylaşılan notun kartı -->
+    <cache-path name="paylas" path="paylas/" />
 </paths>

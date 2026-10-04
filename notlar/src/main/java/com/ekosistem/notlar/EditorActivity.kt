@@ -1636,6 +1636,7 @@ class EditorActivity : AppCompatActivity() {
         }
         sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
+        sayfa.madde(R.drawable.ic_gorsel, getString(R.string.kart_paylas)) { kartOlarakPaylas() }
 
         if (mevcutUri != null) {
             sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { sil() }
@@ -1915,6 +1916,53 @@ class EditorActivity : AppCompatActivity() {
             .putExtra(Intent.EXTRA_TEXT, metin)
         Kilit.sistemAraciBekleniyor = true
         startActivity(Intent.createChooser(intent, getString(R.string.paylas)))
+    }
+
+    /**
+     * Not editördeki görünümüyle bir görsele çizilip paylaşılır. Metnin kopyası
+     * imleçsiz biçimlenir ki imlecin olduğu satırdaki işaretler de gizlensin.
+     */
+    private fun kartOlarakPaylas() {
+        val metin = metinAlani.text ?: return
+        if (metin.isBlank()) return
+        val pay = (24 * resources.displayMetrics.density).toInt()
+        val kopya = android.text.SpannableStringBuilder(metin)
+        for (span in kopya.getSpans(0, kopya.length, BulVurguSpan::class.java)) kopya.removeSpan(span)
+        bicimci.uygula(kopya, -1, NotKarti.GENISLIK - 2 * pay)
+        val resim = try {
+            NotKarti.ciz(
+                this,
+                kopya,
+                android.text.TextPaint(metinAlani.paint),
+                metinAlani.lineSpacingMultiplier,
+                metinAlani.lineSpacingExtra,
+                pay
+            )
+        } catch (_: OutOfMemoryError) {
+            null
+        }
+        // Gerçek metnin biçimi kopyanın genişliğiyle bozulmasın.
+        bicimlendir()
+        if (resim == null) {
+            Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+            return
+        }
+        Thread {
+            val adres = NotKarti.kaydet(this, resim)
+            runOnUiThread {
+                if (adres == null) {
+                    Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                val intent = Intent(Intent.ACTION_SEND)
+                    .setType("image/png")
+                    .putExtra(Intent.EXTRA_STREAM, adres)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                intent.clipData = android.content.ClipData.newRawUri("", adres)
+                Kilit.sistemAraciBekleniyor = true
+                startActivity(Intent.createChooser(intent, getString(R.string.kart_paylas)))
+            }
+        }.start()
     }
 
     private fun sil() {

@@ -23,6 +23,7 @@
     <string name="sabit_kaldir">Unpin</string>
     <string name="sil">Delete</string>
     <string name="paylas">Share</string>
+    <string name="kart_paylas">Share as image</string>
     <string name="geri_yukle">Restore</string>
     <string name="kalici_sil">Delete permanently</string>
     <string name="not_kaydedildi">Note saved</string>
