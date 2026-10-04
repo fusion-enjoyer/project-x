@@ -156,8 +156,32 @@ class DetayActivity : AppCompatActivity() {
         val e = etkinlik ?: return
         val sayfa = AltSayfa(this).baslik(e.baslik.ifBlank { getString(R.string.basliksiz) })
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
+        sayfa.madde(R.drawable.ic_takvim, getString(R.string.ics_paylas)) { icsPaylas() }
         if (TakvimDeposu.izinVar(this)) sayfa.madde(R.drawable.ic_cogalt, getString(R.string.cogalt)) { cogalt() }
         sayfa.goster()
+    }
+
+    /** Etkinliği `.ics` dosyası olarak paylaşır (başka takvim uygulaması açıp ekleyebilir). */
+    private fun icsPaylas() {
+        val e = etkinlik ?: return
+        yurutucu.execute {
+            val klasor = java.io.File(cacheDir, "ics").apply { mkdirs() }
+            klasor.listFiles()?.forEach { it.delete() }   // eski paylaşım dosyaları birikmesin
+            val ad = e.baslik.replace(Regex("[^\\p{L}\\p{N}_-]+"), "_").trim('_').take(40).ifEmpty { "etkinlik" }
+            val dosya = java.io.File(klasor, "$ad.ics")
+            val metin = Ics.yaz(listOf(IcsDeposu.tek(this, e)), System.currentTimeMillis())
+            dosya.writeText(metin, Charsets.UTF_8)
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.dosya", dosya)
+                startActivity(
+                    Intent.createChooser(
+                        Intent(Intent.ACTION_SEND).setType("text/calendar").putExtra(Intent.EXTRA_STREAM, uri)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), null
+                    )
+                )
+            }
+        }
     }
 
     /** Aynı bilgilerle yeni bir etkinlik açar (kaydedilene kadar hiçbir şey değişmez). */

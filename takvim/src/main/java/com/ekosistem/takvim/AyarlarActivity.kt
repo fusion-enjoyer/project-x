@@ -110,6 +110,17 @@ class AyarlarActivity : AppCompatActivity() {
             }
         }
 
+        val ice = findViewById<View>(R.id.satirIceAktar)
+        AyarSatiri.kur(ice, R.drawable.ic_ayar_ice, vurgu, getString(R.string.ice_aktar_satir), getString(R.string.ice_aktar_ozet))
+        ice.setOnClickListener {
+            startActivityForResult(
+                Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), ISTEK_ICE
+            )
+        }
+        val disa = findViewById<View>(R.id.satirDisaAktar)
+        AyarSatiri.kur(disa, R.drawable.ic_ayar_disa, vurgu, getString(R.string.disa_aktar_satir), getString(R.string.disa_aktar_ozet))
+        disa.setOnClickListener { disaAktarSec() }
+
         val surum = findViewById<View>(R.id.satirSurum)
         AyarSatiri.kur(surum, R.drawable.ic_ayar_bilgi, notr, getString(R.string.surum), "${BuildConfig.VERSION_NAME} · ${getString(R.string.izin_yok_rozet)}")
         AyarSatiri.oksuz(surum)
@@ -248,5 +259,64 @@ class AyarlarActivity : AppCompatActivity() {
             }
         }
         sayfa.goster()
+    }
+
+    // ---- .ics içe/dışa aktarma ----
+
+    private var disaAktarIdleri: List<Long> = emptyList()
+
+    private fun disaAktarSec() {
+        yurutucu.execute {
+            val liste = TakvimDeposu.takvimler(this)
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                val sayfa = AltSayfa(this).baslik(getString(R.string.disa_baslik))
+                if (liste.size > 1) sayfa.madde(R.drawable.ic_takvim, getString(R.string.tum_takvimler)) { dosyaSec(liste.map { it.id }) }
+                for (t in liste) sayfa.madde(R.drawable.ic_takvim, t.ad) { dosyaSec(listOf(t.id)) }
+                sayfa.goster()
+            }
+        }
+    }
+
+    private fun dosyaSec(idler: List<Long>) {
+        disaAktarIdleri = idler
+        val tarih = Metinler.dosyaTarihi(System.currentTimeMillis())
+        startActivityForResult(
+            Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/calendar")
+                .putExtra(Intent.EXTRA_TITLE, "takvim-$tarih.ics"),
+            ISTEK_DISA
+        )
+    }
+
+    @Deprecated("startActivityForResult ile birlikte")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data ?: return
+        if (resultCode != RESULT_OK) return
+        when (requestCode) {
+            ISTEK_ICE -> startActivity(Intent(this, IcsActivity::class.java).setData(uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+            ISTEK_DISA -> yurutucu.execute {
+                val etkinlikler = IcsDeposu.disaAktar(this, disaAktarIdleri)
+                val metin = Ics.yaz(etkinlikler, System.currentTimeMillis())
+                val yazildi = try {
+                    contentResolver.openOutputStream(uri, "wt")?.use { it.write(metin.toByteArray(Charsets.UTF_8)) } != null
+                } catch (_: Exception) {
+                    false
+                }
+                runOnUiThread {
+                    val mesaj = when {
+                        !yazildi -> getString(R.string.disa_hata)
+                        etkinlikler.isEmpty() -> getString(R.string.disa_bos)
+                        else -> getString(R.string.disa_bitti, etkinlikler.count { it.oncekiOrnek == null })
+                    }
+                    android.widget.Toast.makeText(this, mesaj, android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val ISTEK_ICE = 21
+        private const val ISTEK_DISA = 22
     }
 }

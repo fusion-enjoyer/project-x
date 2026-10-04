@@ -181,6 +181,30 @@
     <string name="gecmis_bolum">Past · %1$d</string>
     <string name="dogal_uygula">Apply: %1$s</string>
     <string name="tekrarli_kisa">repeats</string>
+    <string name="yedek_bolum">Import and backup</string>
+    <string name="ice_aktar">Import</string>
+    <string name="ice_aktar_satir">Import (.ics)</string>
+    <string name="ice_aktar_ozet">Add events from another calendar or a backup</string>
+    <string name="disa_aktar_satir">Export (.ics)</string>
+    <string name="disa_aktar_ozet">Save your calendars to a file for backup or another app</string>
+    <string name="ice_aktar_dugme">Import</string>
+    <string name="ics_okunuyor">Reading the file…</string>
+    <string name="ics_bulunamadi">Couldn\'t open the file.</string>
+    <string name="ics_bos">No events found</string>
+    <string name="ics_bos_aciklama">There is no readable event in this file.</string>
+    <string name="ics_n_etkinlik">%1$d event(s) found</string>
+    <string name="ics_aralik">From %1$s to %2$s</string>
+    <string name="ics_tekrar_notu">Events that already exist with the same title and time are skipped.</string>
+    <string name="ics_hedef">Add to calendar</string>
+    <string name="ics_bitti">%1$d event(s) added</string>
+    <string name="ics_atlanan">%1$d event(s) already existed and were skipped.</string>
+    <string name="ics_hatali">%1$d event(s) couldn\'t be added.</string>
+    <string name="disa_baslik">Which calendars?</string>
+    <string name="tum_takvimler">All calendars</string>
+    <string name="disa_bitti">%1$d event(s) exported</string>
+    <string name="disa_bos">There are no events to export.</string>
+    <string name="disa_hata">Couldn\'t write the file.</string>
+    <string name="ics_paylas">Calendar file (.ics)</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>

@@ -97,6 +97,12 @@ object Metinler {
         else -> gunBaslik(gun)
     }
 
+    /** Dosya adı için "20261004". */
+    fun dosyaTarihi(ms: Long): String {
+        val g = Gun.yerelGun(ms, java.util.TimeZone.getDefault())
+        return "%04d%02d%02d".format(Gun.yil(g), Gun.ay(g), Gun.ayinGunu(g))
+    }
+
     /** Widget'ta gün etiketi: Bugün / Yarın / "Pzt 5". */
     fun widgetGunu(c: Context, gun: Int, bugun: Int): String = when (gun - bugun) {
         0 -> c.getString(R.string.bugun)

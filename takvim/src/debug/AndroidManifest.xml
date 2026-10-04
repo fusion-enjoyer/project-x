@@ -5,5 +5,8 @@
         <activity
             android:name=".WidgetOnizlemeActivity"
             android:exported="true" />
+        <activity
+            android:name=".IcsDenemeActivity"
+            android:exported="true" />
     </application>
 </manifest>

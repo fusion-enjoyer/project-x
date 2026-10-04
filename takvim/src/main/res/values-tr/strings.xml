@@ -181,6 +181,30 @@
     <string name="gecmis_bolum">Geçmiş · %1$d</string>
     <string name="dogal_uygula">Uygula: %1$s</string>
     <string name="tekrarli_kisa">tekrarlı</string>
+    <string name="yedek_bolum">Aktarım ve yedek</string>
+    <string name="ice_aktar">İçe aktar</string>
+    <string name="ice_aktar_satir">İçe aktar (.ics)</string>
+    <string name="ice_aktar_ozet">Başka bir takvimden ya da yedekten etkinlik ekle</string>
+    <string name="disa_aktar_satir">Dışa aktar (.ics)</string>
+    <string name="disa_aktar_ozet">Takvimlerini dosyaya kaydet: yedek ya da başka bir uygulama için</string>
+    <string name="ice_aktar_dugme">İçe aktar</string>
+    <string name="ics_okunuyor">Dosya okunuyor…</string>
+    <string name="ics_bulunamadi">Dosya açılamadı.</string>
+    <string name="ics_bos">Etkinlik bulunamadı</string>
+    <string name="ics_bos_aciklama">Bu dosyada okunabilir bir etkinlik yok.</string>
+    <string name="ics_n_etkinlik">%1$d etkinlik bulundu</string>
+    <string name="ics_aralik">%1$s – %2$s arası</string>
+    <string name="ics_tekrar_notu">Aynı başlık ve saatte zaten var olan etkinlikler atlanır.</string>
+    <string name="ics_hedef">Eklenecek takvim</string>
+    <string name="ics_bitti">%1$d etkinlik eklendi</string>
+    <string name="ics_atlanan">%1$d etkinlik zaten vardı, atlandı.</string>
+    <string name="ics_hatali">%1$d etkinlik eklenemedi.</string>
+    <string name="disa_baslik">Hangi takvimler?</string>
+    <string name="tum_takvimler">Tüm takvimler</string>
+    <string name="disa_bitti">%1$d etkinlik dışa aktarıldı</string>
+    <string name="disa_bos">Dışa aktarılacak etkinlik yok.</string>
+    <string name="disa_hata">Dosya yazılamadı.</string>
+    <string name="ics_paylas">Takvim dosyası (.ics)</string>
     <string-array name="sira_adlari">
         <item>1.</item>
         <item>2.</item>

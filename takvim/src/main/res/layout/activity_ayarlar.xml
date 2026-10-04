@@ -82,6 +82,13 @@
                 <include android:id="@+id/satirIzin" layout="@layout/item_ayar" />
             </LinearLayout>
 
+            <TextView style="@style/BolumBasligi" android:text="@string/yedek_bolum" />
+            <LinearLayout style="@style/AyarKutusu">
+                <include android:id="@+id/satirIceAktar" layout="@layout/item_ayar" />
+                <View style="@style/AyarAyraci" />
+                <include android:id="@+id/satirDisaAktar" layout="@layout/item_ayar" />
+            </LinearLayout>
+
             <TextView style="@style/BolumBasligi" android:text="@string/hakkinda" />
             <LinearLayout style="@style/AyarKutusu">
                 <include android:id="@+id/satirSurum" layout="@layout/item_ayar" />

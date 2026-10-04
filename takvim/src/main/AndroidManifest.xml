@@ -81,6 +81,36 @@
             </intent-filter>
         </activity>
 
+        <!-- .ics dosyası ("Takvim ile aç", paylaş): içe aktarma ekranı -->
+        <activity
+            android:name=".IcsActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="application/ics" />
+                <data android:mimeType="text/x-vcalendar" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="application/ics" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.dosya"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/dosya_yollari" />
+        </provider>
+
         <activity
             android:name=".AramaActivity"
             android:exported="false"
