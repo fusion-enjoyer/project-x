@@ -263,6 +263,20 @@ object Prefs {
         else sp(c).edit().putLong("hat:$uri", zaman).apply()
     }
 
+    /** Hatırlatıcının tekrarı: [Hatirlatici.TEKRAR_YOK] ya da gün/hafta/ay. */
+    fun hatirlaticiTekrari(c: Context, uri: String): Int = sp(c).getInt("hattekrar:$uri", 0)
+
+    /** Tekrarların sayıldığı ilk zaman; ayın sonu gibi günler kaymasın diye ayrı tutulur. */
+    fun hatirlaticiCapasi(c: Context, uri: String): Long = sp(c).getLong("hatcapa:$uri", 0L)
+
+    fun hatirlaticiTekrariKaydet(c: Context, uri: String, tekrar: Int, capa: Long) {
+        if (tekrar <= 0) {
+            sp(c).edit().remove("hattekrar:$uri").remove("hatcapa:$uri").apply()
+        } else {
+            sp(c).edit().putInt("hattekrar:$uri", tekrar).putLong("hatcapa:$uri", capa).apply()
+        }
+    }
+
     fun tumHatirlaticilar(c: Context): Map<String, Long> =
         sp(c).all.filterKeys { it.startsWith("hat:") }
             .mapNotNull { (k, v) -> (v as? Long)?.let { k.removePrefix("hat:") to it } }

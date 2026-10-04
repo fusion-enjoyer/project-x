@@ -163,6 +163,11 @@
     <string name="hatirlatici_kaldir">Remove reminder</string>
     <string name="hatirlatici_kuruldu">Reminder set</string>
     <string name="hatirlatici_kaldirildi">Reminder removed</string>
+    <string name="tekrar">Repeat</string>
+    <string name="tekrar_yok">Once</string>
+    <string name="tekrar_her_gun">Every day</string>
+    <string name="tekrar_her_hafta">Every week</string>
+    <string name="tekrar_her_ay">Every month</string>
     <string name="gecmis_zaman">That time has already passed</string>
     <string name="etiketler">Tags</string>
     <string name="etiket_yok">No tags yet</string>

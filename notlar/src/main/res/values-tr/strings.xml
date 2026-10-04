@@ -163,6 +163,11 @@
     <string name="hatirlatici_kaldir">Hatırlatıcıyı kaldır</string>
     <string name="hatirlatici_kuruldu">Hatırlatıcı kuruldu</string>
     <string name="hatirlatici_kaldirildi">Hatırlatıcı kaldırıldı</string>
+    <string name="tekrar">Tekrar</string>
+    <string name="tekrar_yok">Bir kez</string>
+    <string name="tekrar_her_gun">Her gün</string>
+    <string name="tekrar_her_hafta">Her hafta</string>
+    <string name="tekrar_her_ay">Her ay</string>
     <string name="gecmis_zaman">Geçmiş bir zaman seçilemez</string>
     <string name="etiketler">Etiketler</string>
     <string name="etiket_yok">Henüz etiket yok</string>

@@ -703,8 +703,10 @@ class NotDeposu(private val context: Context) {
             taslaklar.tasi(e, y)
             val hatirlatma = Prefs.hatirlatici(context, e)
             if (hatirlatma > 0) {
+                val tekrar = Prefs.hatirlaticiTekrari(context, e)
+                val capa = Prefs.hatirlaticiCapasi(context, e).takeIf { it > 0 } ?: hatirlatma
                 Hatirlatici.kaldir(context, e)
-                Hatirlatici.kur(context, y, hatirlatma)
+                Hatirlatici.kur(context, y, hatirlatma, tekrar, capa)
             }
         }
     }

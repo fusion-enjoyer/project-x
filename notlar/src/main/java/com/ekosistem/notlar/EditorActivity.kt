@@ -1616,9 +1616,7 @@ class EditorActivity : AppCompatActivity() {
                             Toast.makeText(this, R.string.gecmis_zaman, Toast.LENGTH_SHORT).show()
                             return@TimePickerDialog
                         }
-                        bildirimIzniIste()
-                        Hatirlatici.kur(this, adres, takvim.timeInMillis)
-                        Toast.makeText(this, R.string.hatirlatici_kuruldu, Toast.LENGTH_SHORT).show()
+                        tekrarSec(adres, takvim.timeInMillis)
                     },
                     takvim.get(java.util.Calendar.HOUR_OF_DAY),
                     takvim.get(java.util.Calendar.MINUTE),
@@ -1629,6 +1627,25 @@ class EditorActivity : AppCompatActivity() {
             takvim.get(java.util.Calendar.MONTH),
             takvim.get(java.util.Calendar.DAY_OF_MONTH)
         ).show()
+    }
+
+    /** Saat seçildikten sonra: bir kez mi, her gün/hafta/ay mı? */
+    private fun tekrarSec(adres: String, zaman: Long) {
+        val sayfa = AltSayfa(this).baslik(getString(R.string.tekrar))
+        val secenekler = listOf(
+            Hatirlatici.TEKRAR_YOK to R.string.tekrar_yok,
+            Hatirlatici.HER_GUN to R.string.tekrar_her_gun,
+            Hatirlatici.HER_HAFTA to R.string.tekrar_her_hafta,
+            Hatirlatici.HER_AY to R.string.tekrar_her_ay
+        )
+        for ((tekrar, ad) in secenekler) {
+            sayfa.madde(R.drawable.ic_hatirlatici, getString(ad)) {
+                bildirimIzniIste()
+                Hatirlatici.kur(this, adres, zaman, tekrar)
+                Toast.makeText(this, R.string.hatirlatici_kuruldu, Toast.LENGTH_SHORT).show()
+            }
+        }
+        sayfa.goster()
     }
 
     private fun bildirimIzniIste() {
