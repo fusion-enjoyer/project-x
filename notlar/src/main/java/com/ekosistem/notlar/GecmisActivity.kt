@@ -97,7 +97,11 @@ class GecmisActivity : AppCompatActivity() {
         surumleriYukle()
     }
 
-    private val geriTusu = object : OnBackPressedCallback(true) {
+    /**
+     * Yalnızca fark ekranı açıkken devrede. Listedeyken geri hareketini sistem
+     * karşılar; Android 14+ önceki ekranı önizleyerek kapatır.
+     */
+    private val geriTusu = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() = geriGit()
     }
 
@@ -105,6 +109,7 @@ class GecmisActivity : AppCompatActivity() {
     private fun geriGit() {
         if (farkKap.visibility == View.VISIBLE) {
             farkKap.visibility = View.GONE
+            geriTusu.isEnabled = false
             listeKaydirici.visibility = View.VISIBLE
             findViewById<TextView>(R.id.ekranBaslik).setText(R.string.gecmis)
             seciliSurum = null
@@ -212,6 +217,7 @@ class GecmisActivity : AppCompatActivity() {
                 gorunumuSec(false)
                 listeKaydirici.visibility = View.GONE
                 farkKap.visibility = View.VISIBLE
+                geriTusu.isEnabled = true
                 findViewById<TextView>(R.id.ekranBaslik).setText(R.string.gecmis_karsilastir)
             }
         }.start()
