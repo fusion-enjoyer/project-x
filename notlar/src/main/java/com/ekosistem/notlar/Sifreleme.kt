@@ -42,7 +42,9 @@ object Sifreleme {
 
     fun veriSatiriMi(satir: CharSequence): Boolean = satir.startsWith(ONEK)
 
-    fun sifreliMi(metin: CharSequence): Boolean = metin.lineSequence().any { veriSatiriMi(it) }
+    /** Liste ve aramada her not için çağrılır: önce ucuz arama, satırlar yalnızca gerekirse. */
+    fun sifreliMi(metin: CharSequence): Boolean =
+        metin.contains(ONEK) && metin.lineSequence().any { veriSatiriMi(it) }
 
     /** Türetilmiş anahtar; not açıkken bellekte tutulur, her kayıtta yeniden türetilmez. */
     class Anahtar(val anahtar: SecretKey, val tuz: ByteArray, val tekrar: Int)

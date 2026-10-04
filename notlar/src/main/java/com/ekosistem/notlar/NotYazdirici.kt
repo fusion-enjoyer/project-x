@@ -72,7 +72,8 @@ class NotYazdirici(
         val boyPt = kagit.heightMils * 72f / 1000f
         payPt = PAY_PT
         olcek = GOVDE_PT / boya.textSize.coerceAtLeast(1f)
-        val icGenislik = ((genislikPt - 2 * payPt) / olcek).toInt()
+        // StaticLayout sıfır ya da eksi genişlikte çöker; uç kâğıt boyunda bile en az bu kadar.
+        val icGenislik = ((genislikPt - 2 * payPt) / olcek).toInt().coerceAtLeast(EN_AZ_GENISLIK)
         val icBoy = (boyPt - 2 * payPt) / olcek
 
         val bicimli = SpannableStringBuilder(metin)
@@ -80,7 +81,19 @@ class NotYazdirici(
         val yeniDuzen = duzenKur(bicimli, icGenislik)
         duzen = yeniDuzen
         sayfalar = sayfala(yeniDuzen, icBoy)
-        nitelik = yeni
+        // PrintedPdfDocument çözünürlük ya da kenar boşluğu eksikse çöker; boş gelen doldurulur.
+        nitelik = PrintAttributes.Builder()
+            .setMediaSize(kagit)
+            .setResolution(yeni.resolution ?: PrintAttributes.Resolution("pdf", "PDF", 300, 300))
+            .setMinMargins(yeni.minMargins ?: PrintAttributes.Margins.NO_MARGINS)
+            .setColorMode(
+                if (yeni.colorMode == PrintAttributes.COLOR_MODE_MONOCHROME) {
+                    PrintAttributes.COLOR_MODE_MONOCHROME
+                } else {
+                    PrintAttributes.COLOR_MODE_COLOR
+                }
+            )
+            .build()
 
         val bilgi = PrintDocumentInfo.Builder("$belgeAdi.pdf")
             .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
@@ -143,6 +156,8 @@ class NotYazdirici(
         }
 
     private companion object {
+        const val EN_AZ_GENISLIK = 200
+
         /** Kâğıttaki gövde yazı boyu (punto). */
         const val GOVDE_PT = 11f
 

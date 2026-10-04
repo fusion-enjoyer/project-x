@@ -25,7 +25,12 @@ object SonTarih {
     }
 
     /** Görev metninden tarih işareti atılmış hali (listede ayrıca gösterilir). */
-    fun temizle(metin: String): String = metin.replace(DESEN, "").replace(Regex("\\s{2,}"), " ").trim()
+    fun temizle(metin: String): String {
+        if (!metin.contains("📅")) return metin.trim()
+        return metin.replace(DESEN, "").replace(COK_BOSLUK, " ").trim()
+    }
+
+    private val COK_BOSLUK = Regex("\\s{2,}")
 
     /** Satıra son tarihi yazar; varsa değiştirir. */
     fun yaz(satir: String, yil: Int, ay: Int, gun: Int): String {

@@ -2140,37 +2140,31 @@ class EditorActivity : AppCompatActivity() {
     }
 
     /**
-     * Not editördeki görünümüyle bir görsele çizilip paylaşılır. Metnin kopyası
-     * imleçsiz biçimlenir ki imlecin olduğu satırdaki işaretler de gizlensin.
+     * Not editördeki görünümüyle bir görsele çizilip paylaşılır. Biçimleme,
+     * çizim ve kayıt arka planda, ayrı bir biçimlendiriciyle yapılır: uzun not
+     * ekranı dondurmaz, editördeki biçime de dokunulmaz. Kopya imleçsiz
+     * biçimlenir ki imlecin olduğu satırdaki işaretler de gizlensin.
      */
     private fun kartOlarakPaylas() {
-        val metin = metinAlani.text ?: return
+        val metin = metinAlani.text?.toString().orEmpty()
         if (metin.isBlank()) return
         val pay = (24 * resources.displayMetrics.density).toInt()
-        val kopya = android.text.SpannableStringBuilder(metin)
-        for (span in kopya.getSpans(0, kopya.length, BulVurguSpan::class.java)) kopya.removeSpan(span)
-        bicimci.uygula(kopya, -1, NotKarti.GENISLIK - 2 * pay)
-        val resim = try {
-            NotKarti.ciz(
-                this,
-                kopya,
-                android.text.TextPaint(metinAlani.paint),
-                metinAlani.lineSpacingMultiplier,
-                metinAlani.lineSpacingExtra,
-                pay
-            )
-        } catch (_: OutOfMemoryError) {
-            null
-        }
-        // Gerçek metnin biçimi kopyanın genişliğiyle bozulmasın.
-        bicimlendir()
-        if (resim == null) {
-            Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
-            return
-        }
+        val boya = android.text.TextPaint(metinAlani.paint)
+        val carpan = metinAlani.lineSpacingMultiplier
+        val ek = metinAlani.lineSpacingExtra
         Thread {
-            val adres = NotKarti.kaydet(this, resim)
+            val adres = try {
+                val kartBicimci = MarkdownBicimci(this).also { it.depo = depo }
+                val bicimli = android.text.SpannableStringBuilder(metin)
+                kartBicimci.uygula(bicimli, -1, NotKarti.GENISLIK - 2 * pay)
+                NotKarti.kaydet(this, NotKarti.ciz(this, bicimli, boya, carpan, ek, pay))
+            } catch (_: OutOfMemoryError) {
+                null
+            } catch (_: Exception) {
+                null
+            }
             runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
                 if (adres == null) {
                     Toast.makeText(this, R.string.yedek_hata, Toast.LENGTH_SHORT).show()
                     return@runOnUiThread

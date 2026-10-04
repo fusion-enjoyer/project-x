@@ -23,6 +23,12 @@ class MarkdownBicimci(private val context: Context) {
     private val soluk = ContextCompat.getColor(context, R.color.metin_ikincil)
     private val kodZemin = ContextCompat.getColor(context, R.color.kart)
     private val gecikmis = ContextCompat.getColor(context, R.color.fark_silindi)
+
+    /** Bugünün gün numarası; her taramada bir kez hesaplanır, satır başına değil. */
+    private var bugunNo = 0L
+
+    /** Taranan metnin düz hâli; span'ler değişir, metin tarama boyunca değişmez. */
+    private var duzMetin = ""
     private val yogunluk = context.resources.displayMetrics.density
     private var vurgu = Renkler.vurgu(context)
     private var vurguUzeri = Renkler.vurguUzeri(context)
@@ -78,13 +84,18 @@ class MarkdownBicimci(private val context: Context) {
         var kodBlogunda = false
         // Açık bir bilgi kutusunun rengi; alıntı olmayan satırda kapanır.
         var calloutRengi: Int? = null
+        // Her tuşta bütün not taranır. Satırlar düz metinden kesilir: Editable'dan
+        // kesmek (subSequence) her satır için span'leriyle yeni bir kopya üretiyordu.
+        val duz = s.toString()
+        duzMetin = duz
+        bugunNo = SonTarih.bugun()
         while (bas <= s.length) {
-            var son = s.indexOf('\n', bas)
+            var son = duz.indexOf('\n', bas)
             if (son < 0) son = s.length
             val aktif = imlec in bas..son
+            val satir = duz.substring(bas, son)
             // ``` ile açılıp kapanan kod bloğu: içinde başka işaret yorumlanmaz.
-            val cit = satirNo > 0 && KOD_CITI.containsMatchIn(s.subSequence(bas, son))
-            val satir = s.subSequence(bas, son)
+            val cit = satirNo > 0 && KOD_CITI.containsMatchIn(satir)
             val callout = if (cit || kodBlogunda || satirNo == 0) null else CALLOUT.find(satir)
             when {
                 cit -> {
@@ -99,10 +110,10 @@ class MarkdownBicimci(private val context: Context) {
                     calloutBasligi(s, bas, son, callout, renk, aktif)
                 }
                 calloutRengi != null && ALINTI.containsMatchIn(satir) ->
-                    calloutSatiri(s, bas, son, calloutRengi, aktif)
+                    calloutSatiri(s, bas, son, satir, calloutRengi, aktif)
                 else -> {
                     calloutRengi = null
-                    satirBicimle(s, bas, son, satirNo == 0, aktif, genislik)
+                    satirBicimle(s, bas, son, satir, satirNo == 0, aktif, genislik)
                 }
             }
             if (son >= s.length) break
@@ -175,9 +186,9 @@ class MarkdownBicimci(private val context: Context) {
     }
 
     /** Kutunun gövde satırı: `>` gizlenir, metin normal renkte biçimlenir. */
-    private fun calloutSatiri(s: Editable, bas: Int, son: Int, renk: Int, aktif: Boolean) {
+    private fun calloutSatiri(s: Editable, bas: Int, son: Int, satir: String, renk: Int, aktif: Boolean) {
         calloutZemini(s, bas, son, renk)
-        val isaretBoyu = ALINTI.find(s.subSequence(bas, son))?.value?.length ?: 0
+        val isaretBoyu = ALINTI.find(satir)?.value?.length ?: 0
         isaret(s, bas, bas + isaretBoyu, aktif)
         satirIci(s, bas + isaretBoyu, son, aktif)
     }
@@ -204,12 +215,11 @@ class MarkdownBicimci(private val context: Context) {
         s: Editable,
         bas: Int,
         son: Int,
+        satir: String,
         baslikSatiri: Boolean,
         aktif: Boolean,
         genislik: Int
     ) {
-        val satir = s.subSequence(bas, son).toString()
-
         if (baslikSatiri) {
             if (son > bas) {
                 s.setSpan(StyleSpan(Typeface.BOLD), bas, son, EE)
@@ -301,23 +311,24 @@ class MarkdownBicimci(private val context: Context) {
             s.setSpan(ForegroundColorSpan(soluk), kutuSon, son, EE)
         } else if (kutuSon < son) {
             satirIci(s, kutuSon, son, false)
-            sonTarihBoya(s, kutuSon, son)
+            sonTarihBoya(s, bas, satir, kutuSon - bas)
         }
         return true
     }
 
-    /** Açık görevin son tarihi: geçmişse kırmızı, değilse soluk. */
-    private fun sonTarihBoya(s: Editable, bas: Int, son: Int) {
-        val m = SonTarih.DESEN.find(s.subSequence(bas, son)) ?: return
+    /** Açık görevin son tarihi: geçmişse kırmızı, değilse soluk. [satirBas] satırın metindeki yeri. */
+    private fun sonTarihBoya(s: Editable, satirBas: Int, satir: String, aramaBas: Int) {
+        val m = SonTarih.DESEN.find(satir, aramaBas) ?: return
         val gun = SonTarih.gun(m.value) ?: return
-        val renk = if (gun < SonTarih.bugun()) gecikmis else soluk
-        s.setSpan(ForegroundColorSpan(renk), bas + m.range.first, bas + m.range.last + 1, EE)
+        val renk = if (gun < bugunNo) gecikmis else soluk
+        s.setSpan(ForegroundColorSpan(renk), satirBas + m.range.first, satirBas + m.range.last + 1, EE)
     }
 
     /** Satır içi işaretler: görsel, kod, kalın, italik, üstü çizili. */
     private fun satirIci(s: Editable, bas: Int, son: Int, aktif: Boolean) {
         if (son <= bas) return
-        val metin = s.subSequence(bas, son).toString()
+        // Tarama dışından çağrılırsa (düz metin eskiyse) Editable'dan kesilir.
+        val metin = if (duzMetin.length == s.length) duzMetin.substring(bas, son) else s.subSequence(bas, son).toString()
 
         // Görsel önce: kapladığı aralıkta başka işaret aranmaz, yoksa dosya
         // adındaki * ya da _ yüzünden görselin üstüne span binerdi.

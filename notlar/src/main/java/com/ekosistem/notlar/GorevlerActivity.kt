@@ -122,8 +122,17 @@ class GorevAdapter(
 
     private var gorevler: List<Gorev> = emptyList()
 
+    /** Liste her yenilendiğinde bir kez; satır çizilirken yeniden hesaplanmaz. */
+    private var bugun = SonTarih.bugun()
+
+    /** Tarih biçimleri ilk gerektiğinde kurulur (kurulumu pahalı). */
+    private var buYilBicimi: SimpleDateFormat? = null
+    private var yilliBicim: SimpleDateFormat? = null
+    private val takvim: Calendar = Calendar.getInstance()
+
     fun guncelle(yeni: List<Gorev>) {
         gorevler = yeni
+        bugun = SonTarih.bugun()
         notifyDataSetChanged()
     }
 
@@ -167,7 +176,7 @@ class GorevAdapter(
     /** "3 gün gecikti · Not başlığı": tarih etiketi renkli, not adı soluk. */
     private fun altSatir(context: Context, gorev: Gorev): CharSequence {
         val gun = gorev.sonGun ?: return gorev.notBasligi
-        val fark = (gun - SonTarih.bugun()).toInt()
+        val fark = (gun - bugun).toInt()
         val etiket = tarihEtiketi(context, gun, fark)
         val renk = when {
             gorev.isaretli -> soluk
@@ -183,6 +192,9 @@ class GorevAdapter(
         return s.append(" · ").append(gorev.notBasligi)
     }
 
+    private fun tarihBicimi(iskelet: String): SimpleDateFormat =
+        SimpleDateFormat(DateFormat.getBestDateTimePattern(Locale.getDefault(), iskelet), Locale.getDefault())
+
     private fun tarihEtiketi(context: Context, gun: Long, fark: Int): String {
         val r = context.resources
         return when {
@@ -192,14 +204,15 @@ class GorevAdapter(
             fark < 7 -> r.getQuantityString(R.plurals.gun_kaldi, fark, fark)
             else -> {
                 val (yil, ay, g) = SonTarih.tarih(gun)
-                val takvim = Calendar.getInstance().apply { clear(); set(yil, ay - 1, g) }
+                takvim.clear()
+                takvim.set(yil, ay - 1, g)
                 // Bu yılın tarihinde yıl yazılmaz.
-                val buYil = yil == Calendar.getInstance().get(Calendar.YEAR)
-                val bicim = DateFormat.getBestDateTimePattern(
-                    Locale.getDefault(),
-                    if (buYil) "MMMd" else "yMMMd"
-                )
-                SimpleDateFormat(bicim, Locale.getDefault()).format(takvim.time)
+                val bicim = if (yil == SonTarih.tarih(bugun).first) {
+                    buYilBicimi ?: tarihBicimi("MMMd").also { buYilBicimi = it }
+                } else {
+                    yilliBicim ?: tarihBicimi("yMMMd").also { yilliBicim = it }
+                }
+                bicim.format(takvim.time)
             }
         }
     }

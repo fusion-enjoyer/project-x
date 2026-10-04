@@ -245,6 +245,8 @@ object Gorseller {
      * kapalıysa ya da görsel çözülemezse olduğu gibi kopyalanır.
      */
     fun iceAl(context: Context, depo: NotDeposu, kaynak: Uri, notKlasoru: String?): String? {
+        // Bazı kamera uygulamaları "çekildi" deyip boş dosya bırakır; nota bozuk görsel girmesin.
+        if (bosDosya(context, kaynak)) return null
         val klasor = depo.eklerKlasoru(true) ?: return null
         val kaynakTuru = context.contentResolver.getType(kaynak) ?: "image/jpeg"
         val islenmis = if (Prefs.gorselKucult(context)) kucult(context, kaynak, kaynakTuru) else null
@@ -399,6 +401,15 @@ object Gorseller {
                 true
             } ?: false
         } ?: false
+    } catch (_: Exception) {
+        false
+    }
+
+    /** Boyutu kesin olarak 0 bilinen dosya; boyutu bilinmeyen dosya boş sayılmaz. */
+    private fun bosDosya(context: Context, uri: Uri): Boolean = try {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+            ?.use { imlec -> imlec.moveToFirst() && !imlec.isNull(0) && imlec.getLong(0) == 0L }
+            ?: false
     } catch (_: Exception) {
         false
     }
