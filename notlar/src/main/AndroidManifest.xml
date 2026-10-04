@@ -49,6 +49,10 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".YardimActivity"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".GecmisActivity"
             android:parentActivityName=".EditorActivity" />
 

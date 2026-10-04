@@ -63,7 +63,11 @@ class MarkdownBicimci(private val context: Context) {
     /** Görselin sığacağı genişlik; her biçimlendirmede tazelenir. */
     private var satirGenisligi = 0
 
-    fun uygula(s: Editable, imlec: Int, genislik: Int) {
+    /**
+     * [basliksiz]: ilk satır not başlığı sayılmaz (yardımdaki tek başına örnekler
+     * gibi parça metinler için); not biçimlenirken hep false.
+     */
+    fun uygula(s: Editable, imlec: Int, genislik: Int, basliksiz: Boolean = false) {
         temizle(s)
         satirGenisligi = genislik
         if (s.isEmpty()) return
@@ -95,8 +99,9 @@ class MarkdownBicimci(private val context: Context) {
             val aktif = imlec in bas..son
             val satir = duz.substring(bas, son)
             // ``` ile açılıp kapanan kod bloğu: içinde başka işaret yorumlanmaz.
-            val cit = satirNo > 0 && KOD_CITI.containsMatchIn(satir)
-            val callout = if (cit || kodBlogunda || satirNo == 0) null else CALLOUT.find(satir)
+            val baslikSatiri = satirNo == 0 && !basliksiz
+            val cit = !baslikSatiri && KOD_CITI.containsMatchIn(satir)
+            val callout = if (cit || kodBlogunda || baslikSatiri) null else CALLOUT.find(satir)
             when {
                 cit -> {
                     calloutRengi = null
@@ -113,7 +118,7 @@ class MarkdownBicimci(private val context: Context) {
                     calloutSatiri(s, bas, son, satir, calloutRengi, aktif)
                 else -> {
                     calloutRengi = null
-                    satirBicimle(s, bas, son, satir, satirNo == 0, aktif, genislik)
+                    satirBicimle(s, bas, son, satir, baslikSatiri, aktif, genislik)
                 }
             }
             if (son >= s.length) break

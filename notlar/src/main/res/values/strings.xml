@@ -79,6 +79,10 @@
     <string name="depolama">Storage</string>
     <string name="yedekleme">Backup</string>
     <string name="hakkinda">About</string>
+    <string name="yardim">How to write</string>
+    <string name="yardim_ozet">Formatting, tasks, callouts, links and shortcuts</string>
+    <string name="yardim_yazdigin">You type</string>
+    <string name="yardim_gorunusu">It looks like</string>
     <string name="surum">Version</string>
     <string name="disa_aktar">Export as zip</string>
     <string name="ice_aktar">Import from zip</string>

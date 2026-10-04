@@ -164,6 +164,12 @@
                 android:orientation="vertical">
 
                 <include
+                    android:id="@+id/satirYardim"
+                    layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
                     android:id="@+id/satirSurum"
                     layout="@layout/item_ayar" />
             </LinearLayout>

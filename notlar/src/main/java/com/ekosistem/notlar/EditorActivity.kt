@@ -1858,6 +1858,9 @@ class EditorActivity : AppCompatActivity() {
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
         sayfa.madde(R.drawable.ic_gorsel, getString(R.string.kart_paylas)) { kartOlarakPaylas() }
         sayfa.madde(R.drawable.ic_yazdir, getString(R.string.yazdir)) { yazdir() }
+        sayfa.madde(R.drawable.ic_ayar_bilgi, getString(R.string.yardim)) {
+            startActivity(Intent(this, YardimActivity::class.java))
+        }
 
         if (mevcutUri != null) {
             sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { sil() }

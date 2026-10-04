@@ -167,6 +167,10 @@ class AyarlarActivity : AppCompatActivity() {
             ekranGizlemeyiUygula(this)
         }
 
+        val yardim = findViewById<View>(R.id.satirYardim)
+        satirKur(yardim, R.drawable.ic_ayar_bilgi, NOTR, getString(R.string.yardim), getString(R.string.yardim_ozet))
+        yardim.setOnClickListener { startActivity(Intent(this, YardimActivity::class.java)) }
+
         val surum = findViewById<View>(R.id.satirSurum)
         satirKur(
             surum,

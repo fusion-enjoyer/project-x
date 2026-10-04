@@ -1072,6 +1072,9 @@ class MainActivity : AppCompatActivity() {
             .madde(R.drawable.ic_ayarlar, getString(R.string.ayarlar)) {
                 startActivity(Intent(this, AyarlarActivity::class.java))
             }
+            .madde(R.drawable.ic_ayar_bilgi, getString(R.string.yardim)) {
+                startActivity(Intent(this, YardimActivity::class.java))
+            }
             .goster()
     }
 

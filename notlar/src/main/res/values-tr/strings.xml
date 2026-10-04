@@ -79,6 +79,10 @@
     <string name="depolama">Depolama</string>
     <string name="yedekleme">Yedekleme</string>
     <string name="hakkinda">Hakkında</string>
+    <string name="yardim">Nasıl yazılır</string>
+    <string name="yardim_ozet">Biçimler, görevler, bilgi kutuları, bağlantılar ve kısa yollar</string>
+    <string name="yardim_yazdigin">Yazdığın</string>
+    <string name="yardim_gorunusu">Görünüşü</string>
     <string name="surum">Sürüm</string>
     <string name="disa_aktar">Zip olarak dışa aktar</string>
     <string name="ice_aktar">Zip\'ten içe aktar</string>
