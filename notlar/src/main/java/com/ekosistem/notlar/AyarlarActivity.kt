@@ -70,6 +70,16 @@ class AyarlarActivity : AppCompatActivity() {
             siralamaAdi()
         )
         satirKur(
+            findViewById(R.id.satirGorselKucult),
+            R.drawable.ic_ayar_gorsel,
+            NOTR,
+            getString(R.string.gorsel_kucult),
+            getString(R.string.gorsel_kucult_ozet)
+        )
+        anahtarKur(findViewById(R.id.satirGorselKucult), Prefs.gorselKucult(this)) { acik ->
+            Prefs.gorselKucultKaydet(this, acik)
+        }
+        satirKur(
             findViewById(R.id.satirDisaAktar),
             R.drawable.ic_ayar_disa,
             YESIL,

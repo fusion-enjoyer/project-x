@@ -97,6 +97,12 @@
                 <include
                     android:id="@+id/satirSiralama"
                     layout="@layout/item_ayar" />
+
+                <View style="@style/AyarAyraci" />
+
+                <include
+                    android:id="@+id/satirGorselKucult"
+                    layout="@layout/item_ayar" />
             </LinearLayout>
 
             <TextView

@@ -211,6 +211,8 @@
     <!-- Images -->
     <string name="gorsel_ekle">Insert image</string>
     <string name="gorsel_hata">Couldn\'t add that image</string>
+    <string name="gorsel_kucult">Shrink added images</string>
+    <string name="gorsel_kucult_ozet">Up to 2048 px; location and camera details (EXIF) are removed</string>
 
     <!-- Templates and daily note -->
     <string name="bugunun_notu">Today\'s note</string>

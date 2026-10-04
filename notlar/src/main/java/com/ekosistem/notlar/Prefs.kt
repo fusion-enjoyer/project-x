@@ -142,6 +142,13 @@ object Prefs {
         return eklendi
     }
 
+    /** Eklenen görseller 2048 piksele küçültülür ve EXIF'i atılır (varsayılan açık). */
+    fun gorselKucult(c: Context): Boolean = sp(c).getBoolean("gorsel_kucult", true)
+
+    fun gorselKucultKaydet(c: Context, acik: Boolean) {
+        sp(c).edit().putBoolean("gorsel_kucult", acik).apply()
+    }
+
     fun ekranGizle(c: Context): Boolean = sp(c).getBoolean("ekran_gizle", false)
 
     fun ekranGizleKaydet(c: Context, acik: Boolean) {

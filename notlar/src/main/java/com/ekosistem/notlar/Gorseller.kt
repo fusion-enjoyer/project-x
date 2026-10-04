@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -16,6 +17,8 @@ import android.util.LruCache
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
+import androidx.exifinterface.media.ExifInterface
+import java.io.ByteArrayOutputStream
 import java.util.Collections
 
 /**
@@ -29,6 +32,12 @@ import java.util.Collections
 object Gorseller {
 
     const val EKLER = "ekler"
+
+    /** Küçültme açıkken eklenen görselin en uzun kenarı. */
+    private const val EN_UZUN_KENAR = 2048
+
+    /** Görünür kayıp olmadan dosyayı kamera çıktısının birkaç katı küçültür. */
+    private const val JPEG_KALITESI = 90
 
     /** Görselin kapladığı en fazla yükseklik, ekranın yarısı kadar. */
     private const val YUKSEKLIK_ORANI = 0.5f
@@ -212,15 +221,25 @@ object Gorseller {
      * Seçilen görseli `ekler/` klasörüne kopyalar ve nota yazılacak göreli yolu
      * döndürür. Alt klasördeki not için yol `../ekler/...` olur ki standart
      * Markdown olarak da doğru çözülsün.
+     *
+     * Ayarlarda küçültme açıksa görsel yeniden kodlanarak yazılır ([kucult]);
+     * kapalıysa ya da görsel çözülemezse olduğu gibi kopyalanır.
      */
     fun iceAl(context: Context, depo: NotDeposu, kaynak: Uri, notKlasoru: String?): String? {
         val klasor = depo.eklerKlasoru(true) ?: return null
-        val tur = context.contentResolver.getType(kaynak) ?: "image/jpeg"
+        val kaynakTuru = context.contentResolver.getType(kaynak) ?: "image/jpeg"
+        val islenmis = if (Prefs.gorselKucult(context)) kucult(context, kaynak, kaynakTuru) else null
+        val tur = islenmis?.tur ?: kaynakTuru
         val uzanti = MimeTypeMap.getSingleton().getExtensionFromMimeType(tur) ?: "jpg"
         val govde = tekilAd(depo.cocukAdlari(klasor), gosterilenAd(context, kaynak), uzanti)
 
         val hedef = klasor.createFile(tur, govde) ?: return null
-        if (!kopyala(context, kaynak, hedef.uri)) {
+        val yazildi = if (islenmis != null) {
+            yaz(context, islenmis.bayt, hedef.uri)
+        } else {
+            kopyala(context, kaynak, hedef.uri)
+        }
+        if (!yazildi) {
             runCatching { hedef.delete() }
             return null
         }
@@ -261,6 +280,80 @@ object Gorseller {
         } catch (_: Exception) {
             null
         }
+    }
+
+    private class Islenmis(val tur: String, val bayt: ByteArray)
+
+    /**
+     * Görseli en uzun kenarı [EN_UZUN_KENAR] pikseli geçmeyecek şekilde küçültür
+     * ve yeniden kodlar. Yeniden kodlama EXIF'i (konum, cihaz, çekim tarihi)
+     * tamamen atar; yön bilgisi de gideceği için önce piksellere uygulanır.
+     *
+     * PNG kaynak (ekran görüntüsü gibi) ve saydam görsel PNG kalır, gerisi
+     * JPEG olur. GIF hareketli olabileceği için ve çözülemeyen görsel için
+     * null döner: dosya olduğu gibi kopyalanır.
+     */
+    private fun kucult(context: Context, kaynak: Uri, tur: String): Islenmis? {
+        if (tur == "image/gif") return null
+        val cozucu = context.contentResolver
+        return try {
+            val olcu = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            cozucu.openInputStream(kaynak)?.use { BitmapFactory.decodeStream(it, null, olcu) }
+            val en = olcu.outWidth
+            val boy = olcu.outHeight
+            if (en <= 0 || boy <= 0) return null
+
+            // Önce ikinin katlarıyla kaba küçültme (bellek için), sonra tam ölçek.
+            var orneklem = 1
+            while (maxOf(en, boy) / (orneklem * 2) >= EN_UZUN_KENAR) orneklem *= 2
+            val secenek = BitmapFactory.Options().apply { inSampleSize = orneklem }
+            val ham = cozucu.openInputStream(kaynak)
+                ?.use { BitmapFactory.decodeStream(it, null, secenek) }
+                ?: return null
+
+            val exif = runCatching {
+                cozucu.openInputStream(kaynak)?.use { ExifInterface(it) }
+            }.getOrNull()
+            val matris = Matrix()
+            val uzun = maxOf(ham.width, ham.height)
+            if (uzun > EN_UZUN_KENAR) {
+                val oran = EN_UZUN_KENAR.toFloat() / uzun
+                matris.postScale(oran, oran)
+            }
+            if (exif != null) {
+                matris.postRotate(exif.rotationDegrees.toFloat())
+                if (exif.isFlipped) matris.postScale(-1f, 1f)
+            }
+            val son = if (matris.isIdentity) {
+                ham
+            } else {
+                Bitmap.createBitmap(ham, 0, 0, ham.width, ham.height, matris, true)
+            }
+            if (son !== ham) ham.recycle()
+
+            val png = tur == "image/png" || son.hasAlpha()
+            val cikis = ByteArrayOutputStream()
+            son.compress(
+                if (png) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG,
+                JPEG_KALITESI,
+                cikis
+            )
+            son.recycle()
+            Islenmis(if (png) "image/png" else "image/jpeg", cikis.toByteArray())
+        } catch (_: Exception) {
+            null
+        } catch (_: OutOfMemoryError) {
+            null
+        }
+    }
+
+    private fun yaz(context: Context, bayt: ByteArray, hedef: Uri): Boolean = try {
+        context.contentResolver.openOutputStream(hedef)?.use { cikis ->
+            cikis.write(bayt)
+            true
+        } ?: false
+    } catch (_: Exception) {
+        false
     }
 
     private fun kopyala(context: Context, kaynak: Uri, hedef: Uri): Boolean = try {
