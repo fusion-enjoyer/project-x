@@ -221,6 +221,7 @@
     <string name="etkinlik_var">etkinlik var</string>
     <string name="renk">Renk</string>
     <string name="renk_takvim">Takvim rengi</string>
+    <string name="gunde_daha">+%1$d etkinlik daha: tamamı için Gündem\'e bak.</string>
     <string-array name="sira_adlari">
         <item>1.</item>
         <item>2.</item>

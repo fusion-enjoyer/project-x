@@ -14,10 +14,16 @@ object Metinler {
     private val UTC: TimeZone = TimeZone.getTimeZone("UTC")
 
     /** Gün numarasını (saf tarih) dilin en uygun yazımıyla biçimler; [iskelet] "dMMMM" gibi. */
+    // getBestDateTimePattern ve SimpleDateFormat kurmak pahalı (ICU); iş parçacığı başına bir kez kurulur.
+    private val bicimler = ThreadLocal<HashMap<String, SimpleDateFormat>>()
+
     private fun bicim(iskelet: String, gun: Int): String {
         val yerel = Locale.getDefault()
-        val kalip = DateFormat.getBestDateTimePattern(yerel, iskelet)
-        return SimpleDateFormat(kalip, yerel).apply { timeZone = UTC }.format(Date(gun * Gun.GUN_MS))
+        val harita = bicimler.get() ?: HashMap<String, SimpleDateFormat>().also { bicimler.set(it) }
+        val f = harita.getOrPut("$yerel|$iskelet") {
+            SimpleDateFormat(DateFormat.getBestDateTimePattern(yerel, iskelet), yerel).apply { timeZone = UTC }
+        }
+        return f.format(Date(gun * Gun.GUN_MS))
     }
 
     /** "Ekim 2026" */
@@ -38,27 +44,51 @@ object Metinler {
     /** "Pazar, 4 Ekim" */
     fun gunBaslik(gun: Int) = haftaGunuUzun(Gun.haftaGunu(gun)) + ", " + gunAy(gun)
 
-    fun haftaGunuUzun(i: Int): String = DateFormatSymbols.getInstance().weekdays[sembolNo(i)]
+    private var gunAdlari: Triple<Locale, Array<String>, Array<String>>? = null
 
-    fun haftaGunuKisa(i: Int): String = DateFormatSymbols.getInstance().shortWeekdays[sembolNo(i)]
+    private fun adlar(): Triple<Locale, Array<String>, Array<String>> {
+        val yerel = Locale.getDefault()
+        gunAdlari?.let { if (it.first == yerel) return it }
+        val s = DateFormatSymbols.getInstance(yerel)
+        return Triple(yerel, s.weekdays, s.shortWeekdays).also { gunAdlari = it }
+    }
+
+    fun haftaGunuUzun(i: Int): String = adlar().second[sembolNo(i)]
+
+    fun haftaGunuKisa(i: Int): String = adlar().third[sembolNo(i)]
 
     /** Java'da 1 = Pazar … 7 = Cumartesi; bizde 0 = Pazartesi. */
     private fun sembolNo(i: Int) = (i + 1) % 7 + 1
+
+    // 24 saat ayarını sormak ve ÖÖ/ÖS adlarını almak her çağrıda pahalı (Settings + ICU); kısa süre bellekte tutulur.
+    @Volatile private var saatOnbellegiAn = 0L
+    @Volatile private var yirmiDortOnbellek = true
+    @Volatile private var amPmOnbellek: Array<String> = arrayOf("AM", "PM")
+
+    private fun yirmiDort(c: Context): Boolean {
+        val simdi = android.os.SystemClock.elapsedRealtime()
+        if (simdi - saatOnbellegiAn > 5_000L || saatOnbellegiAn == 0L) {
+            yirmiDortOnbellek = DateFormat.is24HourFormat(c)
+            amPmOnbellek = DateFormatSymbols.getInstance().amPmStrings
+            saatOnbellegiAn = simdi
+        }
+        return yirmiDortOnbellek
+    }
 
     fun saat(c: Context, dakika: Int): String {
         val d = Math.floorMod(dakika, 1440)
         val s = d / 60
         val m = d % 60
-        if (DateFormat.is24HourFormat(c)) return "%02d:%02d".format(s, m)
-        val ek = DateFormatSymbols.getInstance().amPmStrings[if (s < 12) 0 else 1]
+        if (yirmiDort(c)) return "%02d:%02d".format(s, m)
+        val ek = amPmOnbellek[if (s < 12) 0 else 1]
         val s12 = if (s % 12 == 0) 12 else s % 12
         return "%d:%02d %s".format(s12, m, ek)
     }
 
     /** Izgara kenarındaki saat etiketi: "09:00" ya da "9 ÖÖ". */
     fun saatEtiketi(c: Context, saat: Int): String {
-        if (DateFormat.is24HourFormat(c)) return "%02d:00".format(saat)
-        val ek = DateFormatSymbols.getInstance().amPmStrings[if (saat < 12) 0 else 1]
+        if (yirmiDort(c)) return "%02d:00".format(saat)
+        val ek = amPmOnbellek[if (saat < 12) 0 else 1]
         return "%d %s".format(if (saat % 12 == 0) 12 else saat % 12, ek)
     }
 

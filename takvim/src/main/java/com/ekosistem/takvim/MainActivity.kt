@@ -355,8 +355,8 @@ class MainActivity : AppCompatActivity() {
         val (ilk, son) = aralik()
         val n = ++nesil
         yurutucu.execute {
-            val t = TakvimDeposu.takvimler(this)
-            val o = TakvimDeposu.ornekler(this, ilk, son)
+            val t = Hiz.olc("depo.takvimler") { TakvimDeposu.takvimler(this) }
+            val o = Hiz.olc("depo.ornekler(${son - ilk + 1} gün)") { TakvimDeposu.ornekler(this, ilk, son) }
             runOnUiThread {
                 if (n == nesil && !isDestroyed) {
                     takvimler = t
@@ -382,7 +382,9 @@ class MainActivity : AppCompatActivity() {
         sekmeDurumunuGuncelle(false)
     }
 
-    private fun ustBilgiyiYaz() {
+    private fun ustBilgiyiYaz() = Hiz.olc("ustBilgi") { ustBilgiyiYazIc() }
+
+    private fun ustBilgiyiYazIc() {
         btnBugun.text = Gun.ayinGunu(bugun).toString()
         val ilkSon = aralik()
         when (mod) {
@@ -447,11 +449,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
         bosDurumGizle()
-        icerikleriAyarla()
-        when (mod) {
-            Depo.GORUNUM_AY -> ayiCiz()
-            Depo.GORUNUM_HAFTA, Depo.GORUNUM_GUN -> zamaniCiz()
-            else -> gundemiCiz()
+        Hiz.olc("goster mod=$mod (${ornekler.size} örnek)") {
+            icerikleriAyarla()
+            when (mod) {
+                Depo.GORUNUM_AY -> ayiCiz()
+                Depo.GORUNUM_HAFTA, Depo.GORUNUM_GUN -> zamaniCiz()
+                else -> gundemiCiz()
+            }
         }
     }
 
@@ -492,21 +496,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ayiCiz() {
-        val gunler = gunlereBol()
+        val gunler = Hiz.olc("ay.gunlereBol") { gunlereBol() }
         val ozetler = HashMap<Int, GunOzeti>()
-        for ((g, liste) in gunler) {
-            val sirali = liste.sortedWith(::gunSirasi)
-            ozetler[g] = GunOzeti(sirali.map { Renk.yuzey(this, it.renk) }.distinct().take(3).toIntArray(), liste.size)
+        Hiz.olc("ay.ozetler") {
+            for ((g, liste) in gunler) {
+                val sirali = liste.sortedWith(::gunSirasi)
+                ozetler[g] = GunOzeti(sirali.map { Renk.yuzey(this, it.renk) }.distinct().take(3).toIntArray(), liste.size)
+            }
         }
-        ayIzgara.haftaBasi = Depo.haftaBasi(this)
-        ayIzgara.haftaNumaralari = Depo.haftaNumaralari(this)
-        ayIzgara.ilkGun = ayIlkGunu()
-        ayIzgara.satirSayisi = aySatirSayisi()
-        ayIzgara.ay = Gun.ay(ref)
-        ayIzgara.bugun = bugun
-        ayIzgara.secili = ref
-        ayIzgara.gunler = ozetler
+        Hiz.olc("ay.izgara") {
+            ayIzgara.haftaBasi = Depo.haftaBasi(this)
+            ayIzgara.haftaNumaralari = Depo.haftaNumaralari(this)
+            ayIzgara.ilkGun = ayIlkGunu()
+            ayIzgara.satirSayisi = aySatirSayisi()
+            ayIzgara.ay = Gun.ay(ref)
+            ayIzgara.bugun = bugun
+            ayIzgara.secili = ref
+            ayIzgara.gunler = ozetler
+        }
 
+        Hiz.olc("ay.liste") { ayListeyiYaz(gunler) }
+    }
+
+    private fun ayListeyiYaz(gunler: Map<Int, List<Ornek>>) {
         ayGunBasligi.text = if (ref == bugun) getString(R.string.gun_bugun_baslik, Metinler.gunBaslik(ref)) else Metinler.gunBaslik(ref)
         ayListe.removeAllViews()
         val liste = (gunler[ref] ?: emptyList()).sortedWith(::gunSirasi)
@@ -518,16 +530,40 @@ class MainActivity : AppCompatActivity() {
             t.setPadding(0, (8 * resources.displayMetrics.density).toInt(), 0, 0)
             ayListe.addView(t)
         }
-        for (o in liste) kartEkle(ayListe, o, ref)
+        // Çok yoğun günde (ör. yüzlerce içe aktarılmış etkinlik) ilk 40 kart; gerisi Gündem'de.
+        Hiz.olc("ay.kartlar(${liste.size})") {
+            for ((i, o) in liste.take(AY_LISTE_SINIRI).withIndex()) ayListe.addView(kartHazirla(i, o, ref))
+        }
+        if (liste.size > AY_LISTE_SINIRI) {
+            val t = TextView(this)
+            t.text = getString(R.string.gunde_daha, liste.size - AY_LISTE_SINIRI)
+            t.textSize = 14f
+            t.setTextColor(ContextCompat.getColor(this, TR.color.metin_ikincil))
+            t.setPadding(0, 0, 0, (8 * resources.displayMetrics.density).toInt())
+            ayListe.addView(t)
+        }
+    }
+
+    /** Ay görünümündeki kartlar ay değiştikçe yeniden şişirilmez: ilk [i] kart görünümleri tekrar kullanılır. */
+    private val kartHavuzu = ArrayList<View>()
+
+    private fun kartHazirla(i: Int, o: Ornek, gun: Int): View {
+        val v = kartHavuzu.getOrNull(i) ?: LayoutInflater.from(this).inflate(R.layout.item_etkinlik, ayListe, false).also { kartHavuzu.add(it) }
+        kartiDoldur(v, o, gun)
+        return v
     }
 
     private fun kartEkle(kap: ViewGroup, o: Ornek, gun: Int) {
         val v = LayoutInflater.from(this).inflate(R.layout.item_etkinlik, kap, false)
+        kartiDoldur(v, o, gun)
+        kap.addView(v)
+    }
+
+    private fun kartiDoldur(v: View, o: Ornek, gun: Int) {
         v.findViewById<View>(R.id.etkRenk).backgroundTintList = ColorStateList.valueOf(Renk.yuzey(this, o.renk))
         v.findViewById<TextView>(R.id.etkBaslik).text = o.baslik.ifBlank { getString(R.string.basliksiz) }
         v.findViewById<TextView>(R.id.etkAlt).text = Metinler.ornekAltYazisi(this, o, gun)
         v.setOnClickListener { ornekAc(o) }
-        kap.addView(v)
     }
 
     // ---- Hafta ve Gün ----
@@ -782,5 +818,6 @@ class MainActivity : AppCompatActivity() {
         private const val GUNDEM_ILK = 45
         private const val GUNDEM_ADIM = 60
         private const val GUNDEM_EN_COK = 365
+        private const val AY_LISTE_SINIRI = 40
     }
 }

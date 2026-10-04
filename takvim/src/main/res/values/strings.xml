@@ -221,6 +221,7 @@
     <string name="etkinlik_var">has events</string>
     <string name="renk">Color</string>
     <string name="renk_takvim">Calendar color</string>
+    <string name="gunde_daha">+%1$d more events: see them in Agenda.</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>
