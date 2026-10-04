@@ -48,6 +48,8 @@ class GecmisActivity : AppCompatActivity() {
 
     private var notUri: Uri? = null
     private var cakismaUri: Uri? = null
+    /** Çakışan sürümlerden biri şifreli: fark anlamsız, birleştirme yapılamaz. */
+    private var cakismaSifreli = false
     private var guncelMetin = ""
     private var metinDevralindi = false
     private var seciliSurum: NotDeposu.Surum? = null
@@ -343,17 +345,23 @@ class GecmisActivity : AppCompatActivity() {
         Thread {
             val bu = depo.oku(asil)
             val diger = depo.oku(kopya)
-            val fark = Fark.hesapla(bu.lines(), diger.lines())
+            val sifreli = Sifreleme.sifreliMi(bu) || Sifreleme.sifreliMi(diger)
+            val fark = if (sifreli) emptyList() else Fark.hesapla(bu.lines(), diger.lines())
             val (eklenen, silinen) = Fark.sayac(fark)
-            val yazi = farkiBicimle(fark)
+            val yazi: CharSequence = if (sifreli) getString(R.string.cakisma_sifreli) else farkiBicimle(fark)
             runOnUiThread {
+                cakismaSifreli = sifreli
                 guncelMetin = bu
                 surumMetni = diger
                 farkYazisi = yazi
                 farkBaslik.text = bilgi?.let { cakismaBasligi(it) } ?: getString(R.string.cakisma)
-                farkOzet.text = SpannableStringBuilder(sayacMetni(eklenen, silinen))
-                    .append("\n")
-                    .append(getString(R.string.cakisma_aciklama))
+                farkOzet.text = if (sifreli) {
+                    ""
+                } else {
+                    SpannableStringBuilder(sayacMetni(eklenen, silinen))
+                        .append("\n")
+                        .append(getString(R.string.cakisma_aciklama))
+                }
                 gorunumuSec(false)
                 listeKaydirici.visibility = View.GONE
                 farkKap.visibility = View.VISIBLE
@@ -377,7 +385,11 @@ class GecmisActivity : AppCompatActivity() {
             .mesaj(getString(R.string.cakisma_coz_ozet))
             .madde(R.drawable.ic_onay_isaret, getString(R.string.cakisma_bunu_koru)) { coz(KORU) }
             .madde(R.drawable.ic_gecmis, getString(R.string.cakisma_digerini_al)) { coz(DIGERI) }
-            .madde(R.drawable.ic_birlestir, getString(R.string.cakisma_birlestir)) { coz(BIRLESTIR) }
+            .apply {
+                if (!cakismaSifreli) {
+                    madde(R.drawable.ic_birlestir, getString(R.string.cakisma_birlestir)) { coz(BIRLESTIR) }
+                }
+            }
             .goster()
     }
 

@@ -38,6 +38,7 @@ class AltSayfa(private val activity: Activity) {
     private var girdiBaslangic: String = ""
     private var girdiEylem: ((String) -> Unit)? = null
     private var girdiDugmesi: String? = null
+    private var girdiParola = false
     private var ozelIcerik: View? = null
     private var kapanisEylemi: (() -> Unit)? = null
 
@@ -46,8 +47,11 @@ class AltSayfa(private val activity: Activity) {
         ipucu: String,
         baslangic: String = "",
         dugmeMetni: String,
+        /** Parola alanı: yazılan gizlenir, baştaki/sondaki boşluk korunur. */
+        parola: Boolean = false,
         tamamlandi: (String) -> Unit
     ): AltSayfa {
+        girdiParola = parola
         girdiIpucu = ipucu
         girdiBaslangic = baslangic
         girdiDugmesi = dugmeMetni
@@ -151,6 +155,10 @@ class AltSayfa(private val activity: Activity) {
             alan.setText(girdiBaslangic)
             alan.setSelection(girdiBaslangic.length)
             alan.setSingleLine()
+            if (girdiParola) {
+                alan.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
             alan.textSize = 16f
             alan.setTextColor(metinRengi)
             alan.setHintTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
@@ -182,7 +190,8 @@ class AltSayfa(private val activity: Activity) {
             dugmeLp.rightMargin = (24 * y).toInt()
             dugmeLp.bottomMargin = (4 * y).toInt()
             dugme.setOnClickListener {
-                val deger = girdiAlani?.text?.toString()?.trim().orEmpty()
+                val ham = girdiAlani?.text?.toString().orEmpty()
+                val deger = if (girdiParola) ham else ham.trim()
                 dialog.dismiss()
                 if (deger.isNotEmpty()) girdiEylem?.invoke(deger)
             }

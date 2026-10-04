@@ -214,9 +214,11 @@ class NotDeposu(private val context: Context) {
                 val icerik = kayit.icerik.orEmpty()
                 // Kilitli notta yalnızca dosya adı aranır; içeriği aramaya sızmaz.
                 val kilitli = Kilit.notKilitli(context, adres)
-                val aranacak = if (kilitli) g.ad else g.ad + "\n" + icerik
+                // Şifreli notun verisi aranmaz (rastgele harfler sahte eşleşme verirdi).
+                val sifreli = Sifreleme.sifreliMi(icerik)
+                val aranacak = if (kilitli || sifreli) g.ad else g.ad + "\n" + icerik
                 if (!Arama.sadelestir(aranacak).contains(temizSorgu)) continue
-                if (!kilitli) {
+                if (!kilitli && !sifreli) {
                     eslesmeSatiri = icerik.lineSequence()
                         .firstOrNull { Arama.sadelestir(it).contains(temizSorgu) }
                         ?.let { mdTemizle(it) }
@@ -894,6 +896,22 @@ class NotDeposu(private val context: Context) {
         return dizin
     }
 
+    /**
+     * Notun bütün eski sürümlerini siler. Not şifrelenince çağrılır: geçmişteki
+     * sürümler düz metindir, kalsalar şifrelemenin anlamı olmazdı.
+     */
+    fun gecmisiSil(uri: Uri): Boolean {
+        val dizin = gecmisDizini(uri, false) ?: return true
+        GECMIS_ADRESLERI.values.removeAll { it == dizin.uri }
+        return try {
+            // Bazı sağlayıcılar dolu klasörü silmez; önce içi boşaltılır.
+            dizin.listFiles().forEach { it.delete() }
+            dizin.delete()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /** Not taşınınca geçmişi de yeni anahtarına geçer; yoksa taşınan notun geçmişi kaybolurdu. */
     private fun gecmisiTasi(eskiAnahtar: String?, yeni: Uri) {
         eskiAnahtar ?: return
@@ -1032,6 +1050,8 @@ class NotDeposu(private val context: Context) {
             val ozet = StringBuilder()
             for (satir in icerik.lineSequence()) {
                 if (satir.isBlank()) continue
+                // Şifreli notun veri satırı listede görünmez; kapak yeter.
+                if (Sifreleme.veriSatiriMi(satir)) continue
                 if (baslik == null) {
                     baslik = mdTemizle(satir)
                     continue

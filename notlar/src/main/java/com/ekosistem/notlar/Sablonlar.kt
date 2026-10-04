@@ -102,6 +102,8 @@ object Sablonlar {
     fun bugununNotunaEkle(context: Context, depo: NotDeposu, metin: String): Uri? {
         val adres = bugununNotu(context, depo) ?: return null
         val mevcut = depo.okuKesin(adres) ?: return null
+        // Şifreli notun sonuna düz metin yazılmaz (hem sızar hem ilk kayıtta kaybolur).
+        if (Sifreleme.sifreliMi(mevcut)) return null
         val ayrac = if (mevcut.isEmpty() || mevcut.endsWith("\n\n")) "" else if (mevcut.endsWith("\n")) "\n" else "\n\n"
         depo.gecmiseYaz(adres, mevcut)
         return if (depo.yaz(adres, mevcut + ayrac + metin.trim() + "\n")) adres else null

@@ -831,6 +831,13 @@ class MainActivity : AppCompatActivity() {
         val ana = notlar.first()
         NotDeposu.yazici.execute {
             val metinler = notlar.map { depo.oku(it.uri) }
+            // Şifreli not okununca şifreli veri gelir; birleştirilse bozulurdu.
+            if (metinler.any { Sifreleme.sifreliMi(it) }) {
+                runOnUiThread {
+                    Toast.makeText(this, R.string.sifreli_secili, Toast.LENGTH_LONG).show()
+                }
+                return@execute
+            }
             val onceki = metinler.first()
             if (onceki.isNotBlank()) depo.gecmiseYaz(ana.uri, onceki)
             val oldu = depo.yaz(ana.uri, TopluIslem.birlestir(metinler))
@@ -873,7 +880,9 @@ class MainActivity : AppCompatActivity() {
         NotDeposu.yazici.execute {
             var sayi = 0
             for (not in notlar) {
-                val yeni = TopluIslem.etiketEkle(depo.oku(not.uri), etiket) ?: continue
+                val icerik = depo.oku(not.uri)
+                if (Sifreleme.sifreliMi(icerik)) continue
+                val yeni = TopluIslem.etiketEkle(icerik, etiket) ?: continue
                 if (depo.yaz(not.uri, yeni)) sayi++
             }
             runOnUiThread {

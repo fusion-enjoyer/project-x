@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.SpannableString
@@ -124,6 +125,12 @@ class EditorActivity : AppCompatActivity() {
             }
             gorselleriEkle(secilenler)
         }
+
+    /**
+     * Açık şifreli notun anahtarı ([Sifreleme]); null ise not düz metindir.
+     * Doluyken not diske yalnızca şifreli yazılır, taslak ve geçmiş tutulmaz.
+     */
+    private var sifre: Sifreleme.Anahtar? = null
 
     /** Kameranın fotoğrafı yazacağı dosya; ekran yeniden kurulursa da korunur. */
     private var kameraAdresi: Uri? = null
@@ -304,12 +311,17 @@ class EditorActivity : AppCompatActivity() {
     private fun notuYukle(adres: Uri) {
         Thread {
             val metin = depo.okuKesin(adres)
-            val taslak = if (metin != null) taslaklar.oku(adres.toString()) else null
+            val sifreli = metin != null && Sifreleme.sifreliMi(metin)
+            val taslak = if (metin != null && !sifreli) taslaklar.oku(adres.toString()) else null
             runOnUiThread {
                 if (metin == null) {
                     // Boş not gibi açılsaydı ilk yazılan harf asıl notun üzerine yazılırdı.
                     Toast.makeText(this, R.string.not_acilamadi, Toast.LENGTH_LONG).show()
                     finish()
+                    return@runOnUiThread
+                }
+                if (sifreli) {
+                    sifreliNotuAc(adres, metin)
                     return@runOnUiThread
                 }
                 acilisMetni = metin
@@ -323,6 +335,159 @@ class EditorActivity : AppCompatActivity() {
                 }
             }
         }.start()
+    }
+
+    // --- Şifreli not ---
+
+    /** Şifreli not: parola girilene kadar metin gizli, kayıt ve taslak durur. */
+    private fun sifreliNotuAc(adres: Uri, dosya: String) {
+        kilitBekliyor = true
+        metinAlani.visibility = View.INVISIBLE
+        bicimKaydirici.visibility = View.GONE
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Toast.makeText(this, R.string.sifre_eski_android, Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        parolaSor(adres, dosya, yanlis = false)
+    }
+
+    /** Sayfa parola girilmeden kapatılırsa not da kapanır. */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.O)
+    private fun parolaSor(adres: Uri, dosya: String, yanlis: Boolean) {
+        var girildi = false
+        AltSayfa(this)
+            .baslik(getString(R.string.sifreli_not))
+            .mesaj(getString(if (yanlis) R.string.parola_yanlis else R.string.parola_gir))
+            .girdi(
+                ipucu = getString(R.string.parola),
+                dugmeMetni = getString(R.string.parola_ac),
+                parola = true
+            ) { parola ->
+                girildi = true
+                parolaDene(adres, dosya, parola)
+            }
+            // Kapanış bildirimi düğmeden önce gelebilir; karar bir sonraki turda verilir.
+            .kapaninca { metinAlani.post { if (!girildi && sifre == null) finish() } }
+            .goster()
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.O)
+    private fun parolaDene(adres: Uri, dosya: String, parola: String) {
+        Thread {
+            // Anahtar türetmek bilerek yavaş (yaklaşık bir saniye).
+            val sonuc = Sifreleme.coz(dosya, parola.toCharArray())
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                when (sonuc) {
+                    is Sifreleme.Sonuc.Acildi -> {
+                        sifre = sonuc.anahtar
+                        kilitBekliyor = false
+                        metinAlani.visibility = View.VISIBLE
+                        bicimKaydirici.visibility =
+                            if (okumaModu || odakModu) View.GONE else View.VISIBLE
+                        acilisMetni = sonuc.metin
+                        oncekiIcerik = sonuc.metin
+                        metniYerlestir(sonuc.metin)
+                        yuklendi = true
+                        // Şifrelemeden önce kalmış düz taslak varsa gitsin.
+                        NotDeposu.yazici.execute { taslaklar.sil(adres.toString()) }
+                    }
+                    Sifreleme.Sonuc.YanlisParola -> parolaSor(adres, dosya, yanlis = true)
+                    Sifreleme.Sonuc.Bozuk -> {
+                        Toast.makeText(this, R.string.sifre_bozuk, Toast.LENGTH_LONG).show()
+                        finish()
+                    }
+                }
+            }
+        }.start()
+    }
+
+    /**
+     * Şifreli dosyanın okunabilir kapağı: dosya adı ve ne olduğu. Not başka bir
+     * uygulamada açılırsa ne olduğu anlaşılsın; içerikten hiçbir şey taşımaz.
+     */
+    private fun sifreKapagi(): String {
+        val ad = uri?.lastPathSegment
+            ?.substringAfterLast('/')
+            ?.substringAfterLast(':')
+            ?.substringBeforeLast('.')
+            ?.takeIf { it.isNotBlank() }
+            ?: getString(R.string.sifreli_not)
+        return "# 🔒 $ad\n\n" + getString(R.string.sifreli_kapak)
+    }
+
+    /** Uyarı, parola, parola tekrarı; sonra şifrele. */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.O)
+    private fun sifrelemeBaslat() {
+        AltSayfa(this)
+            .baslik(getString(R.string.parolayla_sifrele))
+            .mesaj(getString(R.string.sifrele_uyari))
+            .girdi(
+                ipucu = getString(R.string.parola),
+                dugmeMetni = getString(R.string.devam),
+                parola = true
+            ) { birinci ->
+                if (birinci.length < PAROLA_EN_AZ) {
+                    Toast.makeText(this, getString(R.string.parola_kisa, PAROLA_EN_AZ), Toast.LENGTH_LONG).show()
+                    return@girdi
+                }
+                AltSayfa(this)
+                    .baslik(getString(R.string.parola_tekrar))
+                    .girdi(
+                        ipucu = getString(R.string.parola),
+                        dugmeMetni = getString(R.string.parolayla_sifrele),
+                        parola = true
+                    ) { ikinci ->
+                        if (ikinci != birinci) {
+                            Toast.makeText(this, R.string.parola_eslesmiyor, Toast.LENGTH_LONG).show()
+                        } else {
+                            sifrele(birinci)
+                        }
+                    }
+                    .goster()
+            }
+            .goster()
+    }
+
+    /**
+     * Anahtar arka planda türetilir; ardından not normal kayıt yoluyla şifreli
+     * yazılır (kayıtlar sırayla işlendiği için arada düz yazılan kalmaz) ve
+     * notun düz metin geçmişi ile taslağı silinir.
+     */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.O)
+    private fun sifrele(parola: String) {
+        val adres = uri ?: return
+        Toast.makeText(this, R.string.sifreleniyor, Toast.LENGTH_SHORT).show()
+        Thread {
+            val anahtar = Sifreleme.yeniAnahtar(parola.toCharArray())
+            runOnUiThread {
+                if (isDestroyed) {
+                    Toast.makeText(applicationContext, R.string.sifrelenemedi, Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                sifre = anahtar
+                acilisMetni = ZORLA_KAYIT
+                kaydet()
+                NotDeposu.yazici.execute {
+                    depo.gecmisiSil(adres)
+                    taslaklar.sil(adres.toString())
+                }
+                Toast.makeText(this, R.string.sifrelendi, Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
+    private fun sifreyiKaldirOnayi() {
+        AltSayfa(this)
+            .mesaj(getString(R.string.sifre_kaldir_ozet))
+            .madde(R.drawable.ic_kilit, getString(R.string.sifreyi_kaldir), tehlikeli = true) {
+                sifre = null
+                acilisMetni = ZORLA_KAYIT
+                kaydet()
+                Toast.makeText(this, R.string.sifre_kaldirildi, Toast.LENGTH_SHORT).show()
+            }
+            .goster()
     }
 
     /** Önceki oturumdan kaydedilememiş değişiklik kaldıysa geri yüklemeyi önerir. */
@@ -349,6 +514,8 @@ class EditorActivity : AppCompatActivity() {
     /** Yazma durunca metnin güvenlik kopyasını alır (bkz. [Taslaklar]). */
     private fun taslagiYaz() {
         if (!yuklendi || silindi || kilitBekliyor || isFinishing) return
+        // Şifreli notun düz metni diske hiçbir yoldan yazılmaz.
+        if (sifre != null) return
         val metin = metinAlani.text.toString()
         if (metin == acilisMetni) return
         // Adres yürütme anında okunur: yeni not bu arada oluşturulduysa ona yazılır.
@@ -1550,26 +1717,34 @@ class EditorActivity : AppCompatActivity() {
         oncekiIcerik = metin
         val klasor = hedefKlasor
         val uygulama = applicationContext
+        // Şifreli not: diske giden metin şifrelidir, taslak ve geçmiş yazılmaz.
+        val anahtar = sifre
+        val sifreli = anahtar != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        val diskMetni = if (sifreli && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Sifreleme.sifrele(metin, anahtar!!, sifreKapagi())
+        } else {
+            metin
+        }
         // Var olan notun kartı kaydın bitmesini beklemeden güncellensin:
         // seçilen klasörde kayıt (sürüm geçmişiyle) bir saniyeyi bulabiliyor.
-        uri?.let { NotDeposu.sonDuzenleme = Duzenleme(it, metin, System.currentTimeMillis(), null) }
+        uri?.let { NotDeposu.sonDuzenleme = Duzenleme(it, diskMetni, System.currentTimeMillis(), null) }
         val kayit = NotDeposu.yazici.submit {
             // Adres yürütme anında okunur: önceki kayıt yeni notu oluşturduysa
             // ikinci bir kopya açılmaz, aynı nota yazılır.
             val hedef = uri
             val adres = hedef?.toString()
-            if (metin.isNotBlank()) taslaklar.yaz(adres, metin)
+            if (metin.isNotBlank() && !sifreli) taslaklar.yaz(adres, metin)
             val tamam = if (hedef == null) {
                 if (metin.isBlank()) {
                     true
                 } else {
-                    val yeni = depo.notOlustur(metin, klasor)
+                    val yeni = depo.notOlustur(diskMetni, klasor)
                     if (yeni != null) uri = yeni
                     yeni != null
                 }
             } else {
-                if (onceki.isNotBlank()) depo.gecmiseYaz(hedef, onceki)
-                depo.yaz(hedef, metin)
+                if (onceki.isNotBlank() && !sifreli) depo.gecmiseYaz(hedef, onceki)
+                depo.yaz(hedef, diskMetni)
             }
             if (tamam) {
                 taslaklar.sil(adres)
@@ -1577,7 +1752,7 @@ class EditorActivity : AppCompatActivity() {
                 if (hedef == null) {
                     uri?.let { olusan ->
                         NotDeposu.sonDuzenleme =
-                            Duzenleme(olusan, metin, System.currentTimeMillis(), klasor)
+                            Duzenleme(olusan, diskMetni, System.currentTimeMillis(), klasor)
                     }
                 }
             } else {
@@ -1594,6 +1769,7 @@ class EditorActivity : AppCompatActivity() {
 
     private fun menuGoster() {
         val mevcutUri = uri
+        val sifreli = sifre != null
         val metin = metinAlani.text?.toString().orEmpty()
         val kelime = metin.split(Regex("\\s+")).count { it.isNotBlank() }
         val sayfa = AltSayfa(this).baslik(
@@ -1647,22 +1823,36 @@ class EditorActivity : AppCompatActivity() {
                 secili = Kilit.notKilitli(this, mevcutUri.toString())
             ) { notKilidiDegistir(mevcutUri.toString()) }
 
+            if (Sifreleme.destekleniyor()) {
+                sayfa.madde(
+                    R.drawable.ic_kilit,
+                    getString(if (sifreli) R.string.sifreyi_kaldir else R.string.parolayla_sifrele),
+                    secili = sifreli
+                ) { if (sifreli) sifreyiKaldirOnayi() else sifrelemeBaslat() }
+            }
+
             sayfa.madde(R.drawable.ic_baglanti, getString(R.string.geri_baglantilar)) {
                 geriBaglantilariGoster()
             }
-            sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiAc() }
+            // Şifreli notun geçmişi tutulmaz (eski sürümler düz metin olurdu).
+            if (!sifreli) sayfa.madde(R.drawable.ic_gecmis, getString(R.string.gecmis)) { gecmisiAc() }
         }
         if (mevcutUri != null) {
             sayfa.madde(R.drawable.ic_tasi, getString(R.string.klasore_tasi)) {
                 klasoreTasiSec(mevcutUri)
             }
-            sayfa.madde(R.drawable.ic_arti_koyu, getString(R.string.notu_cogalt)) {
-                notuCogalt()
+            // Çoğaltma, bölme ve şablon düz metin kopya üretir; şifreli notta yok.
+            if (!sifreli) {
+                sayfa.madde(R.drawable.ic_arti_koyu, getString(R.string.notu_cogalt)) {
+                    notuCogalt()
+                }
+                sayfa.madde(R.drawable.ic_bol, getString(R.string.notu_bol)) { bolmeOnayi() }
             }
-            sayfa.madde(R.drawable.ic_bol, getString(R.string.notu_bol)) { bolmeOnayi() }
         }
-        sayfa.madde(R.drawable.ic_sablon, getString(R.string.sablon_olarak_kaydet)) {
-            sablonOlarakKaydet()
+        if (!sifreli) {
+            sayfa.madde(R.drawable.ic_sablon, getString(R.string.sablon_olarak_kaydet)) {
+                sablonOlarakKaydet()
+            }
         }
         sayfa.madde(R.drawable.ic_ara, getString(R.string.bul_degistir)) { bulCubuguAc() }
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
@@ -2051,6 +2241,11 @@ class EditorActivity : AppCompatActivity() {
 
     private companion object {
         const val KAMERA_ADRESI = "kameraAdresi"
+
+        /** Açılış metniyle hiç eşleşmeyen değer: kaydet() metni ne olursa olsun yazar. */
+        const val ZORLA_KAYIT = "\u0000zorla"
+
+        const val PAROLA_EN_AZ = 6
 
         /** Çubuğu gizleyip göstermek için gereken en küçük kaydırma (piksel). */
         const val ESIK = 12

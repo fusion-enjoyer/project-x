@@ -128,7 +128,9 @@ class TekNotWidget : AppWidgetProvider() {
             // Kilitli notun gövdesi ana ekranda gösterilmez.
             val govde = when {
                 Kilit.notKilitli(context, adres) -> context.getString(R.string.kilitli)
-                ilk >= 0 -> satirlar.drop(ilk + 1).joinToString("\n") { temizle(it) }.trim()
+                ilk >= 0 -> satirlar.drop(ilk + 1)
+                    .filterNot { Sifreleme.veriSatiriMi(it) }
+                    .joinToString("\n") { temizle(it) }.trim()
                 else -> ""
             }
             gorunum.setTextViewText(R.id.widgetBaslik, baslik)
