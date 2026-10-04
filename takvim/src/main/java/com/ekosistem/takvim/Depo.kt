@@ -60,6 +60,16 @@ object Depo {
     fun widgetAyOfseti(c: Context) = p(c).getInt("widget_ay_ofseti", 0)
     fun widgetAyOfsetiKaydet(c: Context, v: Int) = p(c).edit().putInt("widget_ay_ofseti", v).apply()
 
+    /** Rehberdeki doğum günlerini takvime kat (rehber izni ister; varsayılan kapalı). */
+    fun dogumGunleri(c: Context) = p(c).getBoolean("dogum_gunleri", false)
+    fun dogumGunleriKaydet(c: Context, v: Boolean) = p(c).edit().putBoolean("dogum_gunleri", v).apply()
+
+    /** Günlük özet bildirimi (varsayılan kapalı) ve saati (gece yarısından beri dakika). */
+    fun ozetAcik(c: Context) = p(c).getBoolean("ozet_acik", false)
+    fun ozetAcikKaydet(c: Context, v: Boolean) = p(c).edit().putBoolean("ozet_acik", v).apply()
+    fun ozetDk(c: Context) = p(c).getInt("ozet_dk", 7 * 60 + 30)
+    fun ozetDkKaydet(c: Context, v: Int) = p(c).edit().putInt("ozet_dk", v).apply()
+
     fun bildirimIstendi(c: Context) = p(c).getBoolean("bildirim_istendi", false)
     fun bildirimIstendiKaydet(c: Context) = p(c).edit().putBoolean("bildirim_istendi", true).apply()
 

@@ -9,6 +9,8 @@ class TakvimApp : Application() {
         super.onCreate()
         temaUygula(Depo.tema(this))
         Bildirimler.kanalKur(this)
+        // Günlük özet açıksa alarmı güvene al (zorla durdurma alarmları siler).
+        OzetAlici.kur(this)
     }
 
     companion object {

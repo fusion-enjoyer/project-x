@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.app.ActivityCompat
 import com.ekosistem.tasarim.AltSayfa
 import com.ekosistem.tasarim.AyarSatiri
 import com.ekosistem.tasarim.Tasarim
@@ -59,6 +60,32 @@ class AyarlarActivity : AppCompatActivity() {
         AyarSatiri.anahtar(haftaNo, Depo.haftaNumaralari(this)) { Depo.haftaNumaralariKaydet(this, it) }
 
         takvimleriKur(vurgu)
+
+        val dogum = findViewById<View>(R.id.satirDogum)
+        AyarSatiri.kur(dogum, R.drawable.ic_takvim, DogumGunleri.RENK, getString(R.string.dogum_satir), getString(R.string.dogum_ozet))
+        AyarSatiri.anahtar(dogum, DogumGunleri.etkin(this)) { acik -> dogumDegisti(acik) }
+
+        val ozet = findViewById<View>(R.id.satirOzet)
+        AyarSatiri.kur(ozet, R.drawable.ic_zil, vurgu, getString(R.string.ozet_satir), getString(R.string.ozet_ozet))
+        AyarSatiri.anahtar(ozet, Depo.ozetAcik(this)) { acik ->
+            Depo.ozetAcikKaydet(this, acik)
+            OzetAlici.kur(this)
+            if (acik && android.os.Build.VERSION.SDK_INT >= 33 &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 32)
+            satirlariKur()
+        }
+        val ozetSaat = findViewById<View>(R.id.satirOzetSaat)
+        AyarSatiri.kur(ozetSaat, R.drawable.ic_saat, vurgu, getString(R.string.ozet_saat), Metinler.saat(this, Depo.ozetDk(this)))
+        ozetSaat.alpha = if (Depo.ozetAcik(this)) 1f else 0.5f
+        ozetSaat.setOnClickListener {
+            if (!Depo.ozetAcik(this)) return@setOnClickListener
+            Secenekler.saatSec(this, getString(R.string.ozet_saat), Depo.ozetDk(this)) { dk ->
+                Depo.ozetDkKaydet(this, dk)
+                OzetAlici.kur(this)
+                satirlariKur()
+            }
+        }
 
         val varTakvim = findViewById<View>(R.id.satirVarsayilanTakvim)
         AyarSatiri.kur(varTakvim, R.drawable.ic_takvim, vurgu, getString(R.string.varsayilan_takvim), getString(R.string.yukleniyor))
@@ -259,6 +286,31 @@ class AyarlarActivity : AppCompatActivity() {
             }
         }
         sayfa.goster()
+    }
+
+    // ---- Rehberdeki doğum günleri ----
+
+    private fun dogumDegisti(acik: Boolean) {
+        DogumGunleri.onbellegiTemizle()
+        if (!acik) {
+            Depo.dogumGunleriKaydet(this, false)
+            satirlariKur()
+            return
+        }
+        Depo.dogumGunleriKaydet(this, true)
+        if (!DogumGunleri.izinVar(this)) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 31)
+        }
+        satirlariKur()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 31 && grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED) {
+            Depo.dogumGunleriKaydet(this, false)
+            android.widget.Toast.makeText(this, R.string.dogum_izin_yok, android.widget.Toast.LENGTH_LONG).show()
+        }
+        satirlariKur()
     }
 
     // ---- .ics içe/dışa aktarma ----

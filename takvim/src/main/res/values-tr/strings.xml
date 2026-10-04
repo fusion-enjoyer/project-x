@@ -205,6 +205,19 @@
     <string name="disa_bos">Dışa aktarılacak etkinlik yok.</string>
     <string name="disa_hata">Dosya yazılamadı.</string>
     <string name="ics_paylas">Takvim dosyası (.ics)</string>
+    <string name="dogum_gunu_baslik">%1$s doğum günü</string>
+    <string name="dogum_yas">%1$d yaşında</string>
+    <string name="dogum_satir">Rehberdeki doğum günleri</string>
+    <string name="dogum_ozet">Rehberden okunur, tüm gün etkinliği olarak görünür; telefondan çıkmaz.</string>
+    <string name="dogum_izin_yok">Rehber izni verilmedi.</string>
+    <string name="ozet_bolum">Günlük özet</string>
+    <string name="ozet_satir">Sabah özeti</string>
+    <string name="ozet_ozet">Her sabah bugünün etkinliklerini bildirim olarak gösterir; etkinlik yoksa göstermez.</string>
+    <string name="ozet_saat">Özet saati</string>
+    <string name="ozet_baslik">Bugün %1$d etkinlik</string>
+    <string name="ozet_daha">+%1$d daha</string>
+    <string name="kanal_ozet">Günlük özet</string>
+    <string name="kanal_ozet_ozet">Sabahları bugünün etkinliklerinin özeti</string>
     <string-array name="sira_adlari">
         <item>1.</item>
         <item>2.</item>

@@ -205,6 +205,19 @@
     <string name="disa_bos">There are no events to export.</string>
     <string name="disa_hata">Couldn\'t write the file.</string>
     <string name="ics_paylas">Calendar file (.ics)</string>
+    <string name="dogum_gunu_baslik">%1$s\'s birthday</string>
+    <string name="dogum_yas">turns %1$d</string>
+    <string name="dogum_satir">Birthdays from contacts</string>
+    <string name="dogum_ozet">Read from your contacts and shown as all-day events; nothing leaves your phone.</string>
+    <string name="dogum_izin_yok">Contacts permission wasn\'t granted.</string>
+    <string name="ozet_bolum">Daily summary</string>
+    <string name="ozet_satir">Morning summary</string>
+    <string name="ozet_ozet">Shows today\'s events as a notification each morning; nothing is shown on empty days.</string>
+    <string name="ozet_saat">Summary time</string>
+    <string name="ozet_baslik">%1$d event(s) today</string>
+    <string name="ozet_daha">+%1$d more</string>
+    <string name="kanal_ozet">Daily summary</string>
+    <string name="kanal_ozet_ozet">Summary of today\'s events each morning</string>
     <string-array name="sira_adlari">
         <item>1st</item>
         <item>2nd</item>

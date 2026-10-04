@@ -74,7 +74,8 @@ object Widgetlar {
 
     fun ayrinti(context: Context, istek: Int, o: Ornek): PendingIntent = PendingIntent.getActivity(
         context, istek,
-        Intent(context, DetayActivity::class.java).setAction("com.ekosistem.takvim.AYRINTI")
+        if (OrnekAc.dogumGunuMu(o)) OrnekAc.niyet(context, o).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        else Intent(context, DetayActivity::class.java).setAction("com.ekosistem.takvim.AYRINTI")
             .setData(Uri.parse("takvim://widget/$istek"))
             .putExtra(DetayActivity.EK_ID, o.etkinlikId).putExtra(DetayActivity.EK_BAS, o.baslangic).putExtra(DetayActivity.EK_BIT, o.bitis),
         bayrak()

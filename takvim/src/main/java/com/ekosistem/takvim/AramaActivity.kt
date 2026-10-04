@@ -116,12 +116,7 @@ class AramaActivity : AppCompatActivity() {
             val gun = Metinler.widgetGunuUzun(this, o.ilkGun, bugun)
             v.findViewById<TextView>(R.id.etkAlt).text = gun + " · " + Metinler.ornekAltYazisi(this, o, o.ilkGun) +
                 (if (o.tekrarli) " · " + getString(R.string.tekrarli_kisa) else "")
-            v.setOnClickListener {
-                startActivity(
-                    Intent(this, DetayActivity::class.java)
-                        .putExtra(DetayActivity.EK_ID, o.etkinlikId).putExtra(DetayActivity.EK_BAS, o.baslangic).putExtra(DetayActivity.EK_BIT, o.bitis)
-                )
-            }
+            v.setOnClickListener { runCatching { startActivity(OrnekAc.niyet(this, o)) } }
             liste.addView(v)
         }
     }

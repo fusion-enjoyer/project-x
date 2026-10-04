@@ -137,6 +137,7 @@ object TakvimDeposu {
             }
         } catch (_: RuntimeException) {
         }
+        liste.addAll(DogumGunleri.ornekler(c, ilkGun, sonGun))
         return liste
     }
 

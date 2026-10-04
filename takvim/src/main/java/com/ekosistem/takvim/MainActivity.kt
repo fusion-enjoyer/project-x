@@ -664,11 +664,7 @@ class MainActivity : AppCompatActivity() {
     // ---- Etkinlik açma/ekleme ----
 
     private fun ornekAc(o: Ornek) {
-        startActivity(
-            Intent(this, DetayActivity::class.java)
-                .putExtra(DetayActivity.EK_ID, o.etkinlikId).putExtra(DetayActivity.EK_BAS, o.baslangic)
-                .putExtra(DetayActivity.EK_BIT, o.bitis)
-        )
+        runCatching { startActivity(OrnekAc.niyet(this, o)) }
     }
 
     private fun yeniEtkinlik(gun: Int = ref, dakika: Int = -1) {

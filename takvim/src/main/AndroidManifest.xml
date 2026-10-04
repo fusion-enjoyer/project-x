@@ -6,6 +6,8 @@
     <!-- Etkinlikler telefonun takvim deposunda yaşar (DAVx5 gibi uygulamalar da oraya yazar). -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- İsteğe bağlı: rehberdeki doğum günlerini takvimde göstermek için (ayarlardan açılır, varsayılan kapalı). -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Hatırlatıcı bildirimi (Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Yeniden başlatınca ertelenmiş hatırlatıcıları kurmak için. -->
@@ -171,6 +173,19 @@
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Günlük özet bildirimi (isteğe bağlı): alarm + açılış/saat değişimi -->
+        <receiver
+            android:name=".OzetAlici"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.ekosistem.takvim.GUNLUK_OZET" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
