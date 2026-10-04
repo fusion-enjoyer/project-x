@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
 class NotAdapter(
@@ -61,12 +62,28 @@ class NotAdapter(
         t.baslik.text = vurgula(not.baslik)
 
         // Kilitli notta içerik yerine "Kilitli" yazar; önizleme sızdırmaz.
-        val ikincil = if (not.kilitli) {
-            t.ozet.context.getString(R.string.kilitli)
-        } else {
-            not.eslesme ?: not.ozet
+        // Eşitleme çakışması kopyası, içeriği yerine ne olduğunu söyler.
+        val cakisma = Cakisma.coz(not.ad)
+        val ikincil = when {
+            not.kilitli -> t.ozet.context.getString(R.string.kilitli)
+            cakisma != null -> t.ozet.context.getString(
+                R.string.cakisma_ozet,
+                cakisma.asilAd.substringBeforeLast('.')
+            )
+            else -> not.eslesme ?: not.ozet
         }
-        t.ozet.text = if (not.kilitli) ikincil else vurgula(ikincil)
+        t.ozet.text = when {
+            not.kilitli -> ikincil
+            cakisma != null -> SpannableString(ikincil).apply {
+                setSpan(
+                    ForegroundColorSpan(ContextCompat.getColor(t.ozet.context, R.color.fark_silindi)),
+                    0,
+                    length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            else -> vurgula(ikincil)
+        }
         t.ozet.visibility = if (ikincil.isBlank()) View.GONE else View.VISIBLE
         t.kilit.visibility = if (not.kilitli) View.VISIBLE else View.GONE
 

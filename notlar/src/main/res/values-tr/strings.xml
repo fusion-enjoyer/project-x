@@ -177,6 +177,16 @@
     <string name="icindekiler">İçindekiler</string>
     <string name="baglanti_yok">Bağlantı yok</string>
     <string name="gecmis">Sürüm geçmişi</string>
+    <string name="cakisma">Eşitleme çakışması</string>
+    <string name="cakisma_ozet">“%1$s” ile eşitleme çakışması. Karşılaştırmak için dokun.</string>
+    <string name="cakisma_coz">Çöz</string>
+    <string name="cakisma_baslik">Diğer cihaz %1$s · %2$s</string>
+    <string name="cakisma_aciklama">Yeşil satırlar yalnızca çakışan kopyada, kırmızılar yalnızca bu notta var.</string>
+    <string name="cakisma_coz_ozet">Seçimden sonra çakışan kopya silinir. Notun önceki hâli geçmişinde kalır.</string>
+    <string name="cakisma_bunu_koru">Bu notu olduğu gibi koru</string>
+    <string name="cakisma_digerini_al">Diğer sürümü kullan</string>
+    <string name="cakisma_birlestir">İkisini birleştir (sonra düzenle)</string>
+    <string name="cakisma_cozuldu">Çakışma çözüldü</string>
     <string name="gecmis_yok">Henüz sürüm yok</string>
     <string name="gecmise_donuldu">Eski sürüm yüklendi</string>
 

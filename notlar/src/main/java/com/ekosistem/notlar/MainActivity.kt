@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
 
         adapter = NotAdapter(
             onTikla = { not ->
-                if (secimModu) secimDegistir(not) else editorAc(not.uri)
+                if (secimModu) secimDegistir(not) else notuAc(not)
             },
             onUzunBas = { not -> secimBaslat(not) }
         )
@@ -526,6 +526,27 @@ class MainActivity : AppCompatActivity() {
                 bosDurumGuncelle(notlar.isEmpty())
             }
         }
+    }
+
+    /**
+     * Eşitleme çakışması kopyası editörde değil, asıl notla karşılaştırma
+     * ekranında açılır. Asıl not listede yoksa (silinmiş) sıradan not gibidir.
+     */
+    private fun notuAc(not: Not) {
+        val bilgi = Cakisma.coz(not.ad)
+        val asil = bilgi?.let { b ->
+            adapter.tumNotlar().firstOrNull { it.ad == b.asilAd && it.klasor == not.klasor }
+        }
+        if (asil == null) {
+            editorAc(not.uri)
+            return
+        }
+        startActivity(
+            Intent(this, GecmisActivity::class.java)
+                .putExtra("uri", asil.uri.toString())
+                .putExtra(GecmisActivity.CAKISMA, not.uri.toString())
+                .putExtra(GecmisActivity.CAKISMA_ADI, not.ad)
+        )
     }
 
     private fun editorAc(uri: Uri) {

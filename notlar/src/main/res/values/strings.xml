@@ -177,6 +177,16 @@
     <string name="icindekiler">Contents</string>
     <string name="baglanti_yok">No links</string>
     <string name="gecmis">Version history</string>
+    <string name="cakisma">Sync conflict</string>
+    <string name="cakisma_ozet">Sync conflict with “%1$s”. Tap to compare.</string>
+    <string name="cakisma_coz">Resolve</string>
+    <string name="cakisma_baslik">Other device %1$s · %2$s</string>
+    <string name="cakisma_aciklama">Green lines are only in the conflicting copy, red lines only in this note.</string>
+    <string name="cakisma_coz_ozet">After you choose, the conflicting copy is deleted. The earlier version of the note stays in its history.</string>
+    <string name="cakisma_bunu_koru">Keep this note as it is</string>
+    <string name="cakisma_digerini_al">Use the other version</string>
+    <string name="cakisma_birlestir">Merge both (then edit)</string>
+    <string name="cakisma_cozuldu">Conflict resolved</string>
     <string name="gecmis_yok">No versions yet</string>
     <string name="gecmise_donuldu">Older version loaded</string>
 

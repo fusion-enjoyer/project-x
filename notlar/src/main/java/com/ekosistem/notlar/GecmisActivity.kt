@@ -19,6 +19,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -30,6 +31,9 @@ import java.util.Locale
  * Sürüm geçmişi. Bir sürüme dokunmak onu doğrudan yüklemez: önce güncel notla
  * farkı gösterilir, geri dönüşü kullanıcı onaylar. (Obsidian'ın dosya kurtarma
  * eklentisiyle aynı akış.)
+ *
+ * [CAKISMA] verilirse aynı ekran eşitleme çakışmasını çözer: asıl not ile
+ * çakışma kopyası karşılaştırılır, kullanıcı birini seçer ya da birleştirir.
  */
 class GecmisActivity : AppCompatActivity() {
 
@@ -43,6 +47,7 @@ class GecmisActivity : AppCompatActivity() {
     private lateinit var bosDurum: TextView
 
     private var notUri: Uri? = null
+    private var cakismaUri: Uri? = null
     private var guncelMetin = ""
     private var metinDevralindi = false
     private var seciliSurum: NotDeposu.Surum? = null
@@ -83,7 +88,9 @@ class GecmisActivity : AppCompatActivity() {
         val geriYukle = findViewById<TextView>(R.id.btnGeriYukle)
         geriYukle.backgroundTintList = ColorStateList.valueOf(vurgu)
         geriYukle.setTextColor(Renkler.vurguUzeri(this))
-        geriYukle.setOnClickListener { geriYuklemeyiOnayla() }
+        geriYukle.setOnClickListener {
+            if (cakismaUri != null) cozumSec() else geriYuklemeyiOnayla()
+        }
 
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { geriGit() }
         onBackPressedDispatcher.addCallback(this, geriTusu)
@@ -94,7 +101,13 @@ class GecmisActivity : AppCompatActivity() {
             metinDevralindi = true
         }
         gecerliMetin = null
-        surumleriYukle()
+        cakismaUri = intent.getStringExtra(CAKISMA)?.let(Uri::parse)
+        if (cakismaUri != null) {
+            geriYukle.setText(R.string.cakisma_coz)
+            cakismayiAc()
+        } else {
+            surumleriYukle()
+        }
     }
 
     /**
@@ -107,7 +120,8 @@ class GecmisActivity : AppCompatActivity() {
 
     /** Fark ekranındayken geri tuşu listeye döner, ekrandan çıkmaz. */
     private fun geriGit() {
-        if (farkKap.visibility == View.VISIBLE) {
+        // Çakışma ekranında liste yok; geri, ekrandan çıkar.
+        if (farkKap.visibility == View.VISIBLE && cakismaUri == null) {
             farkKap.visibility = View.GONE
             geriTusu.isEnabled = false
             listeKaydirici.visibility = View.VISIBLE
@@ -319,6 +333,95 @@ class GecmisActivity : AppCompatActivity() {
         }
     }
 
+    // --- Eşitleme çakışması ---
+
+    private fun cakismayiAc() {
+        val asil = notUri ?: run { finish(); return }
+        val kopya = cakismaUri ?: run { finish(); return }
+        val bilgi = intent.getStringExtra(CAKISMA_ADI)?.let { Cakisma.coz(it) }
+        findViewById<TextView>(R.id.ekranBaslik).setText(R.string.cakisma)
+        Thread {
+            val bu = depo.oku(asil)
+            val diger = depo.oku(kopya)
+            val fark = Fark.hesapla(bu.lines(), diger.lines())
+            val (eklenen, silinen) = Fark.sayac(fark)
+            val yazi = farkiBicimle(fark)
+            runOnUiThread {
+                guncelMetin = bu
+                surumMetni = diger
+                farkYazisi = yazi
+                farkBaslik.text = bilgi?.let { cakismaBasligi(it) } ?: getString(R.string.cakisma)
+                farkOzet.text = SpannableStringBuilder(sayacMetni(eklenen, silinen))
+                    .append("\n")
+                    .append(getString(R.string.cakisma_aciklama))
+                gorunumuSec(false)
+                listeKaydirici.visibility = View.GONE
+                farkKap.visibility = View.VISIBLE
+            }
+        }.start()
+    }
+
+    /** "Diğer cihaz ABCDEF7 · 4 Ekim 2026, 15:30" */
+    private fun cakismaBasligi(b: Cakisma.Bilgi): String {
+        val zaman = try {
+            SimpleDateFormat("yyyyMMddHHmmss", Locale.US).parse(b.tarih + b.saat)
+        } catch (_: Exception) {
+            null
+        }
+        val tarih = zaman?.let { tarihBicimi.format(it) } ?: b.tarih
+        return getString(R.string.cakisma_baslik, b.cihaz, tarih)
+    }
+
+    private fun cozumSec() {
+        AltSayfa(this)
+            .mesaj(getString(R.string.cakisma_coz_ozet))
+            .madde(R.drawable.ic_onay_isaret, getString(R.string.cakisma_bunu_koru)) { coz(KORU) }
+            .madde(R.drawable.ic_gecmis, getString(R.string.cakisma_digerini_al)) { coz(DIGERI) }
+            .madde(R.drawable.ic_birlestir, getString(R.string.cakisma_birlestir)) { coz(BIRLESTIR) }
+            .goster()
+    }
+
+    /**
+     * Asıl not değişecekse önceki hâli geçmişe yazılır; kopya en son silinir,
+     * yazma başarısızsa kopyaya dokunulmaz. Birleştirmede not editörde açılır
+     * ki iki hâli kalan satırlar düzeltilebilsin.
+     */
+    private fun coz(secim: Int) {
+        val asil = notUri ?: return
+        val kopya = cakismaUri ?: return
+        val uygulama = applicationContext
+        NotDeposu.yazici.execute {
+            val bu = depo.oku(asil)
+            val diger = depo.oku(kopya)
+            val yeni = when (secim) {
+                KORU -> null
+                DIGERI -> diger
+                else -> Cakisma.birlestir(bu, diger)
+            }
+            var oldu = true
+            if (yeni != null && yeni != bu) {
+                if (bu.isNotBlank()) depo.gecmiseYaz(asil, bu)
+                oldu = depo.yaz(asil, yeni)
+            }
+            if (oldu) oldu = depo.kaliciSil(kopya)
+            NotWidget.hepsiniGuncelle(uygulama)
+            runOnUiThread {
+                Toast.makeText(
+                    uygulama,
+                    if (oldu) R.string.cakisma_cozuldu else R.string.yedek_hata,
+                    Toast.LENGTH_SHORT
+                ).show()
+                if (!oldu) return@runOnUiThread
+                if (secim == BIRLESTIR) {
+                    startActivity(
+                        Intent(this, EditorActivity::class.java).putExtra("uri", asil.toString())
+                    )
+                }
+                finish()
+            }
+        }
+    }
+
     private fun geriYuklemeyiOnayla() {
         val surum = seciliSurum ?: return
         setResult(RESULT_OK, Intent().putExtra("surum", surum.uri.toString()))
@@ -329,6 +432,14 @@ class GecmisActivity : AppCompatActivity() {
         /** Editördeki (belki henüz kaydedilmemiş) metin karşılaştırma için devredilir. */
         @Volatile
         var gecerliMetin: String? = null
+
+        /** Çakışma kopyasının adresi ve dosya adı (bkz. [Cakisma]). */
+        const val CAKISMA = "cakisma"
+        const val CAKISMA_ADI = "cakismaAdi"
+
+        private const val KORU = 0
+        private const val DIGERI = 1
+        private const val BIRLESTIR = 2
 
         private const val BAGLAM = 3
         private const val EE = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
