@@ -25,6 +25,9 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import java.util.Locale
 
 class EditorActivity : AppCompatActivity() {
@@ -94,7 +97,7 @@ class EditorActivity : AppCompatActivity() {
             }
             kilitBekliyor = false
             metinAlani.visibility = View.VISIBLE
-            bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
+            bicimKaydirici.visibility = if (okumaModu || odakModu) View.GONE else View.VISIBLE
             uri?.let { notuYukle(it) }
         }
 
@@ -194,12 +197,43 @@ class EditorActivity : AppCompatActivity() {
         ipucuVer(findViewById(R.id.btnGeri), findViewById(R.id.btnEditorMenu), btnOkuma)
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
         onBackPressedDispatcher.addCallback(this, bulGeriTusu)
+        onBackPressedDispatcher.addCallback(this, odakGeriTusu)
         dugmeleriGuncelle()
     }
 
     /** Bul çubuğu açıkken geri tuşu önce çubuğu kapatır, notu değil. */
     private val bulGeriTusu = object : androidx.activity.OnBackPressedCallback(false) {
         override fun handleOnBackPressed() = bulCubuguKapat()
+    }
+
+    /** Odak modunda geri tuşu önce moddan çıkar. */
+    private val odakGeriTusu = object : androidx.activity.OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = odakModunuDegistir()
+    }
+
+    /** Yalnızca metin: üst çubuk, biçim çubuğu ve sistem çubukları gizli. */
+    private var odakModu = false
+
+    private fun odakModunuDegistir() {
+        odakModu = !odakModu
+        odakGeriTusu.isEnabled = odakModu
+        val pencere = WindowCompat.getInsetsController(window, window.decorView)
+        if (odakModu) {
+            ustCubuguGoster(false)
+            bicimKaydirici.visibility = View.GONE
+            kaydirici.altPay = 0
+            pencere.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            pencere.hide(WindowInsetsCompat.Type.systemBars())
+            Toast.makeText(this, R.string.odak_cikis, Toast.LENGTH_SHORT).show()
+        } else {
+            pencere.show(WindowInsetsCompat.Type.systemBars())
+            ustCubuguGoster(true)
+            if (!okumaModu && bulCubugu.visibility != View.VISIBLE) {
+                bicimKaydirici.visibility = View.VISIBLE
+                kaydirici.altPay = (BICIM_PAYI_DP * resources.displayMetrics.density).toInt()
+            }
+        }
     }
 
     /**
@@ -238,6 +272,8 @@ class EditorActivity : AppCompatActivity() {
 
     private fun ustCubuguGoster(acik: Boolean) {
         if (acik == ustCubukAcik) return
+        // Odak modunda kaydırmak üst çubuğu geri getirmesin.
+        if (acik && odakModu) return
         // Bul çubuğu açıkken üst ikonlar zaten gizli; karışmasınlar.
         if (bulCubugu.visibility == View.VISIBLE) return
         ustCubukAcik = acik
@@ -1191,7 +1227,8 @@ class EditorActivity : AppCompatActivity() {
         metinAlani.isFocusable = !okumaModu
         metinAlani.isFocusableInTouchMode = !okumaModu
         metinAlani.isCursorVisible = !okumaModu
-        bicimKaydirici.visibility = if (okumaModu || bulCubugu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        bicimKaydirici.visibility =
+            if (okumaModu || odakModu || bulCubugu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         btnOkuma.setImageResource(
             if (okumaModu) R.drawable.ic_duzenle else R.drawable.ic_okuma
         )
@@ -1254,6 +1291,8 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun bulCubuguAc() {
+        // Bul çubuğu üst çubuğun yerinde durur; odak modunda görünmezdi.
+        if (odakModu) odakModunuDegistir()
         bulCubugu.visibility = View.VISIBLE
         // Bul çubuğu üst ikonların yerini alır; ikisi üst üste binmesin.
         ustCubuk.visibility = View.GONE
@@ -1548,6 +1587,8 @@ class EditorActivity : AppCompatActivity() {
                 icindekileriGoster(basliklar)
             }
         }
+
+        sayfa.madde(R.drawable.ic_odak, getString(R.string.odak_modu)) { odakModunuDegistir() }
 
         sayfa.madde(
             R.drawable.ic_kaynak,

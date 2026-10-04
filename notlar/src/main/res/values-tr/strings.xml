@@ -249,6 +249,8 @@
     <string name="kelime_karakter">%1$d kelime \u00b7 %2$d karakter</string>
     <string name="notu_cogalt">Notu çoğalt</string>
     <string name="notu_bol">Buradan böl</string>
+    <string name="odak_modu">Odak modu</string>
+    <string name="odak_cikis">Odak modundan çıkmak için geri kaydır</string>
     <string name="bol_ozet">İmlecin bulunduğu satır ve altı yeni bir not olur. Üst kısım bu notta kalır.</string>
     <string name="bol_bos">Bölmek için imleci notun ortasında bir satıra koy</string>
     <string name="diger">Diğer</string>

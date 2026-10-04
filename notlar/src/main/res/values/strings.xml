@@ -249,6 +249,8 @@
     <string name="kelime_karakter">%1$d words \u00b7 %2$d characters</string>
     <string name="notu_cogalt">Duplicate note</string>
     <string name="notu_bol">Split here</string>
+    <string name="odak_modu">Focus mode</string>
+    <string name="odak_cikis">Swipe back to leave focus mode</string>
     <string name="bol_ozet">The line with the cursor and everything below it becomes a new note. The part above stays in this note.</string>
     <string name="bol_bos">Put the cursor on a line in the middle of the note to split it</string>
     <string name="diger">More</string>
