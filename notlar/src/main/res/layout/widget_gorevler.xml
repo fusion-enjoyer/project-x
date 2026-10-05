@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Görevler widget'ı: bütün notlardaki açık görevler; kutuya dokununca işaretlenir. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:id="@+id/widgetBaslik"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:text="@string/gorevler"
+            android:textColor="@color/metin"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widgetSayac"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:textColor="@color/vurgu"
+            android:textSize="12sp" />
+
+        <ImageView
+            android:id="@+id/widgetEkle"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@string/gorev_ekle"
+            android:src="@drawable/ic_arti"
+            android:tint="@color/vurgu" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/widgetListe"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@null" />
+
+    <TextView
+        android:id="@+id/widgetBos"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/gorev_yok"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="13sp" />
+
+</LinearLayout>

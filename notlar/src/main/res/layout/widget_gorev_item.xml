@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Görev ya da not satırı (Görevler ve Tek not widget'ları). Kutuya dokunmak
+  görevi işaretler, satırın kalanına dokunmak notu açar. Görev olmayan
+  satırlarda kutu gizlenir.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/satirKok"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="top"
+    android:orientation="horizontal"
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp">
+
+    <ImageView
+        android:id="@+id/satirKutu"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginEnd="6dp"
+        android:contentDescription="@string/gorev_isaretle"
+        android:padding="4dp"
+        android:src="@drawable/ic_kutu_bos"
+        android:tint="@color/metin_ikincil" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minHeight="26dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/satirMetin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/metin"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/satirAlt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/metin_ikincil"
+            android:textSize="11sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tek not: başlık ve notun satırları. Görev satırlarının kutusuna dokununca
+  görev işaretlenir; başlığa ya da başka bir satıra dokununca not açılır.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetKok"
     android:layout_width="match_parent"
@@ -13,18 +17,24 @@
         android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="1"
+        android:paddingBottom="4dp"
         android:textColor="@color/metin"
         android:textSize="15sp"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/widgetIcerik"
+    <ListView
+        android:id="@+id/widgetListe"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="6dp"
         android:layout_weight="1"
-        android:ellipsize="end"
-        android:lineSpacingExtra="2dp"
+        android:divider="@null" />
+
+    <TextView
+        android:id="@+id/widgetBos"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="top"
         android:textColor="@color/metin_ikincil"
         android:textSize="12sp" />
 

@@ -25,6 +25,12 @@ object Sablonlar {
     /** Günlük notun gövdesini veren şablonun dosya adı. */
     private const val GUNLUK = "gunluk"
 
+    /** Görevlerin toplandığı bölüm başlığı ("## Görevler", "# Tasks"...). */
+    private val GOREV_BASLIGI = Regex(
+        "^#{1,6}\\s*(görevler|yapılacaklar|yapilacaklar|tasks|to-?do)\\s*:?$",
+        setOf(RegexOption.IGNORE_CASE)
+    )
+
     /**
      * `{{tarih}}`, `{{saat:HH.mm}}`, `{{baslik}}` — Türkçe ve İngilizce adlar.
      * Kapanış süslü parantezleri kaçırılmalı: Android'in ICU motoru kaçışsız
@@ -107,6 +113,53 @@ object Sablonlar {
         val ayrac = if (mevcut.isEmpty() || mevcut.endsWith("\n\n")) "" else if (mevcut.endsWith("\n")) "\n" else "\n\n"
         depo.gecmiseYaz(adres, mevcut)
         return if (depo.yaz(adres, mevcut + ayrac + metin.trim() + "\n")) adres else null
+    }
+
+    /**
+     * Bugünün notuna görev ekler (widget'taki "+"). Notun son satırı zaten
+     * görevse araya boş satır girmez, görevler alt alta dizilir.
+     */
+    fun bugununNotunaGorevEkle(context: Context, depo: NotDeposu, metin: String): Uri? {
+        val adres = bugununNotu(context, depo) ?: return null
+        val mevcut = depo.okuKesin(adres) ?: return null
+        if (Sifreleme.sifreliMi(mevcut)) return null
+        depo.gecmiseYaz(adres, mevcut)
+        return if (depo.yaz(adres, gorevEkle(mevcut, metin))) adres else null
+    }
+
+    /**
+     * Saf kısım: `- [ ] metin` satırını yerleştirir. Notta "Görevler" (ya da
+     * Yapılacaklar / Tasks / To-do) başlığı varsa görev o bölüme girer: bölümde
+     * boş bir `- [ ]` yer tutucusu varsa onun yerine, yoksa son görevin altına.
+     * Günlük not şablonunda böyle bir bölüm var; görev notun sonuna düşmesin.
+     * Başlık yoksa notun sonuna eklenir.
+     */
+    fun gorevEkle(mevcut: String, metin: String): String {
+        val gorev = "- [ ] " + metin.trim().replace('\n', ' ')
+        val satirlar = mevcut.split('\n').toMutableList()
+        val baslikNo = satirlar.indexOfFirst { GOREV_BASLIGI.matches(it.trim()) }
+        if (baslikNo >= 0) {
+            val bolumSonu = (baslikNo + 1 until satirlar.size)
+                .firstOrNull { satirlar[it].trimStart().startsWith("#") } ?: satirlar.size
+            val bolum = baslikNo + 1 until bolumSonu
+            val yerTutucu = bolum.firstOrNull { satirlar[it].trim() == "- [ ]" }
+            if (yerTutucu != null) {
+                satirlar[yerTutucu] = satirlar[yerTutucu].substringBefore("- [ ]") + gorev
+            } else {
+                val sonGorev = bolum.lastOrNull { MarkdownBicimci.ONAY.containsMatchIn(satirlar[it]) }
+                satirlar.add((sonGorev ?: baslikNo) + 1, gorev)
+            }
+            return satirlar.joinToString("\n")
+        }
+        val sonSatir = mevcut.trimEnd('\n').substringAfterLast('\n')
+        val govde = when {
+            mevcut.isEmpty() -> ""
+            MarkdownBicimci.ONAY.containsMatchIn(sonSatir) -> mevcut.trimEnd('\n') + "\n"
+            mevcut.endsWith("\n\n") -> mevcut
+            mevcut.endsWith("\n") -> mevcut + "\n"
+            else -> mevcut + "\n\n"
+        }
+        return govde + gorev + "\n"
     }
 
     private fun gunlukSablonu(depo: NotDeposu): Not? = listele(depo).firstOrNull {

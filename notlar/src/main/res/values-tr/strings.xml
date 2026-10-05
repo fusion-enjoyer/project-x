@@ -155,6 +155,19 @@
     <string name="onizleme_liste_2_ozet">Kürk Mantolu Madonna…</string>
     <string name="onizleme_liste_3">Tarifler</string>
     <string name="onizleme_liste_3_ozet">Mercimek çorbası…</string>
+    <string name="widget_gorevler_aciklama">Bütün notlardaki açık görevler; widget\'tan işaretlenir</string>
+    <string name="onizleme_gorev_sayac">3 açık</string>
+    <string name="onizleme_gorev_1">Süt al</string>
+    <string name="onizleme_gorev_2">Faturayı öde</string>
+    <string name="onizleme_gorev_3">Kargoyu takip et</string>
+    <string name="gorev_ekle">Görev ekle</string>
+    <string name="gorev_ipucu">Bugünün notuna eklenir</string>
+    <string name="gorev_eklendi">Görev bugünün notuna eklendi</string>
+    <string name="gorev_isaretle">Görevi işaretle</string>
+    <plurals name="acik_gorev">
+        <item quantity="one">%d açık</item>
+        <item quantity="other">%d açık</item>
+    </plurals>
     <string name="okuma_gorunumu">Okuma görünümü</string>
     <string name="duzenleme_gorunumu">Düzenlemeye dön</string>
     <string name="kaynak_modu">Kaynak modu</string>

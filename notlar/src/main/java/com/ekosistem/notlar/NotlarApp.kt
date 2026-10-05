@@ -27,7 +27,9 @@ class NotlarApp : Application() {
         override fun onActivityStarted(activity: Activity) {
             if (gorunenSayisi == 0) Kilit.onPlanaGelindi(this@NotlarApp)
             gorunenSayisi++
-            if (activity is KilitActivity || kilitIstendi) return
+            // Widget aracısı ekranda bir şey göstermez; görev işaretlemek PIN istemesin.
+            // Not açılacaksa editör başlarken kilit yine sorulur.
+            if (activity is KilitActivity || activity is WidgetEylemActivity || kilitIstendi) return
             if (!Kilit.gerekli(this@NotlarApp)) return
             kilitIstendi = true
             activity.startActivity(

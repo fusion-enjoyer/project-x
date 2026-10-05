@@ -436,12 +436,17 @@ class NotDeposu(private val context: Context) {
         return sonuc.sortedWith(compareBy<Gorev>({ it.isaretli }, { it.sonGun ?: Long.MAX_VALUE }))
     }
 
-    /** Bir görev satırının işaretini değiştirir. */
-    fun gorevDegistir(gorev: Gorev): Boolean {
+    /**
+     * Bir görev satırının işaretini değiştirir. [metniDogrula] açıksa satırın
+     * metni hâlâ görevinkiyle aynı mı bakılır: widget eski kalmışken not
+     * düzenlenip satırlar kaydıysa yanlış görev işaretlenmesin.
+     */
+    fun gorevDegistir(gorev: Gorev, metniDogrula: Boolean = false): Boolean {
         val satirlar = oku(gorev.notUri).lines().toMutableList()
         if (gorev.satirNo !in satirlar.indices) return false
         val satir = satirlar[gorev.satirNo]
         val eslesme = MarkdownBicimci.ONAY.find(satir) ?: return false
+        if (metniDogrula && SonTarih.temizle(satir.substring(eslesme.value.length)) != gorev.metin) return false
         val girinti = eslesme.groupValues[1].length
         val isaretli = !eslesme.groupValues[2].equals(" ", true)
         val yeniIsaret = if (isaretli) " " else "x"

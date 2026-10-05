@@ -27,6 +27,20 @@
         <item name="android:textSize">14sp</item>
     </style>
 
+    <style name="WidgetOrnekGorev">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:drawableStart">@drawable/ic_kutu_bos</item>
+        <item name="android:drawablePadding">10dp</item>
+        <item name="android:drawableTint">@color/metin_ikincil</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textColor">@color/metin</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
     <style name="WidgetOrnekOzet">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

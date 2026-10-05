@@ -118,6 +118,46 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <service
+            android:name=".TekNotWidgetServisi"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <receiver
+            android:name=".GorevlerWidget"
+            android:exported="false"
+            android:label="@string/gorevler">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_gorevler" />
+        </receiver>
+
+        <service
+            android:name=".GorevlerWidgetServisi"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <!-- Widget listelerindeki dokunuşların görünmez aracısı (görev işaretle / not aç). -->
+        <activity
+            android:name=".WidgetEylemActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
+
+        <!-- Widget'tan görev ekleme: şeffaf ekranda tek satırlık alt sayfa. -->
+        <activity
+            android:name=".GorevEkleActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Notlar.Translucent"
+            android:windowSoftInputMode="adjustResize|stateVisible" />
+
         <!--
           Dışarıdan gelen metin: "Paylaş", seçili metinde "Notlara ekle"
           (Android 6+) ve .md/.txt dosyasını "Birlikte aç".

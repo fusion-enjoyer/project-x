@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- previewLayout, description ve targetCell* Android 12+'da; eskiler yok sayar. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:configure="com.ekosistem.notlar.WidgetAyarActivity"
-    android:description="@string/widget_tek_not_aciklama"
-    android:widgetFeatures="reconfigurable"
-    android:initialLayout="@layout/widget_tek_not"
+    android:description="@string/widget_gorevler_aciklama"
+    android:initialLayout="@layout/widget_gorevler"
     android:minWidth="180dp"
     android:minHeight="110dp"
     android:previewImage="@drawable/ic_launcher"
-    android:previewLayout="@layout/widget_onizleme_tek_not"
+    android:previewLayout="@layout/widget_onizleme_gorevler"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="3"
     android:targetCellHeight="2"

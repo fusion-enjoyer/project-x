@@ -155,6 +155,19 @@
     <string name="onizleme_liste_2_ozet">The Left Hand of Darkness…</string>
     <string name="onizleme_liste_3">Recipes</string>
     <string name="onizleme_liste_3_ozet">Lentil soup…</string>
+    <string name="widget_gorevler_aciklama">Open tasks from all your notes; check them off here</string>
+    <string name="onizleme_gorev_sayac">3 open</string>
+    <string name="onizleme_gorev_1">Buy milk</string>
+    <string name="onizleme_gorev_2">Pay the bill</string>
+    <string name="onizleme_gorev_3">Track the package</string>
+    <string name="gorev_ekle">Add task</string>
+    <string name="gorev_ipucu">Goes into today\'s note</string>
+    <string name="gorev_eklendi">Task added to today\'s note</string>
+    <string name="gorev_isaretle">Check off task</string>
+    <plurals name="acik_gorev">
+        <item quantity="one">%d open</item>
+        <item quantity="other">%d open</item>
+    </plurals>
     <string name="okuma_gorunumu">Reading view</string>
     <string name="duzenleme_gorunumu">Back to editing</string>
     <string name="kaynak_modu">Source mode</string>

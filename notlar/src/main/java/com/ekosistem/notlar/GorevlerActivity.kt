@@ -8,7 +8,6 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.format.DateFormat
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.LayoutInflater
@@ -20,9 +19,6 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 /** Tüm notlardaki onay kutularını tek listede toplar. */
 class GorevlerActivity : TemelActivity() {
@@ -121,17 +117,12 @@ class GorevAdapter(
 
     private var gorevler: List<Gorev> = emptyList()
 
-    /** Liste her yenilendiğinde bir kez; satır çizilirken yeniden hesaplanmaz. */
-    private var bugun = SonTarih.bugun()
-
-    /** Tarih biçimleri ilk gerektiğinde kurulur (kurulumu pahalı). */
-    private var buYilBicimi: SimpleDateFormat? = null
-    private var yilliBicim: SimpleDateFormat? = null
-    private val takvim: Calendar = Calendar.getInstance()
+    /** İlk satır çizilirken kurulur; "bugün" her yenilemede tazelenir. */
+    private var etiketci: TarihEtiketi? = null
 
     fun guncelle(yeni: List<Gorev>) {
         gorevler = yeni
-        bugun = SonTarih.bugun()
+        etiketci?.tazele()
         notifyDataSetChanged()
     }
 
@@ -175,8 +166,9 @@ class GorevAdapter(
     /** "3 gün gecikti · Not başlığı": tarih etiketi renkli, not adı soluk. */
     private fun altSatir(context: Context, gorev: Gorev): CharSequence {
         val gun = gorev.sonGun ?: return gorev.notBasligi
-        val fark = (gun - bugun).toInt()
-        val etiket = tarihEtiketi(context, gun, fark)
+        val e = etiketci ?: TarihEtiketi(context).also { etiketci = it }
+        val fark = e.fark(gun)
+        val etiket = e.etiket(gun)
         val renk = when {
             gorev.isaretli -> soluk
             fark < 0 -> gecikmis
@@ -189,30 +181,5 @@ class GorevAdapter(
             s.setSpan(StyleSpan(Typeface.BOLD), 0, etiket.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         return s.append(" · ").append(gorev.notBasligi)
-    }
-
-    private fun tarihBicimi(iskelet: String): SimpleDateFormat =
-        SimpleDateFormat(DateFormat.getBestDateTimePattern(Locale.getDefault(), iskelet), Locale.getDefault())
-
-    private fun tarihEtiketi(context: Context, gun: Long, fark: Int): String {
-        val r = context.resources
-        return when {
-            fark == 0 -> r.getString(R.string.bugun)
-            fark == 1 -> r.getString(R.string.yarin)
-            fark < 0 -> r.getQuantityString(R.plurals.gun_gecikti, -fark, -fark)
-            fark < 7 -> r.getQuantityString(R.plurals.gun_kaldi, fark, fark)
-            else -> {
-                val (yil, ay, g) = SonTarih.tarih(gun)
-                takvim.clear()
-                takvim.set(yil, ay - 1, g)
-                // Bu yılın tarihinde yıl yazılmaz.
-                val bicim = if (yil == SonTarih.tarih(bugun).first) {
-                    buYilBicimi ?: tarihBicimi("MMMd").also { buYilBicimi = it }
-                } else {
-                    yilliBicim ?: tarihBicimi("yMMMd").also { yilliBicim = it }
-                }
-                bicim.format(takvim.time)
-            }
-        }
     }
 }
