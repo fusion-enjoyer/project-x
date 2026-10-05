@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hızlı eylemler (4x1): yeni not, bugünün notu, görev ekle, fotoğraflı not,
+  ara. İlki vurgu renginde daire; diğerleri metin renginde düz ikon.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_hap"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+
+    <FrameLayout
+        android:id="@+id/eylemYeni"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:contentDescription="@string/yeni_not">
+
+        <ImageView
+            android:id="@+id/eylemYeniDaire"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_daire"
+            android:tint="@color/vurgu" />
+
+        <ImageView
+            android:id="@+id/eylemYeniArti"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_arti"
+            android:tint="@color/pill_metin" />
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/eylemGunluk"
+        style="@style/WidgetEylem"
+        android:contentDescription="@string/bugunun_notu"
+        android:src="@drawable/ic_gunluk" />
+
+    <ImageView
+        android:id="@+id/eylemGorev"
+        style="@style/WidgetEylem"
+        android:contentDescription="@string/gorev_ekle"
+        android:src="@drawable/ic_bicim_onay" />
+
+    <ImageView
+        android:id="@+id/eylemKamera"
+        style="@style/WidgetEylem"
+        android:contentDescription="@string/fotografli_not"
+        android:src="@drawable/ic_kamera" />
+
+    <ImageView
+        android:id="@+id/eylemAra"
+        style="@style/WidgetEylem"
+        android:contentDescription="@string/ara"
+        android:src="@drawable/ic_ara" />
+
+</LinearLayout>

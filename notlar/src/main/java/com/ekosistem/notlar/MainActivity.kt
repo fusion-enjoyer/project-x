@@ -1249,7 +1249,7 @@ class MainActivity : TemelActivity() {
         sayfa.goster()
     }
 
-    private companion object {
+    companion object {
         const val SERIT_SURESI = 5000L
         const val ARAMA_GECIKMESI = 200L
         const val GOSTERGE_GECIKMESI = 250L

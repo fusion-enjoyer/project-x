@@ -183,6 +183,10 @@ class EditorActivity : TemelActivity() {
             acilacak == null -> {
                 yuklendi = true
                 metinAlani.requestFocus()
+                // Hızlı eylemler widget'ındaki "fotoğraflı not": boş not açılır açılmaz kamera.
+                if (savedInstanceState == null && intent.getBooleanExtra(EK_KAMERA, false)) {
+                    metinAlani.post { fotografCek() }
+                }
             }
             // Kilitli notun içeriği kilit açılana kadar hiç yüklenmez.
             Kilit.notKilitli(this, acilacak.toString()) -> {
@@ -2331,7 +2335,7 @@ class EditorActivity : TemelActivity() {
         kameraAdresi?.let { outState.putString(KAMERA_ADRESI, it.toString()) }
     }
 
-    private companion object {
+    companion object {
         const val KAMERA_ADRESI = "kameraAdresi"
 
         /** Açılış metniyle hiç eşleşmeyen değer: kaydet() metni ne olursa olsun yazar. */
@@ -2360,6 +2364,9 @@ class EditorActivity : TemelActivity() {
         val MADDE = Regex("^([ \\t]*)(?:- \\[[ xX]\\] |- |(\\d+)\\. )")
         val NUMARA = Regex("^\\d+\\. ")
         const val KAPANIS_ISARETLERI = "*~`_"
+        /** Boş not açılır açılmaz kamerayı başlatır (Hızlı eylemler widget'ı). */
+        const val EK_KAMERA = "kamera"
+
         val ONEKLER = listOf("- [ ] ", "- [x] ", "- [X] ", "- ", "### ", "## ", "# ", "> ")
     }
 }

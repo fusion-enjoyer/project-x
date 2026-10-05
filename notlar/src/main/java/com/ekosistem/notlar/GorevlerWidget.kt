@@ -27,6 +27,8 @@ class GorevlerWidget : NotWidgetSaglayici() {
         WidgetTema.zemin(context, g, R.id.widgetKok)
         WidgetTema.metin(context, g, R.id.widgetBaslik)
         WidgetTema.ikincil(context, g, R.id.widgetBos)
+        g.setTextViewText(R.id.widgetBaslik, context.getString(R.string.gorevler))
+        g.setTextViewText(R.id.widgetBos, context.getString(R.string.gorev_yok))
         NotWidget.vurguMetni(context, g, R.id.widgetSayac)
         NotWidget.vurguyaBoya(context, g, R.id.widgetEkle)
 

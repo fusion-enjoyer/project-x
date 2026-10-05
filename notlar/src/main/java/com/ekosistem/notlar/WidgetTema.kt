@@ -17,12 +17,19 @@ object WidgetTema {
     class Palet(
         val gece: Boolean,
         val zemin: Int,
+        val hap: Int,
         val metin: Int,
         val ikincil: Int
     )
 
-    private val ACIK = Palet(false, R.drawable.bg_widget_acik, 0xFF171614.toInt(), 0xFF8A867E.toInt())
-    private val KOYU = Palet(true, R.drawable.bg_widget_koyu, 0xFFF2EFE9.toInt(), 0xFF8B867D.toInt())
+    private val ACIK = Palet(
+        false, R.drawable.bg_widget_acik, R.drawable.bg_widget_hap_acik,
+        0xFF171614.toInt(), 0xFF8A867E.toInt()
+    )
+    private val KOYU = Palet(
+        true, R.drawable.bg_widget_koyu, R.drawable.bg_widget_hap_koyu,
+        0xFFF2EFE9.toInt(), 0xFF8B867D.toInt()
+    )
 
     /** null: tema sistemle aynı, renkler kaynaklardan çözülür. */
     fun palet(c: Context): Palet? = when (Prefs.tema(c)) {
@@ -35,6 +42,12 @@ object WidgetTema {
     fun zemin(c: Context, g: RemoteViews, vararg idler: Int) {
         val p = palet(c) ?: return
         for (id in idler) g.setInt(id, "setBackgroundResource", p.zemin)
+    }
+
+    /** Hap biçimli zemin (Hızlı eylemler çubuğu). */
+    fun hap(c: Context, g: RemoteViews, id: Int) {
+        val p = palet(c) ?: return
+        g.setInt(id, "setBackgroundResource", p.hap)
     }
 
     fun metin(c: Context, g: RemoteViews, vararg idler: Int) {

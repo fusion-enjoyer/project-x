@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bugünün notu: gün adı, tarih, notun ilk satırları ve "+ Yaz". Dokununca
+  bugünün notu açılır (yoksa şablonuyla oluşturulur). Örnek metinler widget
+  seçicideki önizleme içindir; çizimde gerçekleri yazılır.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/widgetGun"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text="@string/onizleme_bugun_gun"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widgetTarih"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text="@string/onizleme_bugun_tarih"
+        android:textColor="@color/metin"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widgetIcerik"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:lineSpacingExtra="2dp"
+        android:text="@string/onizleme_bugun_icerik"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/widgetYaz"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/bugun_yaz"
+        android:textColor="@color/vurgu"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

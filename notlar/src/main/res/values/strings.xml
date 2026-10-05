@@ -160,6 +160,15 @@
     <string name="onizleme_gorev_1">Buy milk</string>
     <string name="onizleme_gorev_2">Pay the bill</string>
     <string name="onizleme_gorev_3">Track the package</string>
+    <string name="widget_bugun_aciklama">The first lines of your daily note; tap to open</string>
+    <string name="widget_eylemler">Quick actions</string>
+    <string name="widget_eylemler_aciklama">New note, today\'s note, task, photo, search</string>
+    <string name="onizleme_bugun_gun">Monday</string>
+    <string name="onizleme_bugun_tarih">October 5</string>
+    <string name="onizleme_bugun_icerik">Morning run, 5 km\nRoom for meeting notes…</string>
+    <string name="bugun_yaz">+ Write</string>
+    <string name="bugun_bos">Nothing written today yet</string>
+    <string name="fotografli_not">Photo note</string>
     <string name="gorev_ekle">Add task</string>
     <string name="gorev_ipucu">Goes into today\'s note</string>
     <string name="gorev_eklendi">Task added to today\'s note</string>

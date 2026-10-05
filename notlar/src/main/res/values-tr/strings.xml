@@ -160,6 +160,15 @@
     <string name="onizleme_gorev_1">Süt al</string>
     <string name="onizleme_gorev_2">Faturayı öde</string>
     <string name="onizleme_gorev_3">Kargoyu takip et</string>
+    <string name="widget_bugun_aciklama">Günlük notun ilk satırları; dokununca açılır</string>
+    <string name="widget_eylemler">Hızlı eylemler</string>
+    <string name="widget_eylemler_aciklama">Yeni not, bugünün notu, görev, fotoğraf, arama</string>
+    <string name="onizleme_bugun_gun">Pazartesi</string>
+    <string name="onizleme_bugun_tarih">5 Ekim</string>
+    <string name="onizleme_bugun_icerik">Sabah koşu, 5 km\nToplantı notları için yer…</string>
+    <string name="bugun_yaz">+ Yaz</string>
+    <string name="bugun_bos">Bugün henüz yazmadın</string>
+    <string name="fotografli_not">Fotoğraflı not</string>
     <string name="gorev_ekle">Görev ekle</string>
     <string name="gorev_ipucu">Bugünün notuna eklenir</string>
     <string name="gorev_eklendi">Görev bugünün notuna eklendi</string>

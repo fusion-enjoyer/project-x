@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- previewLayout, description ve targetCell* Android 12+'da; eskiler yok sayar. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_bugun_aciklama"
+    android:initialLayout="@layout/widget_bugun"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:previewImage="@drawable/ic_launcher"
+    android:previewLayout="@layout/widget_bugun"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

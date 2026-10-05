@@ -140,6 +140,30 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <receiver
+            android:name=".BugunWidget"
+            android:exported="false"
+            android:label="@string/bugunun_notu">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_bugun" />
+        </receiver>
+
+        <receiver
+            android:name=".EylemlerWidget"
+            android:exported="false"
+            android:label="@string/widget_eylemler">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_eylemler" />
+        </receiver>
+
         <!-- Widget listelerindeki dokunuşların görünmez aracısı (görev işaretle / not aç). -->
         <activity
             android:name=".WidgetEylemActivity"

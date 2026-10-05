@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hızlı eylemler çubuğunun hap biçimli zemini (Sistem temasında). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/kart" />
+    <corners android:radius="999dp" />
+</shape>

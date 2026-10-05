@@ -1,5 +1,6 @@
 package com.ekosistem.notlar
 
+import android.app.AlarmManager
 import android.app.LocaleManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -17,6 +18,7 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import java.util.Calendar
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -34,7 +36,9 @@ object NotWidget {
         ::HizliNotWidget,
         ::TekNotWidget,
         ::ListeWidget,
-        ::GorevlerWidget
+        ::GorevlerWidget,
+        ::BugunWidget,
+        ::EylemlerWidget
     )
 
     fun bayrak(degistirilebilir: Boolean): Int {
@@ -136,6 +140,13 @@ abstract class NotWidgetSaglayici : AppWidgetProvider() {
     /** Koleksiyon widget'ının liste görünümü; varsa çizimden sonra içerik tazelenir. */
     protected open val listeId: Int? = null
 
+    /**
+     * İçeriği güne bağlı widget (Bugünün notu, Geçmişte bugün): her çizimden
+     * sonra gece yarısına bir yenileme kurulur. Sistemin 30 dakikalık
+     * güncellemesi tarihi yarım saate kadar geç çevirebiliyordu.
+     */
+    protected open val gunlukYenile: Boolean = false
+
     abstract fun ciz(context: Context, id: Int): RemoteViews
 
     final override fun onUpdate(context: Context, yonetici: AppWidgetManager, widgetIds: IntArray) {
@@ -150,10 +161,30 @@ abstract class NotWidgetSaglayici : AppWidgetProvider() {
                     } catch (_: Exception) {
                     }
                 }
+                if (gunlukYenile) geceYarisinaKur(uygulama, yonetici)
             } finally {
                 bekleyen?.finish()
             }
         }
+    }
+
+    /** Bu sağlayıcının bütün widget'ları için ertesi gece yarısı (+1 dk) güncelleme. */
+    private fun geceYarisinaKur(context: Context, yonetici: AppWidgetManager) {
+        val ids = yonetici.getAppWidgetIds(ComponentName(context, this::class.java)) ?: return
+        if (ids.isEmpty()) return
+        val niyet = Intent(context, this::class.java)
+            .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        val bekleyen = PendingIntent.getBroadcast(context, 0, niyet, NotWidget.bayrak(false))
+        val takvim = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 1)
+            set(Calendar.SECOND, 0)
+        }
+        // Kesin alarm izni gerekmez: birkaç dakika gecikmesi sorun değil.
+        val alarm = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        alarm.set(AlarmManager.RTC, takvim.timeInMillis, bekleyen)
     }
 }
 
@@ -164,6 +195,8 @@ class HizliNotWidget : NotWidgetSaglayici() {
         val g = RemoteViews(context.packageName, R.layout.widget_hizli_not)
         WidgetTema.zemin(context, g, R.id.widgetKok)
         WidgetTema.ikincil(context, g, R.id.widgetEtiket)
+        // Sabit yazılar da koddan: yerleşimdekini başlatıcı sistem diliyle çözüyor.
+        g.setTextViewText(R.id.widgetEtiket, context.getString(R.string.widget_hizli_not))
         NotWidget.vurguyaBoya(context, g, R.id.widgetDaire)
         NotWidget.vurguyaBoya(context, g, R.id.widgetArti, uzeri = true)
         g.setOnClickPendingIntent(
@@ -355,12 +388,14 @@ class TekNotFabrikasi(
         private const val EN_FAZLA_SATIR = 80
 
         /** Satırdaki Markdown işaretleri atılır (görev olmayan satırlar). */
-        fun temizle(satir: String): String =
-            satir.trim()
-                .trimStart('#', '>', ' ')
-                .removePrefix("- ")
+        fun temizle(satir: String): String {
+            val t = satir.trim().trimStart('#', '>', ' ')
+            // Şablondaki boş madde ("- ") tek başına "-" olarak görünmesin.
+            if (t == "-" || t == "*") return ""
+            return t.removePrefix("- ")
                 .replace("**", "")
                 .replace("`", "")
+        }
     }
 }
 
@@ -374,6 +409,8 @@ class ListeWidget : NotWidgetSaglayici() {
         WidgetTema.zemin(context, g, R.id.widgetKok)
         WidgetTema.metin(context, g, R.id.widgetBaslik)
         WidgetTema.ikincil(context, g, R.id.widgetBos)
+        g.setTextViewText(R.id.widgetBaslik, context.getString(R.string.app_name))
+        g.setTextViewText(R.id.widgetBos, context.getString(R.string.widget_bos))
         NotWidget.vurguyaBoya(context, g, R.id.widgetEkle)
 
         val servis = Intent(context, ListeWidgetServisi::class.java)
