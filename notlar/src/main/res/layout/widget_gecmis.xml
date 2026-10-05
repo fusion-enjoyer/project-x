@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Geçmişte bugün: bir yıl ya da bir ay önce bugün yazılan not; yoksa her gün
+  değişen eski bir not. Örnek metinler widget seçicideki önizleme içindir.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetKok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/widgetIkon"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="6dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_gecmis"
+            android:tint="@color/metin_ikincil" />
+
+        <TextView
+            android:id="@+id/widgetEtiket"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:text="@string/onizleme_gecmis_etiket"
+            android:textColor="@color/metin_ikincil"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widgetBaslik"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="@string/onizleme_gecmis_baslik"
+        android:textColor="@color/metin"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widgetIcerik"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:lineSpacingExtra="2dp"
+        android:text="@string/onizleme_gecmis_icerik"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="13sp" />
+
+</LinearLayout>

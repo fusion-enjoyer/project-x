@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget seçicideki örnek görünüm (Android 12+). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="6dp"
+        android:text="@string/yaklasanlar"
+        android:textColor="@color/metin"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView style="@style/WidgetOrnekYaklasan" android:drawableStart="@drawable/ic_hatirlatici" android:text="@string/onizleme_yaklasan_1" />
+    <TextView style="@style/WidgetOrnekYaklasan" android:drawableStart="@drawable/ic_gunluk" android:text="@string/onizleme_yaklasan_2" />
+    <TextView style="@style/WidgetOrnekYaklasan" android:drawableStart="@drawable/ic_gunluk" android:text="@string/onizleme_yaklasan_3" />
+
+</LinearLayout>

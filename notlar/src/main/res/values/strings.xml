@@ -169,6 +169,24 @@
     <string name="bugun_yaz">+ Write</string>
     <string name="bugun_bos">Nothing written today yet</string>
     <string name="fotografli_not">Photo note</string>
+    <string name="yaklasanlar">Upcoming</string>
+    <string name="widget_yaklasanlar_aciklama">Reminders and tasks with due dates</string>
+    <string name="yaklasan_yok">Nothing coming up</string>
+    <string name="onizleme_yaklasan_1">Today 2:00 PM · Dentist</string>
+    <string name="onizleme_yaklasan_2">Tomorrow · Pay rent</string>
+    <string name="onizleme_yaklasan_3">Friday · Visa application</string>
+    <string name="widget_gecmis">On this day</string>
+    <string name="widget_gecmis_aciklama">The note you wrote a year or a month ago today</string>
+    <string name="onizleme_gecmis_etiket">1 year ago today</string>
+    <string name="onizleme_gecmis_baslik">Cappadocia trip</string>
+    <string name="onizleme_gecmis_icerik">The balloons went up at five, the wind…</string>
+    <plurals name="gecmis_yil_once">
+        <item quantity="one">%d year ago today</item>
+        <item quantity="other">%d years ago today</item>
+    </plurals>
+    <string name="gecmis_ay_once">1 month ago today</string>
+    <string name="gecmis_eski_not">An older note</string>
+    <string name="gecmiste_bugun_yok">No older notes yet. As you write, notes from the past show up here.</string>
     <string name="widget_sabit">Pinned notes</string>
     <string name="widget_sabit_aciklama">Your pinned notes as cards</string>
     <string name="sabit_yok">No pinned notes. Pin a note from its menu and it shows up here.</string>

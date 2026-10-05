@@ -58,6 +58,8 @@ object Hatirlatici {
             @Suppress("DEPRECATION")
             yonetici.set(AlarmManager.RTC_WAKEUP, zaman, niyet)
         }
+        // Yaklaşanlar widget'ı hatırlatıcıları gösterir.
+        NotWidget.hepsiniGuncelle(context)
     }
 
     fun kaldir(context: Context, uri: String) {
@@ -72,6 +74,7 @@ object Hatirlatici {
         )
         yonetici.cancel(niyet)
         niyet.cancel()
+        NotWidget.hepsiniGuncelle(context)
     }
 
     /**

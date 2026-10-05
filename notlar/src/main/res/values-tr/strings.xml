@@ -169,6 +169,24 @@
     <string name="bugun_yaz">+ Yaz</string>
     <string name="bugun_bos">Bugün henüz yazmadın</string>
     <string name="fotografli_not">Fotoğraflı not</string>
+    <string name="yaklasanlar">Yaklaşanlar</string>
+    <string name="widget_yaklasanlar_aciklama">Hatırlatıcılar ve son tarihli görevler</string>
+    <string name="yaklasan_yok">Yaklaşan bir şey yok</string>
+    <string name="onizleme_yaklasan_1">Bugün 14:00 · Diş randevusu</string>
+    <string name="onizleme_yaklasan_2">Yarın · Kira öde</string>
+    <string name="onizleme_yaklasan_3">Cuma · Vize başvurusu</string>
+    <string name="widget_gecmis">Geçmişte bugün</string>
+    <string name="widget_gecmis_aciklama">Bir yıl ya da bir ay önce bugün yazdığın not</string>
+    <string name="onizleme_gecmis_etiket">1 yıl önce bugün</string>
+    <string name="onizleme_gecmis_baslik">Kapadokya gezisi</string>
+    <string name="onizleme_gecmis_icerik">Balonlar sabah beşte kalktı, rüzgâr…</string>
+    <plurals name="gecmis_yil_once">
+        <item quantity="one">%d yıl önce bugün</item>
+        <item quantity="other">%d yıl önce bugün</item>
+    </plurals>
+    <string name="gecmis_ay_once">1 ay önce bugün</string>
+    <string name="gecmis_eski_not">Eski bir not</string>
+    <string name="gecmiste_bugun_yok">Henüz eski bir not yok. Yazdıkça burada geçmişten notlar görünür.</string>
     <string name="widget_sabit">Sabitlenmiş notlar</string>
     <string name="widget_sabit_aciklama">Sabitlediğin notlar kartlar halinde</string>
     <string name="sabit_yok">Sabitlenmiş not yok. Bir notu menüden sabitleyince burada görünür.</string>

@@ -198,6 +198,35 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <receiver
+            android:name=".YaklasanlarWidget"
+            android:exported="false"
+            android:label="@string/yaklasanlar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_yaklasanlar" />
+        </receiver>
+
+        <service
+            android:name=".YaklasanlarWidgetServisi"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <receiver
+            android:name=".GecmisWidget"
+            android:exported="false"
+            android:label="@string/widget_gecmis">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_gecmis" />
+        </receiver>
+
         <!-- Klasör/etiket widget'ı eklenirken süzgeç seçimi (şeffaf, alt sayfa). -->
         <activity
             android:name=".FiltreAyarActivity"

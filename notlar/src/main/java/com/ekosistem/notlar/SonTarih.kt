@@ -42,8 +42,12 @@ object SonTarih {
         }
     }
 
-    fun bugun(): Long {
+    fun bugun(): Long = gunu(System.currentTimeMillis())
+
+    /** Bir anın (milisaniye) yerel saate göre gün numarası. */
+    fun gunu(zaman: Long): Long {
         val t = Calendar.getInstance()
+        t.timeInMillis = zaman
         return gunNumarasi(t.get(Calendar.YEAR), t.get(Calendar.MONTH) + 1, t.get(Calendar.DAY_OF_MONTH))
     }
 
@@ -73,7 +77,7 @@ object SonTarih {
         return donem * 146097 + gd - 719468
     }
 
-    private fun ayinGunleri(yil: Int, ay: Int): Int = when (ay) {
+    fun ayinGunleri(yil: Int, ay: Int): Int = when (ay) {
         2 -> if ((yil % 4 == 0 && yil % 100 != 0) || yil % 400 == 0) 29 else 28
         4, 6, 9, 11 -> 30
         else -> 31
