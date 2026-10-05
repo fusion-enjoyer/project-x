@@ -31,7 +31,10 @@ class WidgetAyarActivity : TemelActivity() {
         }
 
         findViewById<TextView>(R.id.ekranBasligi).setText(R.string.widget_not_sec)
-        findViewById<TextView>(R.id.bosDurum).setText(R.string.bos_durum)
+        // bosDurum bir TextView değil, ikonlu bir kutu (bos_durum.xml). Önceden
+        // TextView sanılıp metin yazılıyordu; ekran açılır açılmaz çöküyor, Android
+        // de ayar ekranı başarısız olunca widget'ı ana ekrandan kaldırıyordu.
+        val bosDurum = findViewById<View>(R.id.bosDurum)
         findViewById<ImageButton>(R.id.btnMenu).visibility = View.GONE
         findViewById<ImageButton>(R.id.btnGeri).setOnClickListener { finish() }
 
@@ -55,8 +58,16 @@ class WidgetAyarActivity : TemelActivity() {
             }
             runOnUiThread {
                 adapter.guncelle(notlar)
-                findViewById<TextView>(R.id.bosDurum).visibility =
-                    if (notlar.isEmpty()) View.VISIBLE else View.GONE
+                if (notlar.isEmpty()) {
+                    BosDurum.goster(
+                        bosDurum,
+                        R.drawable.ic_duzenle,
+                        getString(R.string.bos_baslik),
+                        getString(R.string.bos_aciklama)
+                    )
+                } else {
+                    bosDurum.visibility = View.GONE
+                }
             }
         }.start()
     }

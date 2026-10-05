@@ -360,6 +360,8 @@ class AyarlarActivity : TemelActivity() {
             ) {
                 Prefs.temaKaydet(this, indeks)
                 Tema.uygula(indeks)
+                // Widget'lar uygulamanın temasını izler (WidgetTema).
+                NotWidget.renkleriGuncelle(applicationContext)
                 recreate()
             }
         }

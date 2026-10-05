@@ -17,7 +17,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/yeni_not"
-            android:src="@drawable/ic_daire" />
+            android:src="@drawable/ic_daire"
+            android:tint="@color/vurgu" />
 
         <ImageView
             android:id="@+id/widgetArti"
@@ -25,7 +26,8 @@
             android:layout_height="22dp"
             android:layout_gravity="center"
             android:importantForAccessibility="no"
-            android:src="@drawable/ic_arti" />
+            android:src="@drawable/ic_arti"
+            android:tint="@color/pill_metin" />
     </FrameLayout>
 
     <TextView

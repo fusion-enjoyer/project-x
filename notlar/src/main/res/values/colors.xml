@@ -27,4 +27,6 @@
     <!-- Sürüm farkı -->
     <color name="fark_eklendi">#0F6E56</color>
     <color name="fark_silindi">#A32D2D</color>
+    <!-- Widget liste ayracı: açık ve koyu zeminde de silik görünsün diye yarı saydam gri -->
+    <color name="widget_ayrac">#26808080</color>
 </resources>

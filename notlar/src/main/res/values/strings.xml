@@ -144,6 +144,17 @@
     <string name="widget_liste">Note list</string>
     <string name="widget_not_sec">Choose a note to show</string>
     <string name="widget_bos">No notes</string>
+    <string name="widget_hizli_not_aciklama">Tap to start a blank note</string>
+    <string name="widget_tek_not_aciklama">Shows one note of your choice</string>
+    <string name="widget_liste_aciklama">Your recent notes, scrollable</string>
+    <string name="onizleme_not_baslik">Groceries</string>
+    <string name="onizleme_not_govde">☑ Bread\n☐ Tomatoes\n☐ Olive oil\nGet them fresh at the market</string>
+    <string name="onizleme_liste_1">Meeting notes</string>
+    <string name="onizleme_liste_1_ozet">Budget approved, timeline…</string>
+    <string name="onizleme_liste_2">Books to read</string>
+    <string name="onizleme_liste_2_ozet">The Left Hand of Darkness…</string>
+    <string name="onizleme_liste_3">Recipes</string>
+    <string name="onizleme_liste_3_ozet">Lentil soup…</string>
     <string name="okuma_gorunumu">Reading view</string>
     <string name="duzenleme_gorunumu">Back to editing</string>
     <string name="kaynak_modu">Source mode</string>

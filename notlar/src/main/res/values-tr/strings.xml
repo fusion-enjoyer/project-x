@@ -144,6 +144,17 @@
     <string name="widget_liste">Not listesi</string>
     <string name="widget_not_sec">Gösterilecek notu seç</string>
     <string name="widget_bos">Not yok</string>
+    <string name="widget_hizli_not_aciklama">Dokununca boş bir not açar</string>
+    <string name="widget_tek_not_aciklama">Seçtiğin bir notu ana ekranda gösterir</string>
+    <string name="widget_liste_aciklama">Son düzenlenen notlar, kaydırılabilir</string>
+    <string name="onizleme_not_baslik">Alışveriş</string>
+    <string name="onizleme_not_govde">☑ Ekmek\n☐ Domates\n☐ Zeytinyağı\nPazardan taze al</string>
+    <string name="onizleme_liste_1">Toplantı notları</string>
+    <string name="onizleme_liste_1_ozet">Bütçe onaylandı, takvim…</string>
+    <string name="onizleme_liste_2">Okunacak kitaplar</string>
+    <string name="onizleme_liste_2_ozet">Kürk Mantolu Madonna…</string>
+    <string name="onizleme_liste_3">Tarifler</string>
+    <string name="onizleme_liste_3_ozet">Mercimek çorbası…</string>
     <string name="okuma_gorunumu">Okuma görünümü</string>
     <string name="duzenleme_gorunumu">Düzenlemeye dön</string>
     <string name="kaynak_modu">Kaynak modu</string>

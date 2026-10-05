@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Uygulamada "Açık" tema seçiliyken widget zemini (sistem temasından bağımsız). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#F5F4F2" />
+    <corners android:radius="18dp" />
+</shape>

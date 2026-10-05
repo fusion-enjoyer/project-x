@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- previewLayout, description ve targetCell* Android 12+'da; eskiler yok sayar. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_hizli_not_aciklama"
     android:initialLayout="@layout/widget_hizli_not"
     android:minWidth="40dp"
     android:minHeight="40dp"
     android:previewImage="@drawable/ic_launcher"
+    android:previewLayout="@layout/widget_hizli_not"
     android:resizeMode="none"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

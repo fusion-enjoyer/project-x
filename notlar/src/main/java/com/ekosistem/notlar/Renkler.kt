@@ -77,7 +77,11 @@ object Renkler {
     /** Vurgu zemini üzerine gelecek metin/ikon rengi. */
     fun vurguUzeri(context: Context): Int {
         if (sistemSecili(context)) return ContextCompat.getColor(context, R.color.vurgu_sistem_uzeri)
-        val renk = vurgu(context)
+        return uzeriRengi(vurgu(context))
+    }
+
+    /** Verilen zemin renginin üstünde okunacak siyah ya da beyaz. */
+    fun uzeriRengi(renk: Int): Int {
         val r = (renk shr 16) and 0xFF
         val g = (renk shr 8) and 0xFF
         val b = renk and 0xFF

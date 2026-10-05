@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Widget seçicideki örnek görünüm (Android 12+): üç örnek not. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widgetKok"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_widget"
@@ -15,7 +15,6 @@
         android:paddingBottom="8dp">
 
         <TextView
-            android:id="@+id/widgetBaslik"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -25,29 +24,18 @@
             android:textStyle="bold" />
 
         <ImageView
-            android:id="@+id/widgetEkle"
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:contentDescription="@string/yeni_not"
-            android:src="@drawable/ic_arti" />
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_arti"
+            android:tint="@color/vurgu" />
     </LinearLayout>
 
-    <ListView
-        android:id="@+id/widgetListe"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="@color/widget_ayrac"
-        android:dividerHeight="0.5dp" />
-
-    <TextView
-        android:id="@+id/widgetBos"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:text="@string/widget_bos"
-        android:textColor="@color/metin_ikincil"
-        android:textSize="13sp" />
+    <TextView style="@style/WidgetOrnekBaslik" android:text="@string/onizleme_liste_1" />
+    <TextView style="@style/WidgetOrnekOzet" android:text="@string/onizleme_liste_1_ozet" />
+    <TextView style="@style/WidgetOrnekBaslik" android:layout_marginTop="10dp" android:text="@string/onizleme_liste_2" />
+    <TextView style="@style/WidgetOrnekOzet" android:text="@string/onizleme_liste_2_ozet" />
+    <TextView style="@style/WidgetOrnekBaslik" android:layout_marginTop="10dp" android:text="@string/onizleme_liste_3" />
+    <TextView style="@style/WidgetOrnekOzet" android:text="@string/onizleme_liste_3_ozet" />
 
 </LinearLayout>

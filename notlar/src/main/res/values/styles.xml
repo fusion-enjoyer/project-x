@@ -17,4 +17,21 @@
         <item name="android:layout_marginLeft">56dp</item>
         <item name="android:background">@color/ayrac</item>
     </style>
+
+    <!-- Widget önizlemelerindeki örnek satırlar (widget_onizleme_*.xml) -->
+    <style name="WidgetOrnekBaslik">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/metin</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="WidgetOrnekOzet">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/metin_ikincil</item>
+        <item name="android:textSize">11sp</item>
+    </style>
 </resources>
