@@ -25,6 +25,7 @@ import java.util.zip.ZipInputStream
  *   isPinned / isArchived → sabitlenir / "Arşiv" klasörüne gider
  *   isTrashed             → alınmaz
  *   userEditedTimestampUsec → notun tarihi
+ *   createdTimestampUsec  → oluşturma tarihi (Not hakkında)
  *
  * Zip iki kez okunur: önce notlar, sonra yalnızca gereken görseller. Görseller
  * zip'te notlardan önce de gelebilir ve hepsini belleğe almak eski telefonda
@@ -42,6 +43,8 @@ object KeepAktarma {
         val arsivde: Boolean,
         /** Milisaniye; bilinmiyorsa 0. */
         val degistirilme: Long,
+        /** Milisaniye; bilinmiyorsa 0. */
+        val olusturma: Long,
         /** Görsel eklerin zip'teki dosya adları. */
         val gorseller: List<String>,
         /** Ses kaydı gibi alınamayan ekler. */
@@ -123,6 +126,7 @@ object KeepAktarma {
             sabit = o.optBoolean("isPinned", false),
             arsivde = o.optBoolean("isArchived", false),
             degistirilme = duzenleme,
+            olusturma = olusturma / 1000,
             gorseller = gorseller,
             atlananEk = atlanan
         )
@@ -222,7 +226,7 @@ object KeepAktarma {
             val yollar = n.gorseller.mapNotNull { kaydedilen[ekAnahtari(it)] }
                 .map { "$onek${Gorseller.EKLER}/${Uri.encode(it, "")}" }
             val uri = depo.notOlustur(metinOlustur(n, yollar), klasor) ?: continue
-            depo.tarihiKoru(uri, n.degistirilme)
+            depo.tarihiKoru(uri, n.degistirilme, n.olusturma)
             // sabitDegistir aç/kapa yapar; aynı adreste eski bir kayıt kalmışsa notu çözerdi.
             if (n.sabit && uri.toString() !in Prefs.sabitler(context)) {
                 Prefs.sabitDegistir(context, uri.toString())

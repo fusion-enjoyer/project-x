@@ -207,6 +207,21 @@ object Prefs {
 
     private const val DAMGA_PAYI = 10_000L
 
+    // --- Oluşturma zamanı ---
+
+    /**
+     * Notun ilk oluşturulduğu an. Dosya sistemi bunu güvenilir saklamıyor (SAF
+     * hiç vermiyor), dosyanın içine yazmak da notu değiştirmek olurdu; bu
+     * yüzden burada tutulur. Bu özellikten önce oluşturulan notlarda 0'dır.
+     */
+    fun olusturma(c: Context, uri: String): Long = sp(c).getLong("olusturma:$uri", 0L)
+
+    fun olusturmaKaydet(c: Context, uri: String, zaman: Long) {
+        val d = sp(c).edit()
+        if (zaman <= 0) d.remove("olusturma:$uri") else d.putLong("olusturma:$uri", zaman)
+        d.apply()
+    }
+
     /** Notun adresi değiştiğinde ona bağlı tüm ayarları yeni adrese taşır. */
     fun adresTasi(c: Context, eski: String, yeni: String) = adresleriTasi(c, mapOf(eski to yeni))
 
@@ -239,6 +254,11 @@ object Prefs {
                 d.remove("zaman:$eski").putLong("zaman:$yeni", damga)
                 val yazilma = sp(c).getLong("zamanyaz:$eski", 0L)
                 if (yazilma > 0) d.remove("zamanyaz:$eski").putLong("zamanyaz:$yeni", yazilma)
+                degisti = true
+            }
+            val olusturma = olusturma(c, eski)
+            if (olusturma > 0) {
+                d.remove("olusturma:$eski").putLong("olusturma:$yeni", olusturma)
                 degisti = true
             }
         }

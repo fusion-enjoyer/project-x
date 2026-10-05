@@ -85,7 +85,9 @@
     <string name="yardim_gorunusu">It looks like</string>
     <string name="surum">Version</string>
     <string name="disa_aktar">Export as zip</string>
-    <string name="ice_aktar">Import from zip</string>
+    <string name="ice_aktar">Import</string>
+    <string name="ice_aktar_ozet">Notes backup or Google Keep</string>
+    <string name="ice_aktar_yedek">Notes backup (zip)</string>
     <string name="yedek_alindi">Backup saved</string>
     <string name="yedek_hata">Couldn\'t finish that</string>
     <string name="yedek_yarim">Part of the backup couldn\'t be read</string>
@@ -168,7 +170,10 @@
     <string name="guvenlik">Security</string>
     <string name="ekran_gizle">Block screenshots</string>
     <string name="ekran_gizle_ozet">Also hides recordings and the recent apps preview</string>
-    <string name="nota_kilit">Lock this note</string>
+    <string name="not_koru">Protect note</string>
+    <string name="koruma_pin">Protected: locked with PIN</string>
+    <string name="koruma_parola">Protected: encrypted with password</string>
+    <string name="pin_ile_kilitle">Lock with PIN</string>
     <string name="sifreli_not">Encrypted note</string>
     <string name="sifreli_kapak">This note is encrypted with a password in the Notes app. Open it there to read it.</string>
     <string name="parolayla_sifrele">Encrypt with password</string>
@@ -230,7 +235,7 @@
     <!-- Note lock -->
     <string name="kilitli_not">Locked note</string>
     <string name="kilitli_not_ozet">Enter your PIN to open this note</string>
-    <string name="not_kilit_ozet">A locked note hides its preview everywhere and asks for your PIN each time you open it. The .md file itself is not encrypted.</string>
+    <string name="koruma_ozet">A PIN lock hides the note inside the app: no preview anywhere, PIN asked on every open, the file itself stays plain. Password encryption protects the file itself: it can\'t be read from a sync copy or backup either, but if you forget the password the note can\'t be recovered.</string>
 
     <!-- App lock options -->
     <string name="parmak_izi_soru">Also unlock with your fingerprint?</string>
@@ -293,8 +298,6 @@
     <string name="kelime_karakter">%1$d words \u00b7 %2$d characters</string>
     <string name="notu_cogalt">Duplicate note</string>
     <string name="notu_bol">Split here</string>
-    <string name="odak_modu">Focus mode</string>
-    <string name="odak_cikis">Swipe back to leave focus mode</string>
     <string name="bol_ozet">The line with the cursor and everything below it becomes a new note. The part above stays in this note.</string>
     <string name="bol_bos">Put the cursor on a line in the middle of the note to split it</string>
     <string name="diger">More</string>
@@ -327,7 +330,6 @@
     <string name="taslak_kurtarildi">An unsaved note was recovered</string>
     <string name="klasor_kismen">Notes moved out. The folder still holds other files, so it was kept.</string>
     <string name="keep_aktar">Import from Google Keep</string>
-    <string name="keep_aktar_ozet">Notes, lists, labels and photos</string>
     <string name="keep_aciklama">1. Open takeout.google.com in a browser\n2. Click “Deselect all”, then tick only Keep\n3. Create the export and download the zip file\n4. Pick that zip here\n\nLabels become #tags, lists become checkboxes, archived notes go to an Archive folder. Importing the same zip again won\'t duplicate notes.</string>
     <string name="keep_zip_sec">Pick the Takeout zip</string>
     <string name="keep_aktariliyor">Importing from Keep… this can take a minute.</string>
@@ -385,4 +387,27 @@
     <string name="bugun">Today</string>
     <string name="yarin">Tomorrow</string>
     <string name="pin_bekle">Too many attempts. Try again in %d s</string>
+
+    <!-- Note info -->
+    <string name="not_hakkinda">Note info</string>
+    <string name="hakkinda_konum">Location</string>
+    <string name="hakkinda_uzunluk">Length</string>
+    <string name="hakkinda_uzunluk_deger">%1$s · %2$s · %3$s</string>
+    <string name="hakkinda_olusturma">Created</string>
+    <string name="hakkinda_duzenleme">Last edited</string>
+    <string name="hakkinda_boyut">File size</string>
+    <string name="hakkinda_bilinmiyor">Unknown (created before this was tracked)</string>
+    <string name="okuma_bir_dakikadan_az">Under 1 min read</string>
+    <plurals name="kelime_sayisi">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <plurals name="karakter_sayisi">
+        <item quantity="one">%d character</item>
+        <item quantity="other">%d characters</item>
+    </plurals>
+    <plurals name="okuma_dakika">
+        <item quantity="one">%d min read</item>
+        <item quantity="other">%d min read</item>
+    </plurals>
 </resources>

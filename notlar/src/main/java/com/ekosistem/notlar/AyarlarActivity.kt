@@ -137,14 +137,7 @@ class AyarlarActivity : TemelActivity() {
             R.drawable.ic_ayar_ice,
             YESIL,
             getString(R.string.ice_aktar),
-            null
-        )
-        satirKur(
-            findViewById(R.id.satirKeep),
-            R.drawable.ic_ayar_ice,
-            YESIL,
-            getString(R.string.keep_aktar),
-            getString(R.string.keep_aktar_ozet)
+            getString(R.string.ice_aktar_ozet)
         )
         satirKilit = findViewById(R.id.satirKilit)
         satirKur(
@@ -189,8 +182,7 @@ class AyarlarActivity : TemelActivity() {
         satirSiralama.setOnClickListener { siralamaSec() }
         satirKilit.setOnClickListener { kilitAyari() }
         findViewById<View>(R.id.satirDisaAktar).setOnClickListener { disaAktarmayiBaslat() }
-        findViewById<View>(R.id.satirIceAktar).setOnClickListener { iceAktarmayiBaslat() }
-        findViewById<View>(R.id.satirKeep).setOnClickListener { keepAciklamasi() }
+        findViewById<View>(R.id.satirIceAktar).setOnClickListener { iceAktarmaSec() }
     }
 
     private fun satirKur(satir: View, ikon: Int, rozetRengi: Int, baslik: String, ozet: String?) {
@@ -481,6 +473,15 @@ class AyarlarActivity : TemelActivity() {
             .putExtra(Intent.EXTRA_TITLE, Yedekleme.dosyaAdi())
         Kilit.sistemAraciBekleniyor = true
         disaAktarmaSonucu.launch(intent)
+    }
+
+    /** Uygulamanın kendi yedeği ve Google Keep aktarması tek menüde. */
+    private fun iceAktarmaSec() {
+        AltSayfa(this)
+            .baslik(getString(R.string.ice_aktar))
+            .madde(R.drawable.ic_ayar_ice, getString(R.string.ice_aktar_yedek)) { iceAktarmayiBaslat() }
+            .madde(R.drawable.ic_ayar_ice, getString(R.string.keep_aktar)) { keepAciklamasi() }
+            .goster()
     }
 
     private fun iceAktarmayiBaslat() {

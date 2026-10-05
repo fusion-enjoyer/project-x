@@ -145,12 +145,6 @@
                 <include
                     android:id="@+id/satirIceAktar"
                     layout="@layout/item_ayar" />
-
-                <View style="@style/AyarAyraci" />
-
-                <include
-                    android:id="@+id/satirKeep"
-                    layout="@layout/item_ayar" />
             </LinearLayout>
 
             <TextView

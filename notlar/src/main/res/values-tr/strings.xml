@@ -85,7 +85,9 @@
     <string name="yardim_gorunusu">Görünüşü</string>
     <string name="surum">Sürüm</string>
     <string name="disa_aktar">Zip olarak dışa aktar</string>
-    <string name="ice_aktar">Zip\'ten içe aktar</string>
+    <string name="ice_aktar">İçe aktar</string>
+    <string name="ice_aktar_ozet">Notlar yedeği ya da Google Keep</string>
+    <string name="ice_aktar_yedek">Notlar yedeği (zip)</string>
     <string name="yedek_alindi">Yedek kaydedildi</string>
     <string name="yedek_hata">İşlem tamamlanamadı</string>
     <string name="yedek_yarim">Yedeğin bir kısmı okunamadı</string>
@@ -168,7 +170,10 @@
     <string name="guvenlik">Güvenlik</string>
     <string name="ekran_gizle">Ekran görüntüsünü engelle</string>
     <string name="ekran_gizle_ozet">Kaydı ve son uygulamalar önizlemesini de gizler</string>
-    <string name="nota_kilit">Bu notu kilitle</string>
+    <string name="not_koru">Notu koru</string>
+    <string name="koruma_pin">Korunuyor: PIN ile kilitli</string>
+    <string name="koruma_parola">Korunuyor: parolayla şifreli</string>
+    <string name="pin_ile_kilitle">PIN ile kilitle</string>
     <string name="sifreli_not">Şifreli not</string>
     <string name="sifreli_kapak">Bu not Notlar uygulamasında parolayla şifrelendi. Okumak için orada aç.</string>
     <string name="parolayla_sifrele">Parolayla şifrele</string>
@@ -230,7 +235,7 @@
     <!-- Not kilidi -->
     <string name="kilitli_not">Kilitli not</string>
     <string name="kilitli_not_ozet">Bu notu açmak için PIN gerekiyor</string>
-    <string name="not_kilit_ozet">Kilitli notun önizlemesi hiçbir yerde görünmez ve her açılışta PIN sorulur. .md dosyasının kendisi şifrelenmez.</string>
+    <string name="koruma_ozet">PIN ile kilit notu uygulamada gizler: önizlemesi görünmez, her açılışta PIN sorulur, dosyanın kendisi düz kalır. Parolayla şifreleme dosyanın kendisini korur: eşitleme kopyasında ya da yedekte de okunamaz, ama parola unutulursa not kurtarılamaz.</string>
 
     <!-- Uygulama kilidi seçenekleri -->
     <string name="parmak_izi_soru">Parmak izi de kullanılsın mı?</string>
@@ -293,8 +298,6 @@
     <string name="kelime_karakter">%1$d kelime \u00b7 %2$d karakter</string>
     <string name="notu_cogalt">Notu çoğalt</string>
     <string name="notu_bol">Buradan böl</string>
-    <string name="odak_modu">Odak modu</string>
-    <string name="odak_cikis">Odak modundan çıkmak için geri kaydır</string>
     <string name="bol_ozet">İmlecin bulunduğu satır ve altı yeni bir not olur. Üst kısım bu notta kalır.</string>
     <string name="bol_bos">Bölmek için imleci notun ortasında bir satıra koy</string>
     <string name="diger">Diğer</string>
@@ -327,7 +330,6 @@
     <string name="taslak_kurtarildi">Kaydedilmemiş bir not kurtarıldı</string>
     <string name="klasor_kismen">Notlar taşındı. Klasörde başka dosyalar olduğu için klasör silinmedi.</string>
     <string name="keep_aktar">Google Keep\'ten aktar</string>
-    <string name="keep_aktar_ozet">Notlar, listeler, etiketler ve fotoğraflar</string>
     <string name="keep_aciklama">1. Tarayıcıda takeout.google.com adresini aç\n2. “Seçimi kaldır”a bas, yalnızca Keep\'i işaretle\n3. Dışa aktarımı oluştur ve zip dosyasını indir\n4. O zip dosyasını burada seç\n\nEtiketler #etikete, listeler onay kutusuna dönüşür, arşivdeki notlar Arşiv klasörüne gider. Aynı zip\'i yeniden aktarırsan notlar çiftlenmez.</string>
     <string name="keep_zip_sec">Takeout zip dosyasını seç</string>
     <string name="keep_aktariliyor">Keep\'ten aktarılıyor… bu biraz sürebilir.</string>
@@ -385,4 +387,27 @@
     <string name="bugun">Bugün</string>
     <string name="yarin">Yarın</string>
     <string name="pin_bekle">Çok fazla deneme. %d sn sonra tekrar dene</string>
+
+    <!-- Not hakkında -->
+    <string name="not_hakkinda">Not hakkında</string>
+    <string name="hakkinda_konum">Konum</string>
+    <string name="hakkinda_uzunluk">Uzunluk</string>
+    <string name="hakkinda_uzunluk_deger">%1$s · %2$s · %3$s</string>
+    <string name="hakkinda_olusturma">Oluşturuldu</string>
+    <string name="hakkinda_duzenleme">Son düzenleme</string>
+    <string name="hakkinda_boyut">Dosya boyutu</string>
+    <string name="hakkinda_bilinmiyor">Bilinmiyor (bu bilgi tutulmaya başlamadan önce oluşturulmuş)</string>
+    <string name="okuma_bir_dakikadan_az">1 dakikadan kısa okuma</string>
+    <plurals name="kelime_sayisi">
+        <item quantity="one">%d kelime</item>
+        <item quantity="other">%d kelime</item>
+    </plurals>
+    <plurals name="karakter_sayisi">
+        <item quantity="one">%d karakter</item>
+        <item quantity="other">%d karakter</item>
+    </plurals>
+    <plurals name="okuma_dakika">
+        <item quantity="one">%d dakikalık okuma</item>
+        <item quantity="other">%d dakikalık okuma</item>
+    </plurals>
 </resources>

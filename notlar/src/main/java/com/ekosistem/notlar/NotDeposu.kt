@@ -589,7 +589,10 @@ class NotDeposu(private val context: Context) {
      * Uygulama deposunda dosyanın kendi tarihi değişir; seçilen klasörde (SAF)
      * değiştirilemediği için ayrıca saklanır.
      */
-    fun tarihiKoru(uri: Uri, zaman: Long) {
+    fun tarihiKoru(uri: Uri, zaman: Long, olusturma: Long = 0L) {
+        // Dışarıdan gelen notun oluşturma anı aktarma anı değildir: kaynak
+        // biliyorsa (Keep) o yazılır, bilmiyorsa (zip) bilinmiyor kalır.
+        Prefs.olusturmaKaydet(context, uri.toString(), olusturma)
         if (zaman <= 0) return
         val yol = if (uri.scheme == "file") uri.path else null
         if (yol != null && File(yol).setLastModified(zaman)) return
@@ -625,7 +628,10 @@ class NotDeposu(private val context: Context) {
         if (!sonAd.endsWith(".md", true) && !sonAd.endsWith(".txt", true)) {
             sonAd = if (f.renameTo("$tekilAd.md")) "$tekilAd.md" else sonAd
         }
-        return if (yaz(f.uri, icerik)) f.uri to sonAd else null
+        if (!yaz(f.uri, icerik)) return null
+        // Yeni not, çoğaltma, bölme, paylaşımdan gelen not: hepsi buradan doğar.
+        Prefs.olusturmaKaydet(context, f.uri.toString(), System.currentTimeMillis())
+        return f.uri to sonAd
     }
 
     fun docGetir(uri: Uri): DocumentFile? =
@@ -689,6 +695,8 @@ class NotDeposu(private val context: Context) {
         val icerik = oku(uri)
         val ad = (f.name ?: "not.md").removeSuffix(".md").removeSuffix(".txt")
         val yeni = dosyaOlustur(hedef, icerik, ad) ?: return null
+        // Kopya yeni dosya olarak doğdu; oluşturma anı asıl notunki kalsın.
+        Prefs.olusturmaKaydet(context, yeni.toString(), Prefs.olusturma(context, uri.toString()))
         if (zaman > 0) Prefs.zamanDamgasiKaydet(context, yeni.toString(), zaman)
         try {
             f.delete()
@@ -782,6 +790,33 @@ class NotDeposu(private val context: Context) {
         if (Prefs.sabitler(context).contains(id)) Prefs.sabitDegistir(context, id)
     }
 
+
+    // --- Not hakkında ---
+
+    /**
+     * "Not hakkında" sayfasının diskten gelen kısmı. [kokAdi] seçilen klasörün
+     * adıdır; null ise not uygulamanın kendi deposunda. [olusturma] 0 ise bu
+     * özellikten önce oluşmuş ya da kaynağı bilinmeyen bir aktarma.
+     */
+    class NotBilgisi(
+        val kokAdi: String?,
+        val yol: List<String>,
+        val boyut: Long,
+        val degistirilme: Long,
+        val olusturma: Long
+    )
+
+    fun notBilgisi(uri: Uri): NotBilgisi? {
+        val f = docGetir(uri) ?: return null
+        val k = kok()
+        return NotBilgisi(
+            kokAdi = if (k.uri.scheme == "file") null else k.name,
+            yol = goreliParcalar(uri) ?: listOfNotNull(f.name),
+            boyut = f.length(),
+            degistirilme = Prefs.gosterilenZaman(context, uri.toString(), f.lastModified()),
+            olusturma = Prefs.olusturma(context, uri.toString())
+        )
+    }
 
     // --- Etiketler ve bağlantılar ---
 

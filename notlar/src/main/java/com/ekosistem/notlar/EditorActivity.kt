@@ -25,9 +25,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import java.util.Locale
 
 class EditorActivity : TemelActivity() {
@@ -99,7 +96,7 @@ class EditorActivity : TemelActivity() {
             }
             kilitBekliyor = false
             metinAlani.visibility = View.VISIBLE
-            bicimKaydirici.visibility = if (okumaModu || odakModu) View.GONE else View.VISIBLE
+            bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
             uri?.let { notuYukle(it) }
         }
 
@@ -205,43 +202,12 @@ class EditorActivity : TemelActivity() {
         ipucuVer(findViewById(R.id.btnGeri), findViewById(R.id.btnEditorMenu), btnOkuma)
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
         onBackPressedDispatcher.addCallback(this, bulGeriTusu)
-        onBackPressedDispatcher.addCallback(this, odakGeriTusu)
         dugmeleriGuncelle()
     }
 
     /** Bul çubuğu açıkken geri tuşu önce çubuğu kapatır, notu değil. */
     private val bulGeriTusu = object : androidx.activity.OnBackPressedCallback(false) {
         override fun handleOnBackPressed() = bulCubuguKapat()
-    }
-
-    /** Odak modunda geri tuşu önce moddan çıkar. */
-    private val odakGeriTusu = object : androidx.activity.OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() = odakModunuDegistir()
-    }
-
-    /** Yalnızca metin: üst çubuk, biçim çubuğu ve sistem çubukları gizli. */
-    private var odakModu = false
-
-    private fun odakModunuDegistir() {
-        odakModu = !odakModu
-        odakGeriTusu.isEnabled = odakModu
-        val pencere = WindowCompat.getInsetsController(window, window.decorView)
-        if (odakModu) {
-            ustCubuguGoster(false)
-            bicimKaydirici.visibility = View.GONE
-            kaydirici.altPay = 0
-            pencere.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            pencere.hide(WindowInsetsCompat.Type.systemBars())
-            Toast.makeText(this, R.string.odak_cikis, Toast.LENGTH_SHORT).show()
-        } else {
-            pencere.show(WindowInsetsCompat.Type.systemBars())
-            ustCubuguGoster(true)
-            if (!okumaModu && bulCubugu.visibility != View.VISIBLE) {
-                bicimKaydirici.visibility = View.VISIBLE
-                kaydirici.altPay = (BICIM_PAYI_DP * resources.displayMetrics.density).toInt()
-            }
-        }
     }
 
     /**
@@ -280,8 +246,6 @@ class EditorActivity : TemelActivity() {
 
     private fun ustCubuguGoster(acik: Boolean) {
         if (acik == ustCubukAcik) return
-        // Odak modunda kaydırmak üst çubuğu geri getirmesin.
-        if (acik && odakModu) return
         // Bul çubuğu açıkken üst ikonlar zaten gizli; karışmasınlar.
         if (bulCubugu.visibility == View.VISIBLE) return
         ustCubukAcik = acik
@@ -386,7 +350,7 @@ class EditorActivity : TemelActivity() {
                         kilitBekliyor = false
                         metinAlani.visibility = View.VISIBLE
                         bicimKaydirici.visibility =
-                            if (okumaModu || odakModu) View.GONE else View.VISIBLE
+                            if (okumaModu) View.GONE else View.VISIBLE
                         acilisMetni = sonuc.metin
                         oncekiIcerik = sonuc.metin
                         metniYerlestir(sonuc.metin)
@@ -1465,7 +1429,7 @@ class EditorActivity : TemelActivity() {
         metinAlani.isFocusableInTouchMode = !okumaModu
         metinAlani.isCursorVisible = !okumaModu
         bicimKaydirici.visibility =
-            if (okumaModu || odakModu || bulCubugu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            if (okumaModu || bulCubugu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         btnOkuma.setImageResource(
             if (okumaModu) R.drawable.ic_duzenle else R.drawable.ic_okuma
         )
@@ -1528,8 +1492,6 @@ class EditorActivity : TemelActivity() {
     }
 
     private fun bulCubuguAc() {
-        // Bul çubuğu üst çubuğun yerinde durur; odak modunda görünmezdi.
-        if (odakModu) odakModunuDegistir()
         bulCubugu.visibility = View.VISIBLE
         // Bul çubuğu üst ikonların yerini alır; ikisi üst üste binmesin.
         ustCubuk.visibility = View.GONE
@@ -1844,8 +1806,6 @@ class EditorActivity : TemelActivity() {
             }
         }
 
-        sayfa.madde(R.drawable.ic_odak, getString(R.string.odak_modu)) { odakModunuDegistir() }
-
         sayfa.madde(
             R.drawable.ic_kaynak,
             getString(R.string.kaynak_modu),
@@ -1867,19 +1827,18 @@ class EditorActivity : TemelActivity() {
                 }
             }
 
+            val kilitli = Kilit.notKilitli(this, mevcutUri.toString())
             sayfa.madde(
                 R.drawable.ic_kilit,
-                getString(if (Kilit.notKilitli(this, mevcutUri.toString())) R.string.kilidi_kaldir else R.string.nota_kilit),
-                secili = Kilit.notKilitli(this, mevcutUri.toString())
-            ) { notKilidiDegistir(mevcutUri.toString()) }
-
-            if (Sifreleme.destekleniyor()) {
-                sayfa.madde(
-                    R.drawable.ic_kilit,
-                    getString(if (sifreli) R.string.sifreyi_kaldir else R.string.parolayla_sifrele),
-                    secili = sifreli
-                ) { if (sifreli) sifreyiKaldirOnayi() else sifrelemeBaslat() }
-            }
+                getString(
+                    when {
+                        sifreli -> R.string.koruma_parola
+                        kilitli -> R.string.koruma_pin
+                        else -> R.string.not_koru
+                    }
+                ),
+                secili = kilitli || sifreli
+            ) { korumaSec(mevcutUri.toString()) }
 
             sayfa.madde(R.drawable.ic_baglanti, getString(R.string.geri_baglantilar)) {
                 geriBaglantilariGoster()
@@ -1908,6 +1867,9 @@ class EditorActivity : TemelActivity() {
         sayfa.madde(R.drawable.ic_paylas, getString(R.string.paylas)) { paylas() }
         sayfa.madde(R.drawable.ic_gorsel, getString(R.string.kart_paylas)) { kartOlarakPaylas() }
         sayfa.madde(R.drawable.ic_yazdir, getString(R.string.yazdir)) { yazdir() }
+        if (mevcutUri != null) {
+            sayfa.madde(R.drawable.ic_ayar_bilgi, getString(R.string.not_hakkinda)) { notHakkindaGoster() }
+        }
         sayfa.madde(R.drawable.ic_ayar_bilgi, getString(R.string.yardim)) {
             startActivity(Intent(this, YardimActivity::class.java))
         }
@@ -1916,6 +1878,74 @@ class EditorActivity : TemelActivity() {
             sayfa.madde(R.drawable.ic_sil, getString(R.string.sil), tehlikeli = true) { sil() }
         }
         sayfa.goster()
+    }
+
+    // --- Not hakkında ---
+
+    /** Konum, kelime ve tarih bilgileri; dosya bilgisi arka planda okunur. */
+    private fun notHakkindaGoster() {
+        val adres = uri ?: return
+        val metin = metinAlani.text?.toString() ?: ""
+        Thread {
+            val bilgi = depo.notBilgisi(adres)
+            runOnUiThread { if (!isDestroyed) notHakkindaSayfasi(bilgi, metin) }
+        }.start()
+    }
+
+    private fun notHakkindaSayfasi(bilgi: NotDeposu.NotBilgisi?, metin: String) {
+        val y = resources.displayMetrics.density
+        val kutu = LinearLayout(this)
+        kutu.orientation = LinearLayout.VERTICAL
+        // Yatay pay AltSayfa'dan gelir; başlıkla aynı hizada dursun.
+        kutu.setPadding(0, (4 * y).toInt(), 0, (8 * y).toInt())
+
+        val dil = androidx.core.os.ConfigurationCompat.getLocales(resources.configuration)[0] ?: Locale.getDefault()
+        val tarihBicimi = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.LONG, java.text.DateFormat.SHORT, dil)
+        fun satir(etiket: Int, deger: String) {
+            kutu.addView(TextView(this).apply {
+                text = getString(etiket)
+                setTextColor(ContextCompat.getColor(context, R.color.metin_ikincil))
+                textSize = 13f
+                setPadding(0, (12 * y).toInt(), 0, 0)
+            })
+            kutu.addView(TextView(this).apply {
+                text = deger
+                setTextColor(ContextCompat.getColor(context, R.color.metin))
+                textSize = 16f
+                // Konum gibi uzun değerler kopyalanabilsin.
+                setTextIsSelectable(true)
+            })
+        }
+
+        if (bilgi != null) {
+            val kok = bilgi.kokAdi ?: getString(R.string.klasor_uygulama)
+            satir(R.string.hakkinda_konum, (listOf(kok) + bilgi.yol).joinToString(" / "))
+        }
+        val kelime = NotIstatistigi.kelime(metin)
+        satir(
+            R.string.hakkinda_uzunluk,
+            getString(
+                R.string.hakkinda_uzunluk_deger,
+                resources.getQuantityString(R.plurals.kelime_sayisi, kelime, kelime),
+                resources.getQuantityString(R.plurals.karakter_sayisi, metin.length, metin.length),
+                NotIstatistigi.okumaDakikasi(kelime).let { dk ->
+                    if (dk == 0) getString(R.string.okuma_bir_dakikadan_az)
+                    else resources.getQuantityString(R.plurals.okuma_dakika, dk, dk)
+                }
+            )
+        )
+        if (bilgi != null) {
+            satir(
+                R.string.hakkinda_olusturma,
+                if (bilgi.olusturma > 0) tarihBicimi.format(java.util.Date(bilgi.olusturma))
+                else getString(R.string.hakkinda_bilinmiyor)
+            )
+            if (bilgi.degistirilme > 0) {
+                satir(R.string.hakkinda_duzenleme, tarihBicimi.format(java.util.Date(bilgi.degistirilme)))
+            }
+            satir(R.string.hakkinda_boyut, android.text.format.Formatter.formatShortFileSize(this, bilgi.boyut))
+        }
+        AltSayfa(this).baslik(getString(R.string.not_hakkinda)).icerik(kutu).goster()
     }
 
     // --- Hatırlatıcı, kilit, bağlantı, geçmiş ---
@@ -1974,25 +2004,42 @@ class EditorActivity : TemelActivity() {
         }
     }
 
-    private fun notKilidiDegistir(adres: String) {
+    /**
+     * Not kilidi ve parolayla şifreleme tek menüde: ikisi aynı ikonla alt alta
+     * durunca farkları anlaşılmıyordu. Sayfanın başında fark tek cümleyle
+     * anlatılır; seçili olan işaretli görünür ve buradan kaldırılır.
+     */
+    private fun korumaSec(adres: String) {
+        val kilitli = Kilit.notKilitli(this, adres)
+        val sayfa = AltSayfa(this)
+            .baslik(getString(R.string.not_koru))
+            .mesaj(getString(R.string.koruma_ozet))
+        if (kilitli) {
+            sayfa.madde(R.drawable.ic_kilit, getString(R.string.kilidi_kaldir), secili = true) {
+                Kilit.notKilidiDegistir(this, adres)
+                Toast.makeText(this, R.string.not_kilidi_acildi, Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            sayfa.madde(R.drawable.ic_kilit, getString(R.string.pin_ile_kilitle)) { notuKilitle(adres) }
+        }
+        if (sifre != null) {
+            sayfa.madde(R.drawable.ic_kilit, getString(R.string.sifreyi_kaldir), secili = true) {
+                sifreyiKaldirOnayi()
+            }
+        } else if (Sifreleme.destekleniyor()) {
+            sayfa.madde(R.drawable.ic_kilit, getString(R.string.parolayla_sifrele)) { sifrelemeBaslat() }
+        }
+        sayfa.goster()
+    }
+
+    private fun notuKilitle(adres: String) {
         if (!Kilit.kurulu(this)) {
             Toast.makeText(this, R.string.once_pin_kur, Toast.LENGTH_LONG).show()
             startActivity(Intent(this, AyarlarActivity::class.java))
             return
         }
-        if (Kilit.notKilitli(this, adres)) {
-            Kilit.notKilidiDegistir(this, adres)
-            Toast.makeText(this, R.string.not_kilidi_acildi, Toast.LENGTH_SHORT).show()
-            return
-        }
-        // Kilidin ne yaptığı önce anlatılır: not şifrelenmez, sadece gizlenir.
-        AltSayfa(this)
-            .mesaj(getString(R.string.not_kilit_ozet))
-            .madde(R.drawable.ic_kilit, getString(R.string.nota_kilit)) {
-                Kilit.notKilidiDegistir(this, adres)
-                Toast.makeText(this, R.string.not_kilitlendi, Toast.LENGTH_SHORT).show()
-            }
-            .goster()
+        Kilit.notKilidiDegistir(this, adres)
+        Toast.makeText(this, R.string.not_kilitlendi, Toast.LENGTH_SHORT).show()
     }
 
     /** Başlığa dokununca imleç oraya gider, satır ekrana kaydırılır. */
