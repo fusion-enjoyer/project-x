@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -73,6 +72,8 @@ class MainActivity : TemelActivity() {
         vurguUzeri = Renkler.vurguUzeri(this)
 
         bosDurum = findViewById(R.id.bosDurum)
+        // Yazılar değişip kutu boy değiştirince ortası yeniden hesaplanır.
+        bosDurum.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> bosDurumuKaydir() }
         arama = findViewById(R.id.arama)
         aramaGostergesi = findViewById(R.id.aramaGostergesi)
         aramaTemizle = findViewById(R.id.aramaTemizle)
@@ -242,19 +243,38 @@ class MainActivity : TemelActivity() {
                 getString(R.string.bos_aciklama)
             )
         }
-        // Aramada boş durum üstte durur: ortalıyken klavye açılıp kapandıkça
-        // pencere küçülüp büyüdüğü için yazı yukarı aşağı kayıyordu.
-        val y = resources.displayMetrics.density
+        // Aramada boş durum üstten kaydırılarak ortaya konur (bkz. bosDurumuKaydir).
         val yer = bosDurum.layoutParams as FrameLayout.LayoutParams
         val aramada = s != null
         val yerci = if (aramada) Gravity.TOP or Gravity.CENTER_HORIZONTAL else Gravity.CENTER
         if (yer.gravity != yerci) {
             yer.gravity = yerci
-            yer.topMargin = if (aramada) (48 * y).toInt() else 0
-            yer.bottomMargin = if (aramada) 0 else (64 * y).toInt()
+            yer.bottomMargin = if (aramada) 0 else (CUBUK_PAYI * resources.displayMetrics.density).toInt()
             bosDurum.layoutParams = yer
         }
         BosDurum.goster(bosDurum, ikon, baslik, aciklama, eylem)
+        bosDurumuKaydir()
+    }
+
+    /** Liste alanının klavye kapalıykenki yüksekliği; aramada boş durum buna göre ortalanır. */
+    private var klavyesizYukseklik = 0
+
+    /**
+     * Aramada boş durum, klavye kapalıykenki alanın ortasında sabit durur.
+     * Görünen alanda ortalanınca klavye açılıp kapandıkça yukarı aşağı
+     * kayıyordu; üste sabitlenince de ekranın çok yukarısında kalıyordu.
+     * Kenar payı değil kaydırma: klavye açıkken alan kısalınca kutu
+     * sıkışmasın, alt kısmı klavyenin arkasında kalsın.
+     */
+    private fun bosDurumuKaydir() {
+        if (sorgu == null) {
+            bosDurum.translationY = 0f
+            return
+        }
+        val alan = klavyesizYukseklik.takeIf { it > 0 } ?: (bosDurum.parent as View).height
+        val y = resources.displayMetrics.density
+        bosDurum.translationY =
+            ((alan - CUBUK_PAYI * y - bosDurum.height) / 2).coerceAtLeast(16 * y)
     }
 
     private fun klasorGorunenAdi(ad: String): String =
@@ -276,11 +296,31 @@ class MainActivity : TemelActivity() {
         when (gelen?.action) {
             KISAYOL_YENI -> startActivity(Intent(this, EditorActivity::class.java))
             KISAYOL_GUNLUK -> bugununNotu()
-            KISAYOL_ARA -> liste.post { aramaOdakla() }
+            KISAYOL_ARA -> {
+                aramaBekliyor = true
+                if (hasWindowFocus()) aramayiAc()
+            }
             else -> return
         }
         // Ekran döndürülünce ya da geri gelince aynı kısayol tekrar çalışmasın.
         gelen.action = Intent.ACTION_MAIN
+    }
+
+    /**
+     * Arama kısayolu (widget, simge menüsü) pencere odağı gelince işlenir.
+     * Ekran açılırken klavye istenirse Android isteği sessizce yok sayıyordu:
+     * pencere henüz odakta değildi, uygulama kilitliyse kilit ekranı öndeydi.
+     */
+    private var aramaBekliyor = false
+
+    override fun onWindowFocusChanged(odakta: Boolean) {
+        super.onWindowFocusChanged(odakta)
+        if (odakta && aramaBekliyor) aramayiAc()
+    }
+
+    private fun aramayiAc() {
+        aramaBekliyor = false
+        arama.post { aramaOdakla() }
     }
 
     override fun onResume() {
@@ -354,23 +394,41 @@ class MainActivity : TemelActivity() {
     /**
      * Klavye açıkken yüzen gezinme çubuğu klavyenin hemen üstüne çıkıp arama
      * sonuçlarını örtüyordu. Klavye açılınca gizlenir, kapanınca geri gelir.
-     * Pencerenin görünen alanına bakılır: her Android sürümünde çalışır.
+     *
+     * Klavyenin açık olduğu, liste alanının ekranın altına ne kadar uzak
+     * kaldığından anlaşılır (her Android sürümünde, pencere küçülse de kök
+     * dolgusu büyüse de). Önceden pencerenin görünen alanına bakılıyordu; o,
+     * klavye kapanmaya başlar başlamaz "kapandı" diyordu, yerleşim ise hâlâ
+     * klavyeli boydaydı: çubuk bir an klavyenin üstünde görünüp aşağı iniyordu.
      */
     private fun klavyedeCubuguGizle() {
         val cubuk = findViewById<View>(R.id.gezinmeCubugu)
         val sis = findViewById<View>(R.id.altSis)
         val kok = window.decorView
-        val alan = Rect()
+        val alan = liste.parent as View
+        val konum = IntArray(2)
         kok.viewTreeObserver.addOnGlobalLayoutListener {
-            kok.getWindowVisibleDisplayFrame(alan)
-            val klavyeAcik = kok.height - alan.bottom > kok.height * KLAVYE_ORANI
+            alan.getLocationInWindow(konum)
+            val alttakiBosluk = kok.height - (konum[1] + alan.height)
+            val klavyeAcik = alttakiBosluk > kok.height * KLAVYE_ORANI
+            if (!klavyeAcik && alan.height != klavyesizYukseklik) {
+                klavyesizYukseklik = alan.height
+                bosDurumuKaydir()
+            }
             val hedef = if (klavyeAcik) View.GONE else View.VISIBLE
             if (cubuk.visibility != hedef) {
                 cubuk.visibility = hedef
                 sis.visibility = hedef
-                // Klavye kapandıysa arama kutusu odağı bıraksın; yoksa başka
-                // ekranlardan dönünce bile imleç kutuda yanıp sönüyordu.
-                if (!klavyeAcik) arama.clearFocus()
+                if (!klavyeAcik) {
+                    // Klavyenin son karesi kalkarken çubuk yavaşça belirsin.
+                    for (v in arrayOf(cubuk, sis)) {
+                        v.alpha = 0f
+                        v.animate().alpha(1f).setDuration(CUBUK_BELIRME).start()
+                    }
+                    // Klavye kapandıysa arama kutusu odağı bıraksın; yoksa başka
+                    // ekranlardan dönünce bile imleç kutuda yanıp sönüyordu.
+                    arama.clearFocus()
+                }
             }
         }
     }
@@ -1269,5 +1327,8 @@ class MainActivity : TemelActivity() {
 
         /** Ekranın bu kadarından fazlası kapandıysa klavye açık sayılır. */
         const val KLAVYE_ORANI = 0.15f
+        /** Boş durumun ortalanırken yüzen çubuk için bıraktığı pay (dp). */
+        const val CUBUK_PAYI = 64
+        const val CUBUK_BELIRME = 150L
     }
 }
