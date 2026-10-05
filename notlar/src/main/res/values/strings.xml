@@ -31,6 +31,16 @@
     <string name="cope_tasindi">Moved to trash</string>
     <string name="cop_bos">Trash is empty</string>
     <string name="cop_bos_aciklama">Notes you delete land here, and you can bring them back.</string>
+    <string name="cop_bosalt">Empty trash</string>
+    <string name="hepsini_kalici_sil">Delete all permanently</string>
+    <plurals name="cop_bosalt_ozet">
+        <item quantity="one">%d note in the trash will be deleted permanently. This can\'t be undone.</item>
+        <item quantity="other">%d notes in the trash will be deleted permanently. This can\'t be undone.</item>
+    </plurals>
+    <plurals name="kalici_silindi">
+        <item quantity="one">%d note deleted permanently</item>
+        <item quantity="other">%d notes deleted permanently</item>
+    </plurals>
     <string name="tema_sistem">Follow system</string>
     <string name="tema_acik">Light</string>
     <string name="tema_siyah">Pure black</string>

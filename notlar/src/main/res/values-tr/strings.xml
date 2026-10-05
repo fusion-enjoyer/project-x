@@ -31,6 +31,16 @@
     <string name="cope_tasindi">Çöp kutusuna taşındı</string>
     <string name="cop_bos">Çöp kutusu boş</string>
     <string name="cop_bos_aciklama">Sildiğin notlar buraya gelir; istersen geri alabilirsin.</string>
+    <string name="cop_bosalt">Çöp kutusunu boşalt</string>
+    <string name="hepsini_kalici_sil">Hepsini kalıcı olarak sil</string>
+    <plurals name="cop_bosalt_ozet">
+        <item quantity="one">Çöp kutusundaki %d not kalıcı olarak silinecek. Bu geri alınamaz.</item>
+        <item quantity="other">Çöp kutusundaki %d not kalıcı olarak silinecek. Bu geri alınamaz.</item>
+    </plurals>
+    <plurals name="kalici_silindi">
+        <item quantity="one">%d not kalıcı olarak silindi</item>
+        <item quantity="other">%d not kalıcı olarak silindi</item>
+    </plurals>
     <string name="tema_sistem">Sistemle aynı</string>
     <string name="tema_acik">Açık</string>
     <string name="tema_siyah">Saf siyah</string>

@@ -24,13 +24,24 @@
             android:src="@drawable/ic_geri" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:layout_weight="1"
             android:text="@string/cop_kutusu"
             android:textColor="@color/metin"
             android:textSize="24sp"
             android:textStyle="bold" />
+
+        <!-- Çöp boşken gizli. -->
+        <ImageButton
+            android:id="@+id/btnHepsiniSil"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cop_bosalt"
+            android:src="@drawable/ic_cop_bosalt"
+            android:visibility="gone" />
     </LinearLayout>
 
     <FrameLayout
@@ -46,7 +57,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingTop="16dp"
-            android:paddingBottom="24dp" />
+            android:paddingBottom="88dp" />
 
         <include
             android:id="@+id/bosDurum"
@@ -54,6 +65,42 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center" />
+
+        <!-- Kaydırarak kalıcı silmede birkaç saniye "Geri al" şansı (ana ekrandaki şeridin eşi). -->
+        <LinearLayout
+            android:id="@+id/bildirimSeridi"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_serit"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="18dp"
+            android:paddingRight="8dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/bildirimMetin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/metin"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/bildirimEylem"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/geri_al"
+                android:textColor="@color/vurgu"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </FrameLayout>
 
 </LinearLayout>
