@@ -169,13 +169,6 @@ object Prefs {
         sp(c).edit().putBoolean("parmak_izi", acik).apply()
     }
 
-    /** Otomatik kilitlenme seçeneğinin sırası (bkz. Kilit.GECIKMELER). */
-    fun kilitGecikmesi(c: Context): Int = sp(c).getInt("kilit_gecikme", 0)
-
-    fun kilitGecikmesiKaydet(c: Context, indeks: Int) {
-        sp(c).edit().putInt("kilit_gecikme", indeks).apply()
-    }
-
     // --- Taşımada korunan değiştirme tarihi ---
 
     /**

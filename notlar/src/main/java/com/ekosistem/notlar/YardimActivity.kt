@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
 /**
@@ -15,7 +14,7 @@ import androidx.core.content.ContextCompat
  * (dile göre `raw-tr`); anlatım ve örnekler uygulamanın kendi biçimlendiricisiyle
  * çizilir, yani rehberde görünen, notta görünecek olanın aynısıdır.
  */
-class YardimActivity : AppCompatActivity() {
+class YardimActivity : TemelActivity() {
 
     private lateinit var bicimci: MarkdownBicimci
     private var yogunluk = 1f

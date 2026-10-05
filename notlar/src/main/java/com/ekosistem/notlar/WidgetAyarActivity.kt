@@ -6,13 +6,12 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 /** "Tek not" widget'ı eklenirken hangi notun gösterileceğini seçtirir. */
-class WidgetAyarActivity : AppCompatActivity() {
+class WidgetAyarActivity : TemelActivity() {
 
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 

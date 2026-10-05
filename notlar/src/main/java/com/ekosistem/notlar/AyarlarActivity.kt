@@ -16,7 +16,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.AccessibilityDelegateCompat
@@ -24,7 +23,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.documentfile.provider.DocumentFile
 
-class AyarlarActivity : AppCompatActivity() {
+class AyarlarActivity : TemelActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var satirTema: View
@@ -328,19 +327,10 @@ class AyarlarActivity : AppCompatActivity() {
 
     private fun kilitOzeti(): String {
         if (!Kilit.kurulu(this)) return getString(R.string.kilit_kapali)
-        val parcalar = mutableListOf(getString(R.string.kilit_acik), gecikmeAdi())
+        val parcalar = mutableListOf(getString(R.string.kilit_acik))
         if (Kilit.parmakIziAcik(this)) parcalar.add(getString(R.string.parmak_izi))
         return parcalar.joinToString(" · ")
     }
-
-    private fun gecikmeAdi(): String = getString(
-        when (Prefs.kilitGecikmesi(this)) {
-            1 -> R.string.kilit_30sn
-            2 -> R.string.kilit_1dk
-            3 -> R.string.kilit_5dk
-            else -> R.string.kilit_hemen
-        }
-    )
 
     /** Kilit kuruluysa seçenekler açılır; değilse doğrudan PIN kurulumuna gider. */
     private fun kilitAyari() {
@@ -356,30 +346,8 @@ class AyarlarActivity : AppCompatActivity() {
                 ozetGuncelle(satirKilit, kilitOzeti())
             }
         }
-        sayfa.madde(
-            R.drawable.ic_gecmis,
-            "${getString(R.string.otomatik_kilit)}: ${gecikmeAdi()}"
-        ) { gecikmeSec() }
         sayfa.madde(R.drawable.ic_sil, getString(R.string.pin_kaldir), tehlikeli = true) {
             kilitEkraniAc(KilitActivity.KIP_KALDIR)
-        }
-        sayfa.goster()
-    }
-
-    private fun gecikmeSec() {
-        val etiketler = listOf(
-            R.string.kilit_hemen,
-            R.string.kilit_30sn,
-            R.string.kilit_1dk,
-            R.string.kilit_5dk
-        )
-        val secili = Prefs.kilitGecikmesi(this)
-        val sayfa = AltSayfa(this).baslik(getString(R.string.otomatik_kilit))
-        etiketler.forEachIndexed { indeks, etiket ->
-            sayfa.madde(R.drawable.ic_gecmis, getString(etiket), secili = indeks == secili) {
-                Prefs.kilitGecikmesiKaydet(this, indeks)
-                ozetGuncelle(satirKilit, kilitOzeti())
-            }
         }
         sayfa.goster()
     }

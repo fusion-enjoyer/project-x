@@ -24,14 +24,13 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import java.util.Locale
 
-class EditorActivity : AppCompatActivity() {
+class EditorActivity : TemelActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var metinAlani: NotEditText
@@ -84,6 +83,8 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var bulSayac: TextView
     private var eslesmeler: List<Int> = emptyList()
     private var eslesmeSirasi = -1
+    /** Metnin bul çubuğu kapalıykenki üst boşluğu; ilk açılışta okunur. */
+    private var normalUstBosluk = -1
 
     private data class Durum(val metin: String, val imlec: Int)
 
@@ -883,7 +884,7 @@ class EditorActivity : AppCompatActivity() {
             .madde(R.drawable.ic_baglanti, getString(R.string.baglanti_ac)) {
                 try {
                     Kilit.sistemAraciBekleniyor = true
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(adres)))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(MarkdownBicimci.webAdresi(adres))))
                 } catch (_: android.content.ActivityNotFoundException) {
                     Kilit.sistemAraciBekleniyor = false
                     Toast.makeText(this, R.string.baglanti_uygulama_yok, Toast.LENGTH_SHORT).show()
@@ -934,6 +935,7 @@ class EditorActivity : AppCompatActivity() {
             Arac(R.drawable.ic_bicim_cizili, R.string.bicim_cizili) { sarmala("~~") },
             Arac(R.drawable.ic_bicim_kod, R.string.bicim_kod) { sarmala("`") },
             Arac(R.drawable.ic_bicim_alinti, R.string.bicim_alinti) { onekDegistir("> ") },
+            Arac(R.drawable.ic_bicim_kutu, R.string.bicim_kutu) { kutuTuruSec() },
             Arac(R.drawable.ic_bicim_liste, R.string.bicim_liste) { onekDegistir("- ") },
             Arac(R.drawable.ic_bicim_numarali, R.string.bicim_numarali) { onekDegistir("1. ") },
             Arac(R.drawable.ic_bicim_onay, R.string.bicim_onay) { onekDegistir("- [ ] ") },
@@ -992,6 +994,44 @@ class EditorActivity : AppCompatActivity() {
             if (mevcut != onek) s.insert(satirBasi + girinti, onek)
         } else {
             s.insert(satirBasi + girinti, onek)
+        }
+    }
+
+    /**
+     * Bilgi kutusu ekler. Tür Obsidian'ın İngilizce adıyla yazılır (orada da
+     * renkli görünsün), başlık kullanıcının dilinde: `> [!warning] Uyarı`.
+     * Satır doluysa o satır kutunun gövdesi olur; boşsa imleç gövdeye geçer.
+     */
+    private fun kutuTuruSec() {
+        val turler = listOf(
+            "note" to R.string.kutu_not,
+            "tip" to R.string.kutu_ipucu,
+            "success" to R.string.kutu_basari,
+            "question" to R.string.kutu_soru,
+            "warning" to R.string.kutu_uyari,
+            "failure" to R.string.kutu_hata,
+            "example" to R.string.kutu_ornek,
+            "quote" to R.string.kutu_alinti
+        )
+        val sayfa = AltSayfa(this).baslik(getString(R.string.bicim_kutu))
+        for ((tur, ad) in turler) {
+            sayfa.madde(R.drawable.ic_bicim_kutu, getString(ad)) { kutuEkle(tur, getString(ad)) }
+        }
+        sayfa.goster()
+    }
+
+    private fun kutuEkle(tur: String, baslik: String) {
+        val s = metinAlani.text ?: return
+        val (satirBasi, satirSonu) = satirSinirlari()
+        val satir = s.subSequence(satirBasi, satirSonu).toString()
+        val ust = "> [!$tur] $baslik\n"
+        if (satir.isBlank()) {
+            s.replace(satirBasi, satirSonu, "$ust> ")
+            metinAlani.setSelection((satirBasi + ust.length + 2).coerceAtMost(s.length))
+        } else {
+            val govde = if (satir.startsWith(">")) satir else "> $satir"
+            s.replace(satirBasi, satirSonu, ust + govde)
+            metinAlani.setSelection((satirBasi + ust.length + govde.length).coerceAtMost(s.length))
         }
     }
 
@@ -1510,7 +1550,14 @@ class EditorActivity : AppCompatActivity() {
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
             .showSoftInput(bulAlani, 0)
         // Eşleşme, bul çubuğunun arkasında kalacak yere kaydırılmasın.
-        bulCubugu.post { kaydirici.ustPay = bulCubugu.height }
+        // Metnin üst boşluğu da çubuk kadar açılır: bul ve değiştir iki satır
+        // olduğu için 72 dp'lik boşluğa sığmıyor, notun ilk satırlarını örtüyordu.
+        bulCubugu.post {
+            kaydirici.ustPay = bulCubugu.height
+            if (normalUstBosluk < 0) normalUstBosluk = metinAlani.paddingTop
+            val ust = maxOf(normalUstBosluk, bulCubugu.height + (8 * resources.displayMetrics.density).toInt())
+            metinAlani.setPadding(metinAlani.paddingLeft, ust, metinAlani.paddingRight, metinAlani.paddingBottom)
+        }
         eslesmeleriBul(git = true)
     }
 
@@ -1522,6 +1569,9 @@ class EditorActivity : AppCompatActivity() {
         ustCubukAcik = true
         bulGeriTusu.isEnabled = false
         kaydirici.ustPay = 0
+        if (normalUstBosluk >= 0 && metinAlani.paddingTop != normalUstBosluk) {
+            metinAlani.setPadding(metinAlani.paddingLeft, normalUstBosluk, metinAlani.paddingRight, metinAlani.paddingBottom)
+        }
         if (!okumaModu) {
             bicimKaydirici.visibility = View.VISIBLE
             kaydirici.altPay = (BICIM_PAYI_DP * resources.displayMetrics.density).toInt()

@@ -3,7 +3,6 @@ package com.ekosistem.notlar
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDelegate
@@ -21,8 +20,8 @@ class NotlarApp : Application() {
     }
 
     /**
-     * Kilit ekranı tek yerden yönetilir: uygulama öne her döndüğünde seçilen
-     * gecikme dolduysa oturum kapanır ve PIN yeniden sorulur.
+     * Kilit ekranı tek yerden yönetilir: uygulama öne her döndüğünde oturum
+     * kapanır ve PIN yeniden sorulur.
      */
     private inner class YasamDongusu : ActivityLifecycleCallbacks {
         override fun onActivityStarted(activity: Activity) {
@@ -39,10 +38,7 @@ class NotlarApp : Application() {
 
         override fun onActivityStopped(activity: Activity) {
             gorunenSayisi--
-            if (gorunenSayisi <= 0) {
-                gorunenSayisi = 0
-                Kilit.arkaPlanaGecildi()
-            }
+            if (gorunenSayisi < 0) gorunenSayisi = 0
         }
 
         override fun onActivityDestroyed(activity: Activity) {
@@ -50,18 +46,17 @@ class NotlarApp : Application() {
         }
 
         override fun onActivityCreated(activity: Activity, durum: Bundle?) {
-            // Kilit kuruluysa son uygulamalar ekranında notların önizlemesi
-            // görünmesin (Android 13+). Eski sürümlerde "ekran görüntüsünü
-            // engelle" ayarı bunu da kapsar.
-            if (Build.VERSION.SDK_INT >= 33 && Kilit.kurulu(this@NotlarApp)) {
-                activity.setRecentsScreenshotEnabled(false)
-            }
             ekranGizlemeyiUygula(activity)
         }
 
-        // Ayar değişince arkadaki ekranlar da öne döndüklerinde uyar.
-        override fun onActivityResumed(activity: Activity) = ekranGizlemeyiUygula(activity)
-        override fun onActivityPaused(activity: Activity) {}
+        override fun onActivityResumed(activity: Activity) {
+            // Ayar değişince arkadaki ekranlar da öne döndüklerinde uyar.
+            ekranGizlemeyiUygula(activity)
+            GizlilikOrtusu.devamEdildi(activity)
+        }
+
+        // Kilit kuruluysa son uygulamalar ekranında not yerine örtü görünür.
+        override fun onActivityPaused(activity: Activity) = GizlilikOrtusu.duraklatildi(activity)
         override fun onActivitySaveInstanceState(activity: Activity, durum: Bundle) {}
     }
 }

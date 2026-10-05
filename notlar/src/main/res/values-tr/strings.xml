@@ -139,6 +139,16 @@
     <string name="bicim_cizili">Üstü çizili</string>
     <string name="bicim_kod">Kod</string>
     <string name="bicim_alinti">Alıntı</string>
+    <string name="bicim_kutu">Bilgi kutusu</string>
+    <string name="az_once">Az önce</string>
+    <string name="kutu_not">Not</string>
+    <string name="kutu_ipucu">İpucu</string>
+    <string name="kutu_basari">Başarılı</string>
+    <string name="kutu_soru">Soru</string>
+    <string name="kutu_uyari">Uyarı</string>
+    <string name="kutu_hata">Hata</string>
+    <string name="kutu_ornek">Örnek</string>
+    <string name="kutu_alinti">Alıntı</string>
     <string name="bicim_numarali">Numaralı liste</string>
     <string name="girinti_arti">Girintiyi artır</string>
     <string name="girinti_eksi">Girintiyi azalt</string>
@@ -226,11 +236,6 @@
     <string name="parmak_izi_soru">Parmak izi de kullanılsın mı?</string>
     <string name="parmak_izi_kullan">Parmak izi de kullan</string>
     <string name="sadece_pin">Sadece PIN</string>
-    <string name="otomatik_kilit">Otomatik kilitlenme</string>
-    <string name="kilit_hemen">Hemen</string>
-    <string name="kilit_30sn">30 saniye sonra</string>
-    <string name="kilit_1dk">1 dakika sonra</string>
-    <string name="kilit_5dk">5 dakika sonra</string>
 
     <!-- Sürüm geçmişi -->
     <string name="gecmis_karsilastir">Karşılaştır</string>

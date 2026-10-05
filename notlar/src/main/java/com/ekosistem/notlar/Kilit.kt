@@ -3,7 +3,6 @@ package com.ekosistem.notlar
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.SystemClock
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -18,9 +17,6 @@ object Kilit {
     @Volatile
     var oturumAcik = false
 
-    @Volatile
-    private var arkaPlanZamani = 0L
-
     /**
      * Klasör seçici, paylaşma penceresi gibi bilinçli çıkışlarda dönüşte kilit
      * sorulmaz; yoksa her yedek alma denemesi PIN ekranıyla kesilirdi.
@@ -28,8 +24,6 @@ object Kilit {
     @Volatile
     var sistemAraciBekleniyor = false
 
-    /** Otomatik kilitlenme seçenekleri (ms). Ayarlardaki sırayla aynı. */
-    val GECIKMELER = longArrayOf(0L, 30_000L, 60_000L, 300_000L)
 
     fun kurulu(c: Context): Boolean = Prefs.pinOzeti(c) != null
 
@@ -88,19 +82,17 @@ object Kilit {
 
     // --- Ön plan / arka plan ---
 
-    fun arkaPlanaGecildi() {
-        arkaPlanZamani = SystemClock.elapsedRealtime()
-    }
-
-    /** Uygulama öne döndüğünde seçilen gecikme dolduysa oturumu kapatır. */
+    /**
+     * Uygulama öne her döndüğünde oturum kapanır, PIN yeniden sorulur. Gecikme
+     * seçeneği (30 sn, 1 dk, 5 dk) gereksiz bulunup kaldırıldı.
+     */
     fun onPlanaGelindi(c: Context) {
         if (!kurulu(c) || !oturumAcik) return
         if (sistemAraciBekleniyor) {
             sistemAraciBekleniyor = false
             return
         }
-        val gecikme = GECIKMELER.getOrElse(Prefs.kilitGecikmesi(c)) { 0L }
-        if (SystemClock.elapsedRealtime() - arkaPlanZamani >= gecikme) oturumAcik = false
+        oturumAcik = false
     }
 
     // --- Parmak izi ---

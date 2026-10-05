@@ -14,6 +14,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -24,7 +25,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -34,7 +34,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : TemelActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var adapter: NotAdapter
@@ -238,6 +238,18 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.bos_aciklama)
             )
         }
+        // Aramada boş durum üstte durur: ortalıyken klavye açılıp kapandıkça
+        // pencere küçülüp büyüdüğü için yazı yukarı aşağı kayıyordu.
+        val y = resources.displayMetrics.density
+        val yer = bosDurum.layoutParams as FrameLayout.LayoutParams
+        val aramada = s != null
+        val yerci = if (aramada) Gravity.TOP or Gravity.CENTER_HORIZONTAL else Gravity.CENTER
+        if (yer.gravity != yerci) {
+            yer.gravity = yerci
+            yer.topMargin = if (aramada) (48 * y).toInt() else 0
+            yer.bottomMargin = if (aramada) 0 else (64 * y).toInt()
+            bosDurum.layoutParams = yer
+        }
         BosDurum.goster(bosDurum, ikon, baslik, aciklama, eylem)
     }
 
@@ -286,6 +298,12 @@ class MainActivity : AppCompatActivity() {
             duzenlemeyiUygula(d)
         }
         yenile()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Başka ekrana geçilirken arama odağı bırakılır; dönüşte imleç yanıp sönmesin.
+        arama.clearFocus()
     }
 
     /** Hız ölçümü için: ekrana son dönüş anı. */
@@ -346,6 +364,9 @@ class MainActivity : AppCompatActivity() {
             if (cubuk.visibility != hedef) {
                 cubuk.visibility = hedef
                 sis.visibility = hedef
+                // Klavye kapandıysa arama kutusu odağı bıraksın; yoksa başka
+                // ekranlardan dönünce bile imleç kutuda yanıp sönüyordu.
+                if (!klavyeAcik) arama.clearFocus()
             }
         }
     }

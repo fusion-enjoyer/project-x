@@ -4,11 +4,10 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-class TrashActivity : AppCompatActivity() {
+class TrashActivity : TemelActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var adapter: NotAdapter

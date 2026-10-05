@@ -11,14 +11,13 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
 /**
  * PIN ekranı. Dört işi görür: uygulamanın kilidini açma, kilitli bir notu açma,
  * yeni PIN kurma, PIN'i kaldırma. Hangi işi yapacağı "kip" ek bilgisiyle belirlenir.
  */
-class KilitActivity : AppCompatActivity() {
+class KilitActivity : TemelActivity() {
 
     private lateinit var noktalar: LinearLayout
     private lateinit var aciklama: TextView

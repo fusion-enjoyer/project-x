@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Dışarıdan gelen metin ve dosyalar. Uygulama açılmadan, şeffaf bir ekranda
@@ -19,7 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
  * Seçili metin menüsü Android 6'dan itibaren var; eski sürümlerde yalnızca
  * Paylaş görünür.
  */
-class ShareActivity : AppCompatActivity() {
+class ShareActivity : TemelActivity() {
 
     /** Bir işlem başladıysa sayfa kapanınca ekran hemen kapanmasın. */
     private var islemde = false

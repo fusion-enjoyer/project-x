@@ -139,6 +139,16 @@
     <string name="bicim_cizili">Strikethrough</string>
     <string name="bicim_kod">Code</string>
     <string name="bicim_alinti">Quote</string>
+    <string name="bicim_kutu">Callout</string>
+    <string name="az_once">Just now</string>
+    <string name="kutu_not">Note</string>
+    <string name="kutu_ipucu">Tip</string>
+    <string name="kutu_basari">Success</string>
+    <string name="kutu_soru">Question</string>
+    <string name="kutu_uyari">Warning</string>
+    <string name="kutu_hata">Error</string>
+    <string name="kutu_ornek">Example</string>
+    <string name="kutu_alinti">Quote</string>
     <string name="bicim_numarali">Numbered list</string>
     <string name="girinti_arti">Increase indent</string>
     <string name="girinti_eksi">Decrease indent</string>
@@ -226,11 +236,6 @@
     <string name="parmak_izi_soru">Also unlock with your fingerprint?</string>
     <string name="parmak_izi_kullan">Use fingerprint too</string>
     <string name="sadece_pin">PIN only</string>
-    <string name="otomatik_kilit">Auto-lock</string>
-    <string name="kilit_hemen">Immediately</string>
-    <string name="kilit_30sn">After 30 seconds</string>
-    <string name="kilit_1dk">After 1 minute</string>
-    <string name="kilit_5dk">After 5 minutes</string>
 
     <!-- Version history -->
     <string name="gecmis_karsilastir">Compare</string>

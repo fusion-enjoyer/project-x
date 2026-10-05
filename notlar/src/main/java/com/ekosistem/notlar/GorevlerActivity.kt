@@ -17,7 +17,6 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,7 +25,7 @@ import java.util.Calendar
 import java.util.Locale
 
 /** Tüm notlardaki onay kutularını tek listede toplar. */
-class GorevlerActivity : AppCompatActivity() {
+class GorevlerActivity : TemelActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var adapter: GorevAdapter

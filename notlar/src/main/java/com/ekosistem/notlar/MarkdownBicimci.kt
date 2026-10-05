@@ -136,6 +136,7 @@ class MarkdownBicimci(private val context: Context) {
         for (span in s.getSpans(0, s.length, TypefaceSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, OnayKutusuSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, GizliSpan::class.java)) s.removeSpan(span)
+        for (span in s.getSpans(0, s.length, ItalikSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, AlintiSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, AyracSpan::class.java)) s.removeSpan(span)
         for (span in s.getSpans(0, s.length, MaddeSpan::class.java)) s.removeSpan(span)
@@ -372,7 +373,7 @@ class MarkdownBicimci(private val context: Context) {
             if (kapsaniyor(gorseller, m.range)) continue
             val ic = m.groups[1] ?: continue
             s.setSpan(
-                StyleSpan(Typeface.ITALIC),
+                ItalikSpan(),
                 bas + ic.range.first,
                 bas + ic.range.last + 1,
                 EE
@@ -514,11 +515,27 @@ class MarkdownBicimci(private val context: Context) {
         // "!" ile başlayan gömme görseldir, bağlantı değil.
         val BAGLANTI = Regex("(?<!!)\\[\\[([^\\[\\]\\n]{1,80})]]")
         val GORSEL = Regex("!\\[([^\\]\\n]*)]\\(([^)\\n]+)\\)")
-        /** Düz web adresi. Sondaki nokta, virgül, parantez adrese dahil edilmez. */
-        val URL = Regex("(?<![\\w@/])https?://[^\\s<>\"'`\\[\\]()]*[^\\s<>\"'`\\[\\]().,;:!?]")
+        /**
+         * Düz web adresi: `https://...`, `www....` ya da yaygın uzantılı çıplak
+         * alan adı (`ornek.com`, `site.com.tr/yol`). Çıplak adda uzantı listesi
+         * bilerek dar: `notlar.md` gibi dosya adları bağlantıya dönmesin.
+         * Sondaki nokta, virgül, parantez adrese dahil edilmez; e-posta sayılmaz.
+         */
+        val URL = Regex(
+            "(?<![\\w@/.-])(?:" +
+                "https?://[^\\s<>\"'`\\[\\]()]*[^\\s<>\"'`\\[\\]().,;:!?]" +
+                "|www\\.[^\\s<>\"'`\\[\\]()]*[^\\s<>\"'`\\[\\]().,;:!?]" +
+                "|[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.(?:com|net|org|io|dev|app|co|me|info|edu|gov|tr)(?:\\.tr)?(?![\\w-])" +
+                "(?:/[^\\s<>\"'`\\[\\]()]*[^\\s<>\"'`\\[\\]().,;:!?])?" +
+                ")"
+        )
 
-        /** Markdown bağlantısı: [metin](https://adres) */
-        val MD_BAGLANTI = Regex("(?<!!)\\[([^\\[\\]\\n]+)]\\((https?://[^\\s)]+)\\)")
+        /** Adres şemasızsa (`www.`, `ornek.com`) tarayıcıya https ile verilir. */
+        fun webAdresi(adres: String): String =
+            if (adres.startsWith("http://", true) || adres.startsWith("https://", true)) adres else "https://$adres"
+
+        /** Markdown bağlantısı: [metin](https://adres) ya da [metin](www.adres) */
+        val MD_BAGLANTI = Regex("(?<!!)\\[([^\\[\\]\\n]+)]\\(((?:https?://|www\\.)[^\\s)]+)\\)")
 
         /** Kod bloğu çiti: satır ``` ile başlar (dil adı gelebilir). */
         val KOD_CITI = Regex("^\\s*```")

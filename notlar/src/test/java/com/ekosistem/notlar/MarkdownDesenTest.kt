@@ -52,6 +52,18 @@ class MarkdownDesenTest {
     }
 
     @Test
+    fun semasizAdresTaninir() {
+        val bul = { m: String -> MarkdownBicimci.URL.findAll(m).map { it.value }.toList() }
+        assertEquals(listOf("www.ornek.xyz/a"), bul("bkz. www.ornek.xyz/a."))
+        assertEquals(listOf("google.com"), bul("google.com'da ara"))
+        assertEquals(listOf("site.com.tr/yol?q=1"), bul("(site.com.tr/yol?q=1)"))
+        // Dosya adı, e-posta ve sözcük içi parça bağlantı değildir.
+        assertEquals(emptyList<String>(), bul("notlar.md ve ali@gmail.com ve resim.png"))
+        assertEquals("https://www.x.org", MarkdownBicimci.webAdresi("www.x.org"))
+        assertEquals("http://x.org", MarkdownBicimci.webAdresi("http://x.org"))
+    }
+
+    @Test
     fun markdownBaglantisiMetinVeAdresVerir() {
         val m = MarkdownBicimci.MD_BAGLANTI.find("oku: [Güzel yazı](https://blog.org/y) bitti")!!
         assertEquals("Güzel yazı", m.groupValues[1])

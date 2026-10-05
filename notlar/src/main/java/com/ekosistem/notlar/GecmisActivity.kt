@@ -21,7 +21,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,7 +34,7 @@ import java.util.Locale
  * [CAKISMA] verilirse aynı ekran eşitleme çakışmasını çözer: asıl not ile
  * çakışma kopyası karşılaştırılır, kullanıcı birini seçer ya da birleştirir.
  */
-class GecmisActivity : AppCompatActivity() {
+class GecmisActivity : TemelActivity() {
 
     private lateinit var depo: NotDeposu
     private lateinit var listeKaydirici: ScrollView

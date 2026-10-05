@@ -87,9 +87,13 @@ class NotAdapter(
         t.ozet.visibility = if (ikincil.isBlank()) View.GONE else View.VISIBLE
         t.kilit.visibility = if (not.kilitli) View.VISIBLE else View.GONE
 
-        val zaman = if (not.degistirilme > 0) {
-            DateUtils.getRelativeTimeSpanString(not.degistirilme).toString()
-        } else ""
+        // Bir dakikadan yeni düzenlemede Android "0 dakika önce" yazıyordu.
+        val gecen = System.currentTimeMillis() - not.degistirilme
+        val zaman = when {
+            not.degistirilme <= 0 -> ""
+            gecen in 0 until DateUtils.MINUTE_IN_MILLIS -> t.ozet.context.getString(R.string.az_once)
+            else -> DateUtils.getRelativeTimeSpanString(not.degistirilme).toString()
+        }
         val parcalar = listOfNotNull(zaman.takeIf { it.isNotBlank() }, not.klasor)
         val tarihMetni = SpannableStringBuilder(parcalar.joinToString(" · "))
         if (not.gorev > 0) {

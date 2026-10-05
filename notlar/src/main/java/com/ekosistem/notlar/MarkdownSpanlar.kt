@@ -3,9 +3,13 @@ package com.ekosistem.notlar
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.text.Layout
+import android.text.TextPaint
 import android.text.style.LeadingMarginSpan
+import android.text.style.MetricAffectingSpan
 import android.text.style.ReplacementSpan
 
 /** Markdown işaretini tamamen gizler (imleç başka satırdayken). */
@@ -306,7 +310,49 @@ class CalloutSpan(
  */
 class BulVurguSpan(private val renk: Int) : android.text.style.CharacterStyle(),
     android.text.style.UpdateAppearance {
-    override fun updateDrawState(tp: android.text.TextPaint) {
+    override fun updateDrawState(tp: TextPaint) {
         tp.bgColor = renk
+    }
+}
+
+/**
+ * İtalik. Sıradan `StyleSpan(ITALIC)` bazı telefonlarda görünmüyordu: üreticinin
+ * yazı tipi (Samsung, Xiaomi temaları) italik yuvasına dik harfli dosyayı
+ * koyuyor, Android de "italik var" sanıp eğmiyor. Burada italik yazının
+ * gerçekten eğik olup olmadığı bir kez ölçülür; değilse eğiklik elle verilir.
+ */
+class ItalikSpan : MetricAffectingSpan() {
+
+    override fun updateMeasureState(paint: TextPaint) = uygula(paint)
+
+    override fun updateDrawState(paint: TextPaint) = uygula(paint)
+
+    private fun uygula(paint: Paint) {
+        val eski = paint.typeface ?: Typeface.DEFAULT
+        val italik = Typeface.create(eski, eski.style or Typeface.ITALIC)
+        paint.typeface = italik
+        if (!egikMi(italik)) paint.textSkewX = -0.25f
+    }
+
+    companion object {
+        private val olculen = HashMap<Typeface, Boolean>()
+
+        /**
+         * Dik ve italik "l" harfinin sınır kutusu karşılaştırılır: eğik çizilen
+         * harfin kutusu yana genişler. Aynıysa italik dosyası aslında dik.
+         */
+        fun egikMi(italik: Typeface): Boolean = synchronized(olculen) {
+            olculen.getOrPut(italik) {
+                val dik = Typeface.create(italik, italik.style and Typeface.ITALIC.inv())
+                val p = Paint().apply { textSize = 100f }
+                val a = Rect()
+                val b = Rect()
+                p.typeface = dik
+                p.getTextBounds("lI", 0, 2, a)
+                p.typeface = italik
+                p.getTextBounds("lI", 0, 2, b)
+                a != b
+            }
+        }
     }
 }
