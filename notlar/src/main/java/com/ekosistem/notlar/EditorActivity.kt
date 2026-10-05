@@ -1783,10 +1783,8 @@ class EditorActivity : TemelActivity() {
         val mevcutUri = uri
         val sifreli = sifre != null
         val metin = metinAlani.text?.toString().orEmpty()
-        val kelime = metin.split(Regex("\\s+")).count { it.isNotBlank() }
-        val sayfa = AltSayfa(this).baslik(
-            getString(R.string.kelime_karakter, kelime, metin.length)
-        ).aranabilir()
+        // Kelime ve karakter sayısı "Not hakkında"da; menünün başı boş kalır.
+        val sayfa = AltSayfa(this).aranabilir()
 
         if (mevcutUri != null) {
             val sabit = Prefs.sabitler(this).contains(mevcutUri.toString())

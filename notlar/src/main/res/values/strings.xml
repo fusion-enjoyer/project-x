@@ -295,7 +295,6 @@
 
     <!-- v0.11.0 -->
     <string name="duzenle">Edit</string>
-    <string name="kelime_karakter">%1$d words \u00b7 %2$d characters</string>
     <string name="notu_cogalt">Duplicate note</string>
     <string name="notu_bol">Split here</string>
     <string name="bol_ozet">The line with the cursor and everything below it becomes a new note. The part above stays in this note.</string>

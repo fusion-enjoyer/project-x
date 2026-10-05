@@ -295,7 +295,6 @@
 
     <!-- v0.11.0 -->
     <string name="duzenle">Düzenle</string>
-    <string name="kelime_karakter">%1$d kelime \u00b7 %2$d karakter</string>
     <string name="notu_cogalt">Notu çoğalt</string>
     <string name="notu_bol">Buradan böl</string>
     <string name="bol_ozet">İmlecin bulunduğu satır ve altı yeni bir not olur. Üst kısım bu notta kalır.</string>
