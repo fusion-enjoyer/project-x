@@ -38,7 +38,9 @@ object NotWidget {
         ::ListeWidget,
         ::GorevlerWidget,
         ::BugunWidget,
-        ::EylemlerWidget
+        ::EylemlerWidget,
+        ::SabitWidget,
+        ::FiltreWidget
     )
 
     fun bayrak(degistirilebilir: Boolean): Int {

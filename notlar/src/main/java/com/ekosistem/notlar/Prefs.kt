@@ -115,6 +115,22 @@ object Prefs {
         sp(c).edit().remove("widget_$widgetId").apply()
     }
 
+    /**
+     * Klasör/etiket widget'ının süzgeci: "k:İş" (klasör) ya da "e:iş" (etiket).
+     * Anahtar "widgetfiltre_" ile başlar; "widget_" ile başlayanlar not adresi
+     * sayılıp adres taşımada güncellenir (bkz. [adresleriTasi]).
+     */
+    fun widgetFiltre(c: Context, widgetId: Int): String? =
+        sp(c).getString("widgetfiltre_$widgetId", null)
+
+    fun widgetFiltreKaydet(c: Context, widgetId: Int, filtre: String) {
+        sp(c).edit().putString("widgetfiltre_$widgetId", filtre).apply()
+    }
+
+    fun widgetFiltreSil(c: Context, widgetId: Int) {
+        sp(c).edit().remove("widgetfiltre_$widgetId").apply()
+    }
+
     // --- Kilit ---
 
     fun pinOzeti(c: Context): String? = sp(c).getString("pin_ozet", null)

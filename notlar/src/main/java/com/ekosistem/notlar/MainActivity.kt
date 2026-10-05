@@ -113,6 +113,10 @@ class MainActivity : TemelActivity() {
         intent?.getStringExtra("etiket")?.let { etiket ->
             seciliEtiket = etiket
         }
+        // Klasör widget'ının başlığından gelindiyse o klasör seçili açılır.
+        intent?.getStringExtra("klasor")?.let { klasor ->
+            seciliKlasor = klasor
+        }
         // Tema değişince ya da ekran dönünce seçili klasör "Tümü"ne dönüyordu.
         savedInstanceState?.let { durum ->
             seciliKlasor = durum.getString(DURUM_KLASOR)
@@ -795,6 +799,8 @@ class MainActivity : TemelActivity() {
             val sabit = Prefs.sabitler(this).contains(not.uri.toString())
             if (sabit == hepsiSabit) Prefs.sabitDegistir(this, not.uri.toString())
         }
+        // Sabitlenmiş notlar widget'ı da tazelensin.
+        NotWidget.hepsiniGuncelle(applicationContext)
         secimBitir()
         yenile()
     }

@@ -187,6 +187,14 @@ class EditorActivity : TemelActivity() {
                 if (savedInstanceState == null && intent.getBooleanExtra(EK_KAMERA, false)) {
                     metinAlani.post { fotografCek() }
                 }
+                // Etiket widget'ındaki "+": not etiketiyle başlar, imleç başlık satırında.
+                val etiket = intent.getStringExtra(EK_ETIKET)
+                if (savedInstanceState == null && !etiket.isNullOrBlank()) {
+                    metinAlani.setText("\n\n#$etiket")
+                    metinAlani.setSelection(0)
+                    // Hiçbir şey yazılmadan çıkılırsa yalnızca etiketten oluşan not kaydedilmesin.
+                    acilisMetni = metinAlani.text.toString()
+                }
             }
             // Kilitli notun içeriği kilit açılana kadar hiç yüklenmez.
             Kilit.notKilitli(this, acilacak.toString()) -> {
@@ -1798,6 +1806,7 @@ class EditorActivity : TemelActivity() {
                 secili = sabit
             ) {
                 Prefs.sabitDegistir(this, mevcutUri.toString())
+                NotWidget.hepsiniGuncelle(applicationContext)
             }
         }
 
@@ -2366,6 +2375,9 @@ class EditorActivity : TemelActivity() {
         const val KAPANIS_ISARETLERI = "*~`_"
         /** Boş not açılır açılmaz kamerayı başlatır (Hızlı eylemler widget'ı). */
         const val EK_KAMERA = "kamera"
+
+        /** Yeni not bu etiketle başlar (Klasör/etiket widget'ı). */
+        const val EK_ETIKET = "etiket"
 
         val ONEKLER = listOf("- [ ] ", "- [x] ", "- [X] ", "- ", "### ", "## ", "# ", "> ")
     }

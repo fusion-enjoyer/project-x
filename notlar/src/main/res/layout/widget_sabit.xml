@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sabitlenmiş notlar: zeminsiz, iki sütunlu kart ızgarası. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <GridView
+        android:id="@+id/widgetIzgara"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:horizontalSpacing="8dp"
+        android:numColumns="2"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="8dp" />
+
+    <TextView
+        android:id="@+id/widgetBos"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_widget"
+        android:gravity="center"
+        android:padding="12dp"
+        android:text="@string/sabit_yok"
+        android:textColor="@color/metin_ikincil"
+        android:textSize="13sp" />
+
+</FrameLayout>

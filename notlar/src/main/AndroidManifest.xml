@@ -164,6 +164,52 @@
                 android:resource="@xml/widget_eylemler" />
         </receiver>
 
+        <receiver
+            android:name=".SabitWidget"
+            android:exported="false"
+            android:label="@string/widget_sabit">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_sabit" />
+        </receiver>
+
+        <service
+            android:name=".SabitWidgetServisi"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <receiver
+            android:name=".FiltreWidget"
+            android:exported="false"
+            android:label="@string/widget_filtre">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_filtre" />
+        </receiver>
+
+        <service
+            android:name=".FiltreWidgetServisi"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <!-- Klasör/etiket widget'ı eklenirken süzgeç seçimi (şeffaf, alt sayfa). -->
+        <activity
+            android:name=".FiltreAyarActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Notlar.Translucent">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Widget listelerindeki dokunuşların görünmez aracısı (görev işaretle / not aç). -->
         <activity
             android:name=".WidgetEylemActivity"

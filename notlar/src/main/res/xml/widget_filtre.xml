@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- previewLayout, description, targetCell* ve widgetFeatures Android 12+'da; eskiler yok sayar. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.ekosistem.notlar.FiltreAyarActivity"
+    android:description="@string/widget_filtre_aciklama"
+    android:initialLayout="@layout/widget_liste"
+    android:minWidth="180dp"
+    android:minHeight="180dp"
+    android:previewImage="@drawable/ic_launcher"
+    android:previewLayout="@layout/widget_onizleme_filtre"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="3"
+    android:targetCellHeight="3"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

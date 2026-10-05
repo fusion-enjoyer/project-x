@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget seçicideki örnek görünüm (Android 12+): bir etiketin notları. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/onizleme_filtre_baslik"
+            android:textColor="@color/vurgu"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_arti"
+            android:tint="@color/vurgu" />
+    </LinearLayout>
+
+    <TextView style="@style/WidgetOrnekBaslik" android:text="@string/onizleme_liste_1" />
+    <TextView style="@style/WidgetOrnekOzet" android:text="@string/onizleme_liste_1_ozet" />
+    <TextView style="@style/WidgetOrnekBaslik" android:layout_marginTop="10dp" android:text="@string/onizleme_liste_2" />
+    <TextView style="@style/WidgetOrnekOzet" android:text="@string/onizleme_liste_2_ozet" />
+    <TextView style="@style/WidgetOrnekBaslik" android:layout_marginTop="10dp" android:text="@string/onizleme_liste_3" />
+    <TextView style="@style/WidgetOrnekOzet" android:text="@string/onizleme_liste_3_ozet" />
+
+</LinearLayout>

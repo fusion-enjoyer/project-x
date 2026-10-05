@@ -69,7 +69,9 @@ class BugunWidget : NotWidgetSaglayici() {
 
     companion object {
         fun gunlukNiyeti(context: Context): Intent =
+            // CLEAR_TOP: uygulama açıkken de ana ekran bu istekle yeniden kurulsun.
             Intent(context, MainActivity::class.java).setAction(MainActivity.KISAYOL_GUNLUK)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
 }
 
@@ -111,6 +113,7 @@ class EylemlerWidget : NotWidgetSaglayici() {
                 context,
                 taban + 4,
                 Intent(context, MainActivity::class.java).setAction(MainActivity.KISAYOL_ARA)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             )
         )
         return g
