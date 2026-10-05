@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sabitlenmiş notlar: zeminsiz, iki sütunlu kart ızgarası. -->
+<!--
+  Sabitlenmiş notlar: zeminsiz kart ızgarası. Satırlar ve kartlar koddan
+  eklenir (SabitWidget): kaç kart sığacağı widget'ın boyutuna göre seçilir,
+  kartlar boş yer kalmadan bütün alanı paylaşır.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <GridView
+    <LinearLayout
         android:id="@+id/widgetIzgara"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:horizontalSpacing="8dp"
-        android:numColumns="2"
-        android:stretchMode="columnWidth"
-        android:verticalSpacing="8dp" />
+        android:divider="@drawable/widget_bosluk"
+        android:orientation="vertical"
+        android:showDividers="middle" />
 
     <TextView
         android:id="@+id/widgetBos"
@@ -22,6 +25,7 @@
         android:padding="12dp"
         android:text="@string/sabit_yok"
         android:textColor="@color/metin_ikincil"
-        android:textSize="13sp" />
+        android:textSize="13sp"
+        android:visibility="gone" />
 
 </FrameLayout>

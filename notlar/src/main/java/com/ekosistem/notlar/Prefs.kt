@@ -16,12 +16,27 @@ object Prefs {
     fun sabitler(c: Context): Set<String> =
         sp(c).getStringSet("sabitler", emptySet()) ?: emptySet()
 
+    /**
+     * Sabitlenmiş notlar sabitlenme sırasıyla (ilk sabitlenen başta); widget
+     * kartları bu sırayla dizilir. Küme sıra tutmadığı için sıra ayrı bir
+     * anahtarda; sırası bilinmeyen eski sabitler sona, ada göre eklenir.
+     */
+    fun sabitSirasi(c: Context): List<String> {
+        val kume = sabitler(c)
+        val sira = sp(c).getString("sabit_sirasi", null).orEmpty()
+            .split('\n').filter { it.isNotEmpty() && it in kume }.distinct()
+        return sira + (kume - sira.toSet()).sorted()
+    }
+
     fun sabitDegistir(c: Context, id: String): Boolean {
-        val s = sabitler(c).toMutableSet()
-        val eklendi = if (!s.add(id)) { s.remove(id); false } else true
-        sp(c).edit().putStringSet("sabitler", s).apply()
+        val sira = sabitSirasi(c).toMutableList()
+        val eklendi = if (sira.remove(id)) false else sira.add(id)
+        sabitleriYaz(sp(c).edit(), sira).apply()
         return eklendi
     }
+
+    private fun sabitleriYaz(d: SharedPreferences.Editor, sira: List<String>) =
+        d.putStringSet("sabitler", sira.toHashSet()).putString("sabit_sirasi", sira.joinToString("\n"))
 
     /** Google Keep'ten daha önce alınmış notların anahtarları; ikinci aktarma çiftlemesin. */
     fun keepAktarilanlar(c: Context): Set<String> =
@@ -252,9 +267,9 @@ object Prefs {
         val d = sp(c).edit()
         var degisti = false
 
-        val sabitler = sabitler(c)
+        val sabitler = sabitSirasi(c)
         if (sabitler.any { it in tasinan }) {
-            d.putStringSet("sabitler", sabitler.mapTo(HashSet()) { tasinan[it] ?: it })
+            sabitleriYaz(d, sabitler.map { tasinan[it] ?: it })
             degisti = true
         }
 

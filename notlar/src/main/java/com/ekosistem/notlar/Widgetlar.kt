@@ -151,7 +151,19 @@ abstract class NotWidgetSaglayici : AppWidgetProvider() {
      */
     protected open val gunlukYenile: Boolean = false
 
+    /** Yerleşimi widget'ın boyutuna göre kurulan widget (Sabitlenmiş notlar): yeniden boyutlanınca çizilir. */
+    protected open val boyutaGore: Boolean = false
+
     abstract fun ciz(context: Context, id: Int): RemoteViews
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        yonetici: AppWidgetManager,
+        id: Int,
+        secenekler: android.os.Bundle?
+    ) {
+        if (boyutaGore) onUpdate(context, yonetici, intArrayOf(id))
+    }
 
     final override fun onUpdate(context: Context, yonetici: AppWidgetManager, widgetIds: IntArray) {
         val bekleyen = goAsync()

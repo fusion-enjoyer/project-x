@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sabitlenmiş not kartı. Kilitli notta özet yerine "Kilitli" yazar. -->
+<!--
+  Sabitlenmiş not kartı; genişlik satırdaki kartlar arasında paylaşılır.
+  Kilitli notta özet yerine "Kilitli" yazar. Satır sayıları koddan, kartın
+  yüksekliğine göre (yarım kalan satır görünmesin).
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/satirKok"
-    android:layout_width="match_parent"
-    android:layout_height="96dp"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
     android:background="@drawable/bg_widget"
     android:orientation="vertical"
     android:padding="12dp">
@@ -21,9 +26,8 @@
     <TextView
         android:id="@+id/satirOzet"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:layout_weight="1"
         android:ellipsize="end"
         android:textColor="@color/metin_ikincil"
         android:textSize="12sp" />

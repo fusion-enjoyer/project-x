@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sabitlenmiş notlar widget'ında bir kart satırı; yükseklik satırlar arasında paylaşılır. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetSatir"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:divider="@drawable/widget_bosluk"
+    android:orientation="horizontal"
+    android:showDividers="middle" />

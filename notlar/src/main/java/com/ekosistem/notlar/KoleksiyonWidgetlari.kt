@@ -10,38 +10,154 @@ import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 
 /**
- * Sabitlenmiş notlar: iki sütunlu kart ızgarası. Kilitli notun kartında
- * özet yerine "Kilitli" yazar (listedeki gibi). Kartlara dokununca not açılır.
+ * Sabitlenmiş notlar: en fazla dört kart, sabitlenme sırasıyla. Kaç kartın
+ * sığacağı widget'ın o anki boyutundan hesaplanır ([SabitDuzeni]); kartlar
+ * boş yer bırakmadan bütün alanı paylaşır. Önceden iki sütunlu bir liste
+ * vardı: tek sabit not sol üstte kalıyor, widget'ın geri kalanı boş
+ * duruyordu. Kilitli notun kartında özet yerine "Kilitli" yazar.
  */
 class SabitWidget : NotWidgetSaglayici() {
 
-    override val listeId: Int = R.id.widgetIzgara
+    override val boyutaGore: Boolean = true
 
     override fun ciz(context: Context, id: Int): RemoteViews {
         val g = RemoteViews(context.packageName, R.layout.widget_sabit)
-        WidgetTema.zemin(context, g, R.id.widgetBos)
-        WidgetTema.ikincil(context, g, R.id.widgetBos)
-        g.setTextViewText(R.id.widgetBos, context.getString(R.string.sabit_yok))
-        g.setOnClickPendingIntent(
-            R.id.widgetBos,
-            NotWidget.ekranNiyeti(context, id, Intent(context, MainActivity::class.java))
-        )
-        val servis = Intent(context, SabitWidgetServisi::class.java)
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-        servis.data = Uri.parse(servis.toUri(Intent.URI_INTENT_SCHEME))
-        @Suppress("DEPRECATION")
-        g.setRemoteAdapter(R.id.widgetIzgara, servis)
-        g.setEmptyView(R.id.widgetIzgara, R.id.widgetBos)
-        g.setPendingIntentTemplate(R.id.widgetIzgara, WidgetEylemActivity.sablon(context, id + 2000))
+        val sira = Prefs.sabitSirasi(context)
+        val notlar = if (sira.isEmpty()) emptyList() else
+            NotDeposu(context).notlariListele(null, null)
+                .filter { it.sabit }
+                .sortedBy { sira.indexOf(it.uri.toString()) }
+
+        if (notlar.isEmpty()) {
+            g.setViewVisibility(R.id.widgetIzgara, View.GONE)
+            g.setViewVisibility(R.id.widgetBos, View.VISIBLE)
+            WidgetTema.zemin(context, g, R.id.widgetBos)
+            WidgetTema.ikincil(context, g, R.id.widgetBos)
+            g.setTextViewText(R.id.widgetBos, context.getString(R.string.sabit_yok))
+            g.setOnClickPendingIntent(
+                R.id.widgetBos,
+                NotWidget.ekranNiyeti(context, id, Intent(context, MainActivity::class.java))
+            )
+            return g
+        }
+
+        val (genislik, yukseklik) = boyut(context, id)
+        val satirlar = SabitDuzeni.sec(notlar.size, genislik, yukseklik)
+        val kartYuksekligi =
+            (yukseklik - SabitDuzeni.BOSLUK * (satirlar.size - 1)) / satirlar.size
+
+        g.removeAllViews(R.id.widgetIzgara)
+        var sonraki = 0
+        for (kartSayisi in satirlar) {
+            val kartEni = (genislik - SabitDuzeni.BOSLUK * (kartSayisi - 1)) / kartSayisi
+            val (baslikSatiri, ozetSatiri) = satirSayilari(context, kartEni, kartYuksekligi)
+            val satir = RemoteViews(context.packageName, R.layout.widget_sabit_satir)
+            repeat(kartSayisi) {
+                satir.addView(R.id.widgetSatir, kart(context, id, notlar[sonraki++], baslikSatiri, ozetSatiri))
+            }
+            g.addView(R.id.widgetIzgara, satir)
+        }
         return g
+    }
+
+    private fun kart(context: Context, id: Int, not: Not, baslikSatiri: Int, ozetSatiri: Int): RemoteViews {
+        val k = RemoteViews(context.packageName, R.layout.widget_sabit_item)
+        WidgetTema.zemin(context, k, R.id.satirKok)
+        WidgetTema.metin(context, k, R.id.satirBaslik)
+        WidgetTema.ikincil(context, k, R.id.satirOzet)
+        k.setTextViewText(R.id.satirBaslik, not.baslik)
+        k.setInt(R.id.satirBaslik, "setMaxLines", baslikSatiri)
+        if (ozetSatiri > 0) {
+            k.setTextViewText(R.id.satirOzet, if (not.kilitli) context.getString(R.string.kilitli) else not.ozet)
+            k.setInt(R.id.satirOzet, "setMaxLines", ozetSatiri)
+        } else {
+            k.setViewVisibility(R.id.satirOzet, View.GONE)
+        }
+        val adres = not.uri.toString()
+        k.setOnClickPendingIntent(R.id.satirKok, NotWidget.ekranNiyeti(context, id, NotWidget.notNiyeti(context, adres)))
+        return k
+    }
+
+    /**
+     * Kartın boyuna sığan başlık ve özet satırı; yarım satır görünmesin.
+     * Özete yer yoksa yalnız başlık (en küçük, tek kartlık boyut). Dar kartta
+     * başlık tek satır: iki satıra bölününce kelimenin ortasından kırılıyordu.
+     */
+    private fun satirSayilari(context: Context, kartEni: Int, kartYuksekligi: Int): Pair<Int, Int> {
+        val olcek = context.resources.configuration.fontScale
+        val baslik = 19f * olcek
+        val ozet = 16f * olcek
+        val ic = kartYuksekligi - 24f - 2f
+        val enCokBaslik = if (kartEni < DAR_KART) 1 else 2
+        if (ic < baslik + ozet) return (ic / baslik).toInt().coerceIn(1, enCokBaslik) to 0
+        val baslikSatiri = if (enCokBaslik == 2 && ic >= 2 * baslik + 2 * ozet) 2 else 1
+        return baslikSatiri to ((ic - baslikSatiri * baslik) / ozet).toInt()
+    }
+
+    /**
+     * Widget'ın dp cinsinden boyutu. Dikey ekranda genişlik en küçük, yükseklik
+     * en büyük değerdir (başlatıcıların ortak kuralı). Bildirmeyen başlatıcıda
+     * yerleşimdeki ilk boyut.
+     */
+    private fun boyut(context: Context, id: Int): Pair<Int, Int> {
+        val s = AppWidgetManager.getInstance(context).getAppWidgetOptions(id)
+        val g = s.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+        val y = s.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        return if (g > 0 && y > 0) g to y else 180 to 110
+    }
+
+    private companion object {
+        /** Bundan dar kartta başlık tek satır (dp). */
+        const val DAR_KART = 140
     }
 }
 
-class SabitWidgetServisi : RemoteViewsService() {
-    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory =
-        NotKartFabrikasi(NotWidget.dilBaglami(applicationContext), R.layout.widget_sabit_item) {
-            NotDeposu(it).notlariListele(null, null).filter { not -> not.sabit }
+/** Sabitlenmiş notlar widget'ında kartların dizilişi (saf mantık, test edilir). */
+object SabitDuzeni {
+    const val EN_COK = 4
+    const val BOSLUK = 8
+    /** Bundan küçük kartta başlık okunmuyor. */
+    private const val EN_DAR = 100
+    private const val EN_KISA = 56
+    /** Kartın en iyi göründüğü en/boy oranı. */
+    private const val IDEAL_ORAN = 1.6
+
+    /** Bu boyuttaki widget'a sığan kart sayısı (en az 1, en çok [EN_COK]). */
+    fun kapasite(genislik: Int, yukseklik: Int): Int =
+        minOf(EN_COK, sutunSiniri(genislik) * satirSiniri(yukseklik))
+
+    /**
+     * Satır başına kart sayıları. Gösterilecek not sayısı kapasiteyle sınırlı;
+     * satır sayısı, kartlar ideal orana en yakın olacak şekilde seçilir.
+     * Kartlar satırlara dengeli dağılır; azı alttaki satırlarda kalır ve
+     * genişleyerek satırı doldurur (3 not: üstte 2, altta 1 geniş kart).
+     */
+    fun sec(notSayisi: Int, genislik: Int, yukseklik: Int): List<Int> {
+        val n = minOf(notSayisi, kapasite(genislik, yukseklik))
+        if (n <= 0) return emptyList()
+        var enIyi = listOf(n)
+        var enIyiPuan = Double.MAX_VALUE
+        for (r in 1..minOf(n, satirSiniri(yukseklik))) {
+            val satirlar = List(r) { i -> n / r + if (i < n % r) 1 else 0 }
+            if (satirlar.first() > sutunSiniri(genislik)) continue
+            val kartBoyu = (yukseklik - BOSLUK * (r - 1)).toDouble() / r
+            val puan = satirlar.sumOf { c ->
+                val kartEni = (genislik - BOSLUK * (c - 1)).toDouble() / c
+                c * kotuluk(kartEni / kartBoyu)
+            } / n
+            if (puan < enIyiPuan) {
+                enIyiPuan = puan
+                enIyi = satirlar
+            }
         }
+        return enIyi
+    }
+
+    private fun kotuluk(oran: Double): Double = kotlin.math.abs(kotlin.math.ln(oran / IDEAL_ORAN))
+
+    private fun sutunSiniri(genislik: Int): Int = ((genislik + BOSLUK) / (EN_DAR + BOSLUK)).coerceAtLeast(1)
+
+    private fun satirSiniri(yukseklik: Int): Int = ((yukseklik + BOSLUK) / (EN_KISA + BOSLUK)).coerceAtLeast(1)
 }
 
 /**
@@ -136,7 +252,7 @@ class FiltreWidgetServisi : RemoteViewsService() {
 }
 
 /**
- * Not başlığı ve özeti çizen ortak fabrika (sabit kartlar, süzgeçli liste).
+ * Not başlığı ve özeti çizen liste fabrikası (süzgeçli liste).
  * Yerleşimde satirKok, satirBaslik ve satirOzet bulunmalı.
  */
 class NotKartFabrikasi(
@@ -166,7 +282,6 @@ class NotKartFabrikasi(
     override fun getViewAt(pozisyon: Int): RemoteViews {
         val g = RemoteViews(context.packageName, yerlesim)
         val not = notlar.getOrNull(pozisyon) ?: return g
-        if (yerlesim == R.layout.widget_sabit_item) WidgetTema.zemin(context, g, R.id.satirKok)
         WidgetTema.metin(context, g, R.id.satirBaslik)
         WidgetTema.ikincil(context, g, R.id.satirOzet)
         g.setTextViewText(R.id.satirBaslik, not.baslik)

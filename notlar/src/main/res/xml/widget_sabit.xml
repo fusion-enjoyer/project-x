@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- previewLayout, description ve targetCell* Android 12+'da; eskiler yok sayar. -->
+<!--
+  previewLayout, description ve targetCell* Android 12+'da; eskiler yok sayar.
+  Tek kart boyuna (1x1) kadar küçülür; sığan kart sayısı SabitWidget'ta.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_sabit_aciklama"
     android:initialLayout="@layout/widget_sabit"
     android:minWidth="180dp"
     android:minHeight="110dp"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
     android:previewImage="@drawable/ic_launcher"
     android:previewLayout="@layout/widget_onizleme_sabit"
     android:resizeMode="horizontal|vertical"
