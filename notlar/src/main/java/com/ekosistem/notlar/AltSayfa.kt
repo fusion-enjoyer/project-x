@@ -28,6 +28,8 @@ class AltSayfa(private val activity: Activity) {
         val secili: Boolean,
         val tehlikeli: Boolean,
         val yaziTipi: android.graphics.Typeface?,
+        val altBaslik: String?,
+        val kaldir: (() -> Unit)?,
         val tikla: () -> Unit
     )
 
@@ -75,11 +77,18 @@ class AltSayfa(private val activity: Activity) {
         return this
     }
 
-    /** Hazır satırlar yerine kendi görünümünü koymak için (renk seçici gibi). */
-    fun icerik(gorunum: View): AltSayfa {
+    /**
+     * Hazır satırlar yerine kendi görünümünü koymak için (renk seçici gibi).
+     * [odak] verilirse sayfa açılınca ona odaklanılır, klavye açılır ve
+     * sayfa klavyenin üstünde durur (hızlı geçişin arama kutusu).
+     */
+    fun icerik(gorunum: View, odak: EditText? = null): AltSayfa {
         ozelIcerik = gorunum
+        icerikOdagi = odak
         return this
     }
+
+    private var icerikOdagi: EditText? = null
 
     /**
      * Uzun menünün üstüne arama kutusu koyar: yazdıkça maddeler süzülür
@@ -103,9 +112,13 @@ class AltSayfa(private val activity: Activity) {
         secili: Boolean = false,
         tehlikeli: Boolean = false,
         yaziTipi: android.graphics.Typeface? = null,
+        /** Başlığın altında küçük gri satır (sekmede notun özeti gibi). */
+        altBaslik: String? = null,
+        /** Doluysa satırın sonunda "×": satır sayfa kapanmadan kalkar (sekme kapatma). */
+        kaldir: (() -> Unit)? = null,
         tikla: () -> Unit
     ): AltSayfa {
-        maddeler.add(Madde(ikon, baslik, secili, tehlikeli, yaziTipi, tikla))
+        maddeler.add(Madde(ikon, baslik, secili, tehlikeli, yaziTipi, altBaslik, kaldir, tikla))
         return this
     }
 
@@ -273,7 +286,24 @@ class AltSayfa(private val activity: Activity) {
             tv.setTextColor(renk)
             val tvLp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             tvLp.leftMargin = (18 * y).toInt()
-            satir.addView(tv, tvLp)
+            val alt = madde.altBaslik
+            if (alt.isNullOrBlank()) {
+                satir.addView(tv, tvLp)
+            } else {
+                tv.setSingleLine()
+                tv.ellipsize = android.text.TextUtils.TruncateAt.END
+                val altTv = TextView(activity)
+                altTv.text = alt
+                altTv.textSize = 13f
+                altTv.setSingleLine()
+                altTv.ellipsize = android.text.TextUtils.TruncateAt.END
+                altTv.setTextColor(ContextCompat.getColor(activity, R.color.metin_ikincil))
+                val metinler = LinearLayout(activity)
+                metinler.orientation = LinearLayout.VERTICAL
+                metinler.addView(tv)
+                metinler.addView(altTv)
+                satir.addView(metinler, tvLp)
+            }
 
             if (madde.secili) {
                 val onay = ImageView(activity)
@@ -285,6 +315,24 @@ class AltSayfa(private val activity: Activity) {
                 )
             }
 
+            madde.kaldir?.let { kaldir ->
+                val kapat = android.widget.ImageButton(activity)
+                kapat.setImageResource(R.drawable.ic_kapat)
+                kapat.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(activity, R.color.metin_ikincil))
+                kapat.setBackgroundResource(secilebilirZemin())
+                kapat.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                kapat.setPadding((10 * y).toInt(), (10 * y).toInt(), (10 * y).toInt(), (10 * y).toInt())
+                kapat.contentDescription = activity.getString(R.string.kapat)
+                kapat.setOnClickListener {
+                    satir.visibility = View.GONE
+                    kaldir()
+                }
+                val kapatLp = LinearLayout.LayoutParams((40 * y).toInt(), (40 * y).toInt())
+                kapatLp.leftMargin = (8 * y).toInt()
+                kapatLp.rightMargin = (-10 * y).toInt()
+                satir.addView(kapat, kapatLp)
+            }
+
             satir.setOnClickListener {
                 dialog.dismiss()
                 madde.tikla()
@@ -293,12 +341,12 @@ class AltSayfa(private val activity: Activity) {
                 satir,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    (56 * y).toInt()
+                    ((if (madde.altBaslik.isNullOrBlank()) 56 else 64) * y).toInt()
                 )
             )
             satirlar.add(satir to Arama.sadelestir(madde.baslik.trim()))
         }
-        val toplam = (maddeler.size * 56 * y).toInt()
+        val toplam = (maddeler.sumOf { if (it.altBaslik.isNullOrBlank()) 56 else 64 } * y).toInt()
         val sinir = (activity.resources.displayMetrics.heightPixels * 0.6f).toInt()
         val alan = aramaAlani
         if (alan != null) {
@@ -392,7 +440,7 @@ class AltSayfa(private val activity: Activity) {
             }
             kok.requestFocus()
         }
-        girdiAlani?.let { alan ->
+        (girdiAlani ?: icerikOdagi)?.let { alan ->
             alan.requestFocus()
             val pencere = dialog.window ?: return@let
             if (android.os.Build.VERSION.SDK_INT >= 30) {

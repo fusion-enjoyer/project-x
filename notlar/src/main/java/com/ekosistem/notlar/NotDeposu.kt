@@ -738,6 +738,8 @@ class NotDeposu(private val context: Context) {
         val cop = copKlasoru(true) ?: return null
         val yeni = hedefeTasi(uri, cop, ust) ?: return null
         Prefs.copKaynagiKaydet(context, yeni.toString(), kaynakKlasor)
+        // Çöpteki not sekmelerde açık kalmasın.
+        Sekmeler.kaldir(context, uri.toString())
         return yeni
     }
 
@@ -752,7 +754,10 @@ class NotDeposu(private val context: Context) {
 
     fun klasoreTasi(uri: Uri, klasorAdi: String?): Uri? {
         val hedef = if (klasorAdi == null) kok() else klasorBul(klasorAdi) ?: return null
-        return hedefeTasi(uri, hedef, ustDizin(uri))
+        val yeni = hedefeTasi(uri, hedef, ustDizin(uri)) ?: return null
+        // Taşınan not açık sekmelerde yeni adresiyle kalsın.
+        Sekmeler.adresleriTasi(context, mapOf(uri.toString() to yeni.toString()))
+        return yeni
     }
 
     fun kaliciSil(uri: Uri): Boolean {
@@ -793,6 +798,8 @@ class NotDeposu(private val context: Context) {
     private fun sabitTemizle(uri: Uri) {
         val id = uri.toString()
         if (Prefs.sabitler(context).contains(id)) Prefs.sabitDegistir(context, id)
+        // Silinen not sekme geçmişlerinden de çıkar.
+        Sekmeler.kaldir(context, id)
     }
 
 

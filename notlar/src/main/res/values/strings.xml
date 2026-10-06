@@ -483,4 +483,20 @@
         <item quantity="one">%d min read</item>
         <item quantity="other">%d min read</item>
     </plurals>
+    <!-- Editör alt çubuğu ve sekmeler -->
+    <string name="sekmeler">Tabs</string>
+    <string name="yeni_sekme">New tab</string>
+    <string name="digerlerini_kapat">Close other tabs</string>
+    <string name="onceki_not">Back</string>
+    <string name="sonraki_not">Forward</string>
+    <string name="hizli_gecis">Go to note</string>
+    <string name="hizli_gecis_ipucu">Type a note name…</string>
+    <string name="hizli_gecis_alt">Hold a note to open it in a new tab</string>
+    <string name="eslesen_not_yok">No matching notes</string>
+    <string name="baslik_yok">This note has no headings</string>
+    <string name="yeni_sekmede_acildi">Opened in a new tab</string>
+    <plurals name="sekme_sayisi">
+        <item quantity="one">%d tab</item>
+        <item quantity="other">%d tabs</item>
+    </plurals>
 </resources>

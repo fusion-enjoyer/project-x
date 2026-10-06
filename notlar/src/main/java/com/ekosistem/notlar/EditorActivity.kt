@@ -35,7 +35,29 @@ class EditorActivity : TemelActivity() {
     private lateinit var bicimci: MarkdownBicimci
     private lateinit var bicimCubugu: LinearLayout
     private lateinit var bicimKaydirici: View
+    private lateinit var bicimKaydirma: View
+    private lateinit var gezinmeCubugu: LinearLayout
     private lateinit var btnOkuma: ImageButton
+
+    /** Klavye açık mı? Açıkken altta biçim çubuğu, kapalıyken gezinme çubuğu. */
+    private var klavyeAcik = false
+
+    /** Kaydedilmemiş yeni notun sekmelerdeki geçici adı ([Sekmeler.YENI]). */
+    private var yerTutucu = ""
+
+    /** Bu editörün sekme geçmişindeki kaydı: notun adresi, yoksa geçici adı. */
+    private val sekmeAdresi: String get() = uri?.toString() ?: yerTutucu
+
+    /**
+     * Editöre dışarıdan (liste, widget) girildikten sonra notlar arasında kaç
+     * adım ilerlendi. Geri tuşu önce bu adımları geri alır, sonra listeye döner;
+     * listeden açılan nota geri basınca eski bir nota değil listeye dönülsün.
+     */
+    private var derinlik = 0
+    private var btnNavGeri: View? = null
+    private var btnNavIleri: View? = null
+    private var btnBaglantilar: View? = null
+    private var sekmeSayisi: TextView? = null
     private lateinit var ustCubuk: View
 
     /** Üstteki ikonlar şu an görünür mü? (kaydırmayla gizlenip geri gelirler) */
@@ -96,7 +118,7 @@ class EditorActivity : TemelActivity() {
             }
             kilitBekliyor = false
             metinAlani.visibility = View.VISIBLE
-            bicimKaydirici.visibility = if (okumaModu) View.GONE else View.VISIBLE
+            altCubuguGuncelle()
             uri?.let { notuYukle(it) }
         }
 
@@ -152,6 +174,8 @@ class EditorActivity : TemelActivity() {
         kaydirici = findViewById(R.id.kaydirici)
         bicimCubugu = findViewById(R.id.bicimCubugu)
         bicimKaydirici = findViewById(R.id.bicimKaydirici)
+        bicimKaydirma = findViewById(R.id.bicimKaydirma)
+        gezinmeCubugu = findViewById(R.id.gezinmeCubugu)
         btnOkuma = findViewById(R.id.btnOkuma)
         ustCubuk = findViewById(R.id.ustCubuk)
         kaydirmaKur()
@@ -178,6 +202,7 @@ class EditorActivity : TemelActivity() {
 
         uri = intent.getStringExtra("uri")?.let(Uri::parse)
         hedefKlasor = intent.getStringExtra("klasor")
+        sekmeyeKaydol(savedInstanceState)
         val acilacak = uri
         when {
             acilacak == null -> {
@@ -200,7 +225,7 @@ class EditorActivity : TemelActivity() {
             Kilit.notKilitli(this, acilacak.toString()) -> {
                 kilitBekliyor = true
                 metinAlani.visibility = View.INVISIBLE
-                bicimKaydirici.visibility = View.GONE
+                altCubuguGuncelle()
                 kilitSonucu.launch(
                     Intent(this, KilitActivity::class.java)
                         .putExtra("kip", KilitActivity.KIP_NOT)
@@ -213,8 +238,14 @@ class EditorActivity : TemelActivity() {
         findViewById<ImageButton>(R.id.btnEditorMenu).setOnClickListener { menuGoster() }
         ipucuVer(findViewById(R.id.btnGeri), findViewById(R.id.btnEditorMenu), btnOkuma)
         btnOkuma.setOnClickListener { okumaModunuDegistir() }
+        // Sonra eklenen önce çalışır: bul çubuğu açıksa geri tuşu önce onu kapatır.
+        onBackPressedDispatcher.addCallback(this, sekmeGeriTusu)
         onBackPressedDispatcher.addCallback(this, bulGeriTusu)
         dugmeleriGuncelle()
+        gezinmeCubuguKur()
+        klavyeyiIzle()
+        metinAlani.setOnFocusChangeListener { _, _ -> altCubuguGuncelle() }
+        altCubuguGuncelle()
     }
 
     /** Bul çubuğu açıkken geri tuşu önce çubuğu kapatır, notu değil. */
@@ -287,6 +318,9 @@ class EditorActivity : TemelActivity() {
 
     private fun notuYukle(adres: Uri) {
         Thread {
+            // Sekmeler arasında hızlı gidip gelince önceki editörün kaydı
+            // bitmeden okunursa notun eski hâli açılırdı.
+            NotDeposu.bekleyenKayit?.let { runCatching { it.get(5, java.util.concurrent.TimeUnit.SECONDS) } }
             val metin = depo.okuKesin(adres)
             val sifreli = metin != null && Sifreleme.sifreliMi(metin)
             val taslak = if (metin != null && !sifreli) taslaklar.oku(adres.toString()) else null
@@ -320,7 +354,7 @@ class EditorActivity : TemelActivity() {
     private fun sifreliNotuAc(adres: Uri, dosya: String) {
         kilitBekliyor = true
         metinAlani.visibility = View.INVISIBLE
-        bicimKaydirici.visibility = View.GONE
+        altCubuguGuncelle()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             Toast.makeText(this, R.string.sifre_eski_android, Toast.LENGTH_LONG).show()
             finish()
@@ -361,8 +395,7 @@ class EditorActivity : TemelActivity() {
                         sifre = sonuc.anahtar
                         kilitBekliyor = false
                         metinAlani.visibility = View.VISIBLE
-                        bicimKaydirici.visibility =
-                            if (okumaModu) View.GONE else View.VISIBLE
+                        altCubuguGuncelle()
                         acilisMetni = sonuc.metin
                         oncekiIcerik = sonuc.metin
                         metniYerlestir(sonuc.metin)
@@ -888,11 +921,7 @@ class EditorActivity : TemelActivity() {
             val hedef = depo.baslikIleBul(baslik)
             val adres = hedef?.uri ?: depo.notOlustur("$baslik\n", hedefKlasor)
             runOnUiThread {
-                if (adres != null) {
-                    startActivity(
-                        Intent(this, EditorActivity::class.java).putExtra("uri", adres.toString())
-                    )
-                }
+                if (adres != null && !isFinishing) notaGit(adres.toString())
             }
         }.start()
     }
@@ -1440,8 +1469,7 @@ class EditorActivity : TemelActivity() {
         metinAlani.isFocusable = !okumaModu
         metinAlani.isFocusableInTouchMode = !okumaModu
         metinAlani.isCursorVisible = !okumaModu
-        bicimKaydirici.visibility =
-            if (okumaModu || bulCubugu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        altCubuguGuncelle()
         btnOkuma.setImageResource(
             if (okumaModu) R.drawable.ic_duzenle else R.drawable.ic_okuma
         )
@@ -1508,7 +1536,7 @@ class EditorActivity : TemelActivity() {
         // Bul çubuğu üst ikonların yerini alır; ikisi üst üste binmesin.
         ustCubuk.visibility = View.GONE
         // Klavye ve bul çubuğu zaten yer kaplıyor; biçim çubuğu metne yer bıraksın.
-        bicimKaydirici.visibility = View.GONE
+        altCubuguGuncelle()
         kaydirici.altPay = 0
         bulGeriTusu.isEnabled = true
         // Seçili bir kelime varsa aranacak ifade odur.
@@ -1546,10 +1574,9 @@ class EditorActivity : TemelActivity() {
         if (normalUstBosluk >= 0 && metinAlani.paddingTop != normalUstBosluk) {
             metinAlani.setPadding(metinAlani.paddingLeft, normalUstBosluk, metinAlani.paddingRight, metinAlani.paddingBottom)
         }
-        if (!okumaModu) {
-            bicimKaydirici.visibility = View.VISIBLE
-            kaydirici.altPay = (BICIM_PAYI_DP * resources.displayMetrics.density).toInt()
-        }
+        // Okuma görünümünde de altta gezinme çubuğu var.
+        altCubuguGuncelle()
+        kaydirici.altPay = (BICIM_PAYI_DP * resources.displayMetrics.density).toInt()
         // Kullanıcı son bakılan eşleşmeden yazmaya devam edebilsin.
         val sonBakilan = eslesmeler.getOrNull(eslesmeSirasi)
         eslesmeler = emptyList()
@@ -1698,6 +1725,293 @@ class EditorActivity : TemelActivity() {
         eslesmeleriBul(git = true)
     }
 
+    // --- Sekmeler ve gezinme çubuğu ---
+
+    /**
+     * Editör kendi sekme kaydını bilir. Dışarıdan (liste, widget, bildirim)
+     * açıldıysa not sekmelere işlenir: başka sekmede açıksa oraya geçilir,
+     * yoksa etkin sekmede açılır. Sekme içi gezinmede durum zaten günceldir.
+     */
+    private fun sekmeyeKaydol(durum: Bundle?) {
+        yerTutucu = durum?.getString(EK_YER_TUTUCU)
+            ?: intent.getStringExtra(EK_YER_TUTUCU)
+            ?: Sekmeler.yeniAd()
+        derinlik = durum?.getInt(EK_DERINLIK) ?: intent.getIntExtra(EK_DERINLIK, 0)
+        if (durum == null && !intent.getBooleanExtra(EK_SEKME_ICI, false)) {
+            val adres = sekmeAdresi
+            Sekmeler.degistir(this) { it.ac(adres) }
+        }
+        acikEditor?.get()?.let { eski ->
+            if (eski !== this && !eski.isFinishing && !eski.isDestroyed) eski.finish()
+        }
+        acikEditor = java.lang.ref.WeakReference(this)
+    }
+
+    /**
+     * Ekrana dönünce bu notun sekmesi etkin olur (sekme başka yerden
+     * kapatıldıysa yeniden açılır); düğmeler ve sekme sayısı tazelenir.
+     */
+    private fun sekmeyiEtkinlestir() {
+        val adres = sekmeAdresi
+        val yerinde = Sekmeler.oku(this) { it.etkin?.adres == adres }
+        if (!yerinde) {
+            Sekmeler.degistir(this) { d ->
+                d.sekmeler.firstOrNull { it.adres == adres }?.let { d.sec(it.id) } ?: d.ac(adres)
+            }
+        }
+        gezinmeyiGuncelle()
+    }
+
+    /** Sistem geri tuşu: editörde ilerlenen adımlar varsa önce önceki nota döner. */
+    private val sekmeGeriTusu = object : androidx.activity.OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = gez(-1)
+    }
+
+    /** Bağlantı, geri bağlantı ya da hızlı geçişle aynı sekmede başka nota gidilir. */
+    private fun notaGit(adres: String) {
+        if (adres == sekmeAdresi) return
+        Sekmeler.degistir(this) { it.git(adres) }
+        sekmeyiAc(derinlik + 1)
+    }
+
+    private fun gez(yon: Int) {
+        Sekmeler.degistir(this) { it.gez(yon) } ?: return
+        sekmeyiAc(derinlik + yon)
+    }
+
+    private fun yeniSekmeAc(adres: String = Sekmeler.yeniAd()) {
+        Sekmeler.degistir(this) { it.yeniSekme(adres) }
+        sekmeyiAc(0)
+    }
+
+    /**
+     * Etkin sekmenin notunu açar: bu editör kapanır, yerine o notun editörü
+     * gelir (kayıt onPause'da sıraya girer, yeni editör onu bekleyip okur).
+     * Geçiş animasyonu yok; sekme değiştirmek anlık olsun.
+     */
+    private fun sekmeyiAc(yeniDerinlik: Int) {
+        val hedef = Sekmeler.oku(this) { it.etkin?.adres }
+        if (hedef == null) {
+            finish()
+            return
+        }
+        if (hedef == sekmeAdresi) {
+            gezinmeyiGuncelle()
+            return
+        }
+        val niyet = Intent(this, EditorActivity::class.java)
+            .putExtra(EK_SEKME_ICI, true)
+            .putExtra(EK_DERINLIK, yeniDerinlik.coerceAtLeast(0))
+            .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+        if (hedef.startsWith(Sekmeler.YENI)) niyet.putExtra(EK_YER_TUTUCU, hedef) else niyet.putExtra("uri", hedef)
+        startActivity(niyet)
+        finish()
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
+    }
+
+    /**
+     * Açık sekmeler: dokununca o nota geçilir, "×" sekmeyi kapatır. Başlıklar
+     * liste önbelleğinden; bu editörün notu ekrandaki metinden (kaydedilmemiş
+     * olabilir).
+     */
+    private fun sekmeleriGoster() {
+        val benimMetnim = metinAlani.text?.toString().orEmpty()
+        Thread {
+            val notlar = runCatching { depo.onbellektenListe() }.getOrDefault(emptyList())
+                .associateBy { it.uri.toString() }
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                val (sekmeler, etkinId) = Sekmeler.oku(this) { d -> d.sekmeler.toList() to d.etkin?.id }
+                val sayfa = AltSayfa(this).baslik(getString(R.string.sekmeler))
+                for (s in sekmeler) {
+                    val adres = s.adres
+                    val not = notlar[adres]
+                    val benim = adres == sekmeAdresi
+                    val baslik = (if (benim) ilkSatir(benimMetnim) ?: not?.baslik else not?.baslik)
+                        ?: if (adres.startsWith(Sekmeler.YENI)) {
+                            getString(R.string.yeni_not)
+                        } else {
+                            Uri.parse(adres).lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.') ?: adres
+                        }
+                    val alt = if (not?.kilitli == true) getString(R.string.kilitli) else not?.ozet?.takeIf { it.isNotBlank() }
+                    sayfa.madde(
+                        R.drawable.ic_duzenle,
+                        baslik,
+                        secili = s.id == etkinId,
+                        altBaslik = alt,
+                        kaldir = {
+                            Sekmeler.degistir(this) { it.kapat(s.id) }
+                            if (benim) {
+                                sayfa.kapat()
+                                sekmeyiAc(0)
+                            } else {
+                                gezinmeyiGuncelle()
+                            }
+                        }
+                    ) {
+                        Sekmeler.degistir(this) { it.sec(s.id) }
+                        sekmeyiAc(0)
+                    }
+                }
+                sayfa.madde(R.drawable.ic_arti_koyu, getString(R.string.yeni_sekme)) { yeniSekmeAc() }
+                if (sekmeler.size > 1) {
+                    sayfa.madde(R.drawable.ic_kapat, getString(R.string.digerlerini_kapat)) {
+                        val adres = sekmeAdresi
+                        Sekmeler.degistir(this) { d ->
+                            d.sekmeler.firstOrNull { it.adres == adres }?.let { d.digerleriniKapat(it.id) }
+                        }
+                        gezinmeyiGuncelle()
+                    }
+                }
+                sayfa.goster()
+            }
+        }.start()
+    }
+
+    /** Notun ilk dolu satırı, başlık işaretleri olmadan (sekme adı için). */
+    private fun ilkSatir(metin: String): String? =
+        metin.lineSequence().map { it.trim().trimStart('#').trim() }.firstOrNull { it.isNotEmpty() }?.take(80)
+
+    /** Not adını yazıp atlamak (Obsidian'ın hızlı geçişi); basılı tutunca yeni sekmede. */
+    private fun hizliGecisAc() {
+        val benim = uri
+        Thread {
+            val notlar = runCatching { depo.onbellektenListe() }.getOrDefault(emptyList())
+                .ifEmpty { runCatching { depo.notlariListele(null, null) }.getOrDefault(emptyList()) }
+                .filter { it.uri != benim }
+                .sortedByDescending { it.degistirilme }
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                HizliGecis(this, notlar) { adres, yeniSekmede ->
+                    if (yeniSekmede) yeniSekmeAc(adres) else notaGit(adres)
+                }.goster()
+            }
+        }.start()
+    }
+
+    private fun icindekilerDugmesi() {
+        val basliklar = Icindekiler.basliklar(metinAlani.text?.toString().orEmpty())
+        if (basliklar.isEmpty()) {
+            Toast.makeText(this, R.string.baslik_yok, Toast.LENGTH_SHORT).show()
+        } else {
+            icindekileriGoster(basliklar)
+        }
+    }
+
+    /**
+     * Klavye kapalıyken altta duran çubuk: geri, ileri, nota git, içindekiler,
+     * geri bağlantılar, notta bul, sekmeler, yeni sekme.
+     */
+    private fun gezinmeCubuguKur() {
+        val y = resources.displayMetrics.density
+        val renk = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.metin))
+        fun dugme(ikon: Int, etiket: Int, eylem: () -> Unit): ImageButton {
+            val d = ImageButton(this)
+            d.setImageResource(ikon)
+            d.imageTintList = renk
+            d.contentDescription = getString(etiket)
+            d.setBackgroundResource(yuvarlakZemin())
+            d.setOnClickListener { eylem() }
+            ipucuVer(d)
+            gezinmeCubugu.addView(d, LinearLayout.LayoutParams(0, (44 * y).toInt(), 1f))
+            return d
+        }
+        gezinmeCubugu.removeAllViews()
+        btnNavGeri = dugme(R.drawable.ic_nav_geri, R.string.onceki_not) { gez(-1) }
+        btnNavIleri = dugme(R.drawable.ic_nav_ileri, R.string.sonraki_not) { gez(1) }
+        dugme(R.drawable.ic_hizli_gecis, R.string.hizli_gecis) { hizliGecisAc() }
+        dugme(R.drawable.ic_icindekiler, R.string.icindekiler) { icindekilerDugmesi() }
+        btnBaglantilar = dugme(R.drawable.ic_baglanti, R.string.geri_baglantilar) { geriBaglantilariGoster() }
+        dugme(R.drawable.ic_notta_bul, R.string.bul_degistir) { bulCubuguAc() }
+
+        // Sekme sayısı Obsidian'daki gibi çerçeveli bir rakam.
+        val sekmeKutusu = android.widget.FrameLayout(this)
+        sekmeKutusu.setBackgroundResource(yuvarlakZemin())
+        sekmeKutusu.setOnClickListener { sekmeleriGoster() }
+        val sayi = TextView(this)
+        sayi.setBackgroundResource(R.drawable.bg_sekme_sayisi)
+        sayi.gravity = android.view.Gravity.CENTER
+        sayi.textSize = 11f
+        sayi.setTypeface(null, Typeface.BOLD)
+        sayi.setTextColor(ContextCompat.getColor(this, R.color.metin))
+        sayi.includeFontPadding = false
+        sekmeKutusu.addView(
+            sayi,
+            android.widget.FrameLayout.LayoutParams((21 * y).toInt(), (21 * y).toInt(), android.view.Gravity.CENTER)
+        )
+        gezinmeCubugu.addView(sekmeKutusu, LinearLayout.LayoutParams(0, (44 * y).toInt(), 1f))
+        sekmeSayisi = sayi
+
+        dugme(R.drawable.ic_arti_koyu, R.string.yeni_sekme) { yeniSekmeAc() }
+        gezinmeyiGuncelle()
+    }
+
+    private fun yuvarlakZemin(): Int {
+        val deger = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, deger, true)
+        return deger.resourceId
+    }
+
+    /** Geri/ileri yoksa soluk; yeni (kaydedilmemiş) notun geri bağlantısı olmaz. */
+    private fun gezinmeyiGuncelle() {
+        val (geri, ileri, sayi) = Sekmeler.oku(this) { d ->
+            Triple(d.etkin?.geriVar == true, d.etkin?.ileriVar == true, d.sekmeler.size)
+        }
+        fun ayarla(v: View?, acik: Boolean) {
+            v ?: return
+            v.isEnabled = acik
+            v.alpha = if (acik) 1f else SOLUK
+        }
+        ayarla(btnNavGeri, geri)
+        ayarla(btnNavIleri, ileri)
+        ayarla(btnBaglantilar, uri != null)
+        sekmeSayisi?.let { tv ->
+            tv.text = if (sayi > 99) "∞" else sayi.coerceAtLeast(1).toString()
+            val kutu = tv.parent as? View
+            kutu?.contentDescription = resources.getQuantityString(R.plurals.sekme_sayisi, sayi, sayi)
+            kutu?.let { ipucuVer(it) }
+        }
+        sekmeGeriTusu.isEnabled = geri && derinlik > 0
+    }
+
+    /**
+     * Klavyenin açık olduğu, metin alanının ekranın altına uzaklığından
+     * anlaşılır (ana ekrandaki yöntem): her Android sürümünde çalışır ve
+     * yerleşimle aynı anda değişir.
+     */
+    private fun klavyeyiIzle() {
+        val kok = window.decorView
+        val konum = IntArray(2)
+        kok.viewTreeObserver.addOnGlobalLayoutListener {
+            kaydirici.getLocationInWindow(konum)
+            val acik = kok.height - (konum[1] + kaydirici.height) > kok.height * KLAVYE_ORANI
+            if (acik != klavyeAcik) {
+                klavyeAcik = acik
+                altCubuguGuncelle()
+            }
+        }
+    }
+
+    /**
+     * Alt çubuk: yazarken (klavye açık) biçim araçları, okurken ya da klavye
+     * kapalıyken gezinme çubuğu (Obsidian'daki gibi). Kilitli notta ve bul
+     * çubuğu açıkken ikisi de gizli.
+     */
+    private fun altCubuguGuncelle() {
+        if (kilitBekliyor || bulCubugu.visibility == View.VISIBLE) {
+            bicimKaydirici.visibility = View.GONE
+            return
+        }
+        bicimKaydirici.visibility = View.VISIBLE
+        val donanimKlavyesi = resources.configuration.hardKeyboardHidden ==
+            android.content.res.Configuration.HARDKEYBOARDHIDDEN_NO
+        // Takılı klavyede ekran klavyesi çıkmaz: yazı alanı odaktayken yazılıyor sayılır.
+        val yaziyor = !okumaModu && (klavyeAcik || (donanimKlavyesi && metinAlani.hasFocus()))
+        bicimKaydirma.visibility = if (yaziyor) View.VISIBLE else View.GONE
+        gezinmeCubugu.visibility = if (yaziyor) View.GONE else View.VISIBLE
+    }
+
     // --- Kayıt ve menü ---
 
     override fun onResume() {
@@ -1710,6 +2024,16 @@ class EditorActivity : TemelActivity() {
         if (bicimci.govdeSp != Prefs.yaziBoyu(this)) degisti = true
         tipografiUygula()
         if (degisti) bicimlendir()
+        sekmeyiEtkinlestir()
+    }
+
+    override fun onDestroy() {
+        // Hiçbir şey yazılmadan bırakılan yeni not sekme geçmişinde kalmasın.
+        if (isFinishing && uri == null && metinAlani.text.isNullOrBlank()) {
+            Sekmeler.kaldir(applicationContext, yerTutucu)
+        }
+        if (acikEditor?.get() === this) acikEditor = null
+        super.onDestroy()
     }
 
     override fun onPause() {
@@ -1741,6 +2065,7 @@ class EditorActivity : TemelActivity() {
         oncekiIcerik = metin
         val klasor = hedefKlasor
         val uygulama = applicationContext
+        val geciciAd = yerTutucu
         // Şifreli not: diske giden metin şifrelidir, taslak ve geçmiş yazılmaz.
         val anahtar = sifre
         val sifreli = anahtar != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -1763,7 +2088,11 @@ class EditorActivity : TemelActivity() {
                     true
                 } else {
                     val yeni = depo.notOlustur(diskMetni, klasor)
-                    if (yeni != null) uri = yeni
+                    if (yeni != null) {
+                        uri = yeni
+                        // Sekmelerdeki geçici ad notun adresine döner.
+                        Sekmeler.adresleriTasi(uygulama, mapOf(geciciAd to yeni.toString()))
+                    }
                     yeni != null
                 }
             } else {
@@ -2081,12 +2410,7 @@ class EditorActivity : TemelActivity() {
                     sayfa.madde(R.drawable.ic_baglanti, getString(R.string.baglanti_yok)) {}
                 } else {
                     for (b in baglar) {
-                        sayfa.madde(R.drawable.ic_baglanti, b.baslik) {
-                            startActivity(
-                                Intent(this, EditorActivity::class.java)
-                                    .putExtra("uri", b.uri.toString())
-                            )
-                        }
+                        sayfa.madde(R.drawable.ic_baglanti, b.baslik) { notaGit(b.uri.toString()) }
                     }
                 }
                 sayfa.goster()
@@ -2342,10 +2666,24 @@ class EditorActivity : TemelActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         kameraAdresi?.let { outState.putString(KAMERA_ADRESI, it.toString()) }
+        outState.putString(EK_YER_TUTUCU, yerTutucu)
+        outState.putInt(EK_DERINLIK, derinlik)
     }
 
     companion object {
         const val KAMERA_ADRESI = "kameraAdresi"
+
+        /** Sekmeler arasında gezinirken açılan editör: sekme durumu zaten güncel. */
+        const val EK_SEKME_ICI = "sekme_ici"
+        const val EK_DERINLIK = "derinlik"
+        const val EK_YER_TUTUCU = "yer_tutucu"
+
+        /**
+         * Aynı anda tek editör: dışarıdan (widget, bildirim) yeni bir not
+         * açılınca alttaki eski editör kapanır. Üst üste binen editörlerde
+         * geri dönülen eski kopya notun eski hâlini gösteriyordu.
+         */
+        private var acikEditor: java.lang.ref.WeakReference<EditorActivity>? = null
 
         /** Açılış metniyle hiç eşleşmeyen değer: kaydet() metni ne olursa olsun yazar. */
         const val ZORLA_KAYIT = "\u0000zorla"
@@ -2362,6 +2700,12 @@ class EditorActivity : TemelActivity() {
 
         /** Biçim çubuğunun (geçişiyle) kapladığı yükseklik; imleç bunun üstünde kalır. */
         const val BICIM_PAYI_DP = 72
+
+        /** Ekranın bu kadarından fazlası kapandıysa klavye açık sayılır. */
+        const val KLAVYE_ORANI = 0.15f
+
+        /** Gidilecek yer yokken geri/ileri düğmesinin saydamlığı. */
+        const val SOLUK = 0.3f
 
         /** Yazma bu kadar durunca taslak alınır. */
         const val TASLAK_MS = 1500L

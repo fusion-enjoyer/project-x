@@ -264,6 +264,8 @@ object Prefs {
     fun adresleriTasi(c: Context, degisim: Map<String, String>) {
         val tasinan = degisim.filter { it.key != it.value }
         if (tasinan.isEmpty()) return
+        // Açık sekmelerdeki notlar da yeni adresiyle açılsın.
+        Sekmeler.adresleriTasi(c, tasinan)
         val d = sp(c).edit()
         var degisti = false
 

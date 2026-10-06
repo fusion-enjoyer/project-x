@@ -483,4 +483,20 @@
         <item quantity="one">%d dakikalık okuma</item>
         <item quantity="other">%d dakikalık okuma</item>
     </plurals>
+    <!-- Editör alt çubuğu ve sekmeler -->
+    <string name="sekmeler">Sekmeler</string>
+    <string name="yeni_sekme">Yeni sekme</string>
+    <string name="digerlerini_kapat">Diğer sekmeleri kapat</string>
+    <string name="onceki_not">Geri</string>
+    <string name="sonraki_not">İleri</string>
+    <string name="hizli_gecis">Nota git</string>
+    <string name="hizli_gecis_ipucu">Not adı yaz…</string>
+    <string name="hizli_gecis_alt">Yeni sekmede açmak için nota basılı tut</string>
+    <string name="eslesen_not_yok">Eşleşen not yok</string>
+    <string name="baslik_yok">Bu notta başlık yok</string>
+    <string name="yeni_sekmede_acildi">Yeni sekmede açıldı</string>
+    <plurals name="sekme_sayisi">
+        <item quantity="one">%d sekme</item>
+        <item quantity="other">%d sekme</item>
+    </plurals>
 </resources>
