@@ -150,6 +150,7 @@ class NotDeposu(private val context: Context) {
             ayarlariTopluTasi(degisim)
         }
         klasorGecmisiniTasi(eski, temiz)
+        NotWidget.birazdanGuncelle(context)
         return true
     }
 
@@ -523,7 +524,11 @@ class NotDeposu(private val context: Context) {
         } else {
             saglayiciyaYaz(uri, bayt)
         }
-        if (tamam) ONBELLEK.sil(uri.toString())
+        if (tamam) {
+            ONBELLEK.sil(uri.toString())
+            // Yeni ya da değişen not widget'lara da yansısın.
+            NotWidget.birazdanGuncelle(context)
+        }
         // Not yeniden yazıldı; artık dosyanın kendi tarihi geçerli.
         if (tamam && Prefs.zamanDamgasi(context, uri.toString()) > 0) {
             Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)
@@ -663,6 +668,7 @@ class NotDeposu(private val context: Context) {
             ?: return null
         ayarlariTasi(uri, yeni)
         gecmisiTasi(gecmisAnahtari, yeni)
+        NotWidget.birazdanGuncelle(context)
         return yeni
     }
 
@@ -762,6 +768,7 @@ class NotDeposu(private val context: Context) {
 
     fun kaliciSil(uri: Uri): Boolean {
         sabitTemizle(uri)
+        NotWidget.birazdanGuncelle(context)
         Hatirlatici.kaldir(context, uri.toString())
         Prefs.copKaynagiSil(context, uri.toString())
         Prefs.zamanDamgasiKaydet(context, uri.toString(), 0L)

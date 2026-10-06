@@ -348,6 +348,9 @@ class MainActivity : TemelActivity() {
         super.onStop()
         // Başka ekrana geçilirken arama odağı bırakılır; dönüşte imleç yanıp sönmesin.
         arama.clearFocus()
+        // Ana ekrana dönülürken widget'lar güncel olsun; notlar uygulama
+        // dışında (Obsidian, Syncthing) değişmiş olabilir.
+        if (!isChangingConfigurations) NotWidget.birazdanGuncelle(this)
     }
 
     /** Hız ölçümü için: ekrana son dönüş anı. */
@@ -411,6 +414,7 @@ class MainActivity : TemelActivity() {
             alan.getLocationInWindow(konum)
             val alttakiBosluk = kok.height - (konum[1] + alan.height)
             val klavyeAcik = alttakiBosluk > kok.height * KLAVYE_ORANI
+            klavyeGorunuyor = klavyeAcik
             if (!klavyeAcik && alan.height != klavyesizYukseklik) {
                 klavyesizYukseklik = alan.height
                 bosDurumuKaydir()
@@ -433,11 +437,24 @@ class MainActivity : TemelActivity() {
         }
     }
 
-    private fun aramaOdakla() {
+    /** Yerleşimden okunan klavye durumu (klavyedeCubuguGizle). */
+    private var klavyeGorunuyor = false
+
+    /**
+     * Kutuya odaklanır ve klavyeyi açar. Pencere odağı geldikten sonra da
+     * klavyenin bağlantısı bir an gecikebiliyor: telefonda imleç kutuda
+     * yanıp sönüyor ama klavye açılmıyordu. Klavye görünene kadar kısa
+     * aralıklarla yeniden istenir (en çok ~1,5 sn).
+     */
+    private fun aramaOdakla(deneme: Int = 0) {
+        if (isFinishing || (deneme > 0 && (klavyeGorunuyor || !arama.hasFocus()))) return
         arama.requestFocus()
+        androidx.core.view.WindowCompat.getInsetsController(window, arama)
+            .show(androidx.core.view.WindowInsetsCompat.Type.ime())
         val yonetici = getSystemService(INPUT_METHOD_SERVICE)
             as? android.view.inputmethod.InputMethodManager
-        yonetici?.showSoftInput(arama, 0)
+        yonetici?.showSoftInput(arama, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        if (deneme < KLAVYE_DENEMESI) arama.postDelayed({ aramaOdakla(deneme + 1) }, 250L)
     }
 
     /**
@@ -1330,5 +1347,7 @@ class MainActivity : TemelActivity() {
         /** Boş durumun ortalanırken yüzen çubuk için bıraktığı pay (dp). */
         const val CUBUK_PAYI = 64
         const val CUBUK_BELIRME = 150L
+        /** Klavye açılmazsa arama kutusu için en çok bu kadar yeniden istenir. */
+        const val KLAVYE_DENEMESI = 6
     }
 }

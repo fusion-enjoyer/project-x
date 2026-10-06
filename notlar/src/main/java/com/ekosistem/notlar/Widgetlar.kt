@@ -31,6 +31,15 @@ object NotWidget {
      */
     val isci: ExecutorService = Executors.newSingleThreadExecutor()
 
+    /** Art arda değişiklikler bu süre içinde tek widget güncellemesinde birleşir. */
+    private const val GUNCELLEME_GECIKMESI = 500L
+
+    /**
+     * Liste widget'larına "veri değişti" bir kez daha, biraz sonra söylenir:
+     * bazı başlatıcılar yeniden çizimle aynı anda gelen bildirimi kaçırıyor.
+     */
+    const val IKINCI_BILDIRIM = 1200L
+
     /** Bütün widget sağlayıcıları; yeni widget eklenince buraya da yazılır. */
     private val SAGLAYICILAR: List<() -> NotWidgetSaglayici> = listOf(
         ::HizliNotWidget,
@@ -98,6 +107,29 @@ object NotWidget {
 
     /** Tema ya da vurgu rengi değişince bütün widget'lar yeniden çizilir. */
     fun renkleriGuncelle(context: Context) = hepsiniGuncelle(context)
+
+    private val ana = android.os.Handler(android.os.Looper.getMainLooper())
+    private var bekleyenGuncelleme: Runnable? = null
+
+    /**
+     * Notlar değişti (yazma, oluşturma, taşıma, silme, klasör adı): widget'lar
+     * yarım saniye sonra bir kez tazelenir; art arda gelen değişiklikler tek
+     * güncellemede birleşir. [NotDeposu] her yazmada çağırır: önceden yalnız
+     * bazı ekranlar tazeliyordu, listeden taşınan not klasör widget'ında
+     * görünmüyordu.
+     */
+    fun birazdanGuncelle(context: Context) {
+        val uygulama = context.applicationContext
+        ana.post {
+            bekleyenGuncelleme?.let { ana.removeCallbacks(it) }
+            val guncelleme = Runnable {
+                bekleyenGuncelleme = null
+                hepsiniGuncelle(uygulama)
+            }
+            bekleyenGuncelleme = guncelleme
+            ana.postDelayed(guncelleme, GUNCELLEME_GECIKMESI)
+        }
+    }
 
     /** Not kaydedildikten/silindikten, tema ya da sabitleme değiştikten sonra. */
     fun hepsiniGuncelle(context: Context) {
@@ -178,6 +210,12 @@ abstract class NotWidgetSaglayici : AppWidgetProvider() {
                     }
                 }
                 if (gunlukYenile) geceYarisinaKur(uygulama, yonetici)
+                listeId?.let { liste ->
+                    // Yeni not listede görünmüyordu: bildirim çizimle yarışıp kayboluyordu.
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        for (id in widgetIds) runCatching { yonetici.notifyAppWidgetViewDataChanged(id, liste) }
+                    }, NotWidget.IKINCI_BILDIRIM)
+                }
             } finally {
                 bekleyen?.finish()
             }

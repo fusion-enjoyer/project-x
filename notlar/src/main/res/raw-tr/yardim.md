@@ -1,5 +1,3 @@
-Notlar düz Markdown dosyalarıdır. İşaretler yalnızca düzenlediğin satırda görünür, diğer satırlarda gizlenir. Aşağıdaki her örnekte üstte yazdığın, altta uygulamadaki görünüşü var.
-
 ## Başlıklar
 
 Notun ilk satırı her zaman başlığıdır. Notun içinde bölüm açmak için satırın başına diyez ve boşluk koy. Başlık olan notta menüdeki İçindekiler ile bölümler arasında gezinebilirsin.

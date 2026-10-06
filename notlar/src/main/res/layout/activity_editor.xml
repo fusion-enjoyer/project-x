@@ -220,23 +220,7 @@
         android:background="@drawable/bg_bicim_sis"
         android:paddingTop="20dp">
 
-        <!--
-          Klavye kapalıyken biçim çubuğunun yerinde gezinme çubuğu (Obsidian'daki
-          gibi): geri, ileri, nota git, içindekiler, geri bağlantılar, notta bul,
-          sekmeler, yeni sekme. Düğmeler koddan (EditorActivity.gezinmeCubuguKur).
-        -->
-        <LinearLayout
-            android:id="@+id/gezinmeCubugu"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:visibility="gone" />
-
         <HorizontalScrollView
-            android:id="@+id/bicimKaydirma"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fadingEdgeLength="28dp"
@@ -252,6 +236,35 @@
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp" />
         </HorizontalScrollView>
+    </FrameLayout>
+
+    <!--
+      Klavye kapalıyken biçim çubuğunun yerine yüzen kapsül (ana ekrandaki ve
+      Obsidian'daki gibi): geri, ileri, nota git, yeni sekme, sekmeler.
+      Arkasındaki geçiş, altından kayan yazıyı yumuşakça gizler; kap dokunmayı
+      almaz. Düğmeler koddan (EditorActivity.gezinmeCubuguKur).
+    -->
+    <FrameLayout
+        android:id="@+id/gezinmeKabi"
+        android:layout_width="match_parent"
+        android:layout_height="104dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_alt_sis"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/gezinmeCubugu"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="32dp"
+            android:layout_marginRight="32dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_arac_cubugu"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp" />
     </FrameLayout>
 
 </FrameLayout>

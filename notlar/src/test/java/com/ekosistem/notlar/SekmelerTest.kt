@@ -52,14 +52,15 @@ class SekmelerTest {
     @Test
     fun kapananEtkinSekmeninYerineYanindaki() {
         val d = SekmeDurumu()
-        val a = d.ac("a")
+        d.ac("a")
         val b = d.yeniSekme("b")
         d.yeniSekme("c")
         d.sec(b.id)
         d.kapat(b.id)
         assertEquals("c", d.etkin?.adres)
-        d.digerleriniKapat(a.id)
-        assertEquals(listOf("a"), d.sekmeler.map { it.adres })
+        d.hepsiniKapat()
+        assertTrue(d.sekmeler.isEmpty())
+        assertNull(d.etkin)
     }
 
     @Test

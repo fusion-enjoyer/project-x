@@ -1,5 +1,3 @@
-Notes are plain Markdown files. Markers show only on the line you're editing and are hidden on the others. In each example below, what you type is on top and how it looks in the app is underneath.
-
 ## Headings
 
 The first line of a note is always its title. To start a section inside the note, begin the line with a hash and a space. In a note with headings, Contents in the menu jumps between sections.

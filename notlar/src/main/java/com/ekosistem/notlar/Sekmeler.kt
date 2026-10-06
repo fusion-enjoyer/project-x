@@ -81,9 +81,9 @@ class SekmeDurumu {
         }
     }
 
-    fun digerleriniKapat(id: Long) {
-        sekmeler.removeAll { it.id != id }
-        if (sekmeler.isNotEmpty()) etkinId = id
+    fun hepsiniKapat() {
+        sekmeler.clear()
+        etkinId = 0L
     }
 
     /** Silinen not bütün geçmişlerden çıkar; boşalan sekme kapanır. */
