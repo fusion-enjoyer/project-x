@@ -42,13 +42,15 @@ class BugunWidget : NotWidgetSaglayici() {
     }
 
     /** Başlıktan sonraki dolu satırlar; şablonun başlıkları ve boş maddeleri atlanır. */
-    private fun icerik(context: Context): String {
+    private fun icerik(context: Context): CharSequence {
         val depo = NotDeposu(context)
         val not = depo.baslikIleBul(Sablonlar.bugununBasligi())
             ?: return context.getString(R.string.bugun_bos)
         if (Kilit.notKilitli(context, not.uri.toString())) return context.getString(R.string.kilitli)
         val satirlar = depo.oku(not.uri, 4096).lines()
         val ilk = satirlar.indexOfFirst { it.isNotBlank() }
+        // Satırlar uygulamadaki gibi biçimli (kalın, bağlantı, kutu başlığı).
+        val stil = WidgetTema.stil(context)
         val dolu = satirlar.drop(ilk + 1).asSequence()
             .filterNot { Sifreleme.veriSatiriMi(it) }
             .filterNot { it.trimStart().startsWith("#") }
@@ -57,14 +59,22 @@ class BugunWidget : NotWidgetSaglayici() {
                 if (onay != null) {
                     val metin = SonTarih.temizle(satir.substring(onay.value.length))
                     if (metin.isEmpty()) null
-                    else (if (onay.groupValues[2].equals(" ", true)) "☐ " else "☑ ") + metin
+                    else android.text.SpannableStringBuilder(
+                        if (onay.groupValues[2].equals(" ", true)) "☐ " else "☑ "
+                    ).append(NotOnizleme.bicimli(metin, stil))
                 } else {
-                    TekNotFabrikasi.temizle(satir).takeIf { it.isNotBlank() }
+                    NotOnizleme.bicimli(satir, stil).takeIf { it.isNotBlank() }
                 }
             }
             .take(6)
             .toList()
-        return if (dolu.isEmpty()) context.getString(R.string.bugun_bos) else dolu.joinToString("\n")
+        if (dolu.isEmpty()) return context.getString(R.string.bugun_bos)
+        val sonuc = android.text.SpannableStringBuilder()
+        for ((i, satir) in dolu.withIndex()) {
+            if (i > 0) sonuc.append('\n')
+            sonuc.append(satir)
+        }
+        return sonuc
     }
 
     companion object {

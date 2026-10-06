@@ -72,10 +72,14 @@ class GorevlerFabrikasi(private val context: Context) : RemoteViewsService.Remot
     private var gorevler: List<Gorev> = emptyList()
     private val etiketci = TarihEtiketi(context)
 
+    /** Görev metni uygulamadaki gibi biçimli (kalın, bağlantı, etiket); tema değişince tazelenir. */
+    private var stil = WidgetTema.stil(context)
+
     override fun onCreate() {}
 
     override fun onDataSetChanged() {
         etiketci.tazele()
+        stil = WidgetTema.stil(context)
         gorevler = try {
             NotDeposu(context).gorevleriListele(false).take(EN_FAZLA)
         } catch (_: Exception) {
@@ -95,7 +99,7 @@ class GorevlerFabrikasi(private val context: Context) : RemoteViewsService.Remot
         WidgetTema.metin(context, g, R.id.satirMetin)
         WidgetTema.ikincil(context, g, R.id.satirAlt)
         WidgetTema.ikincilIkon(context, g, R.id.satirKutu)
-        g.setTextViewText(R.id.satirMetin, gorev.metin)
+        g.setTextViewText(R.id.satirMetin, NotOnizleme.bicimli(gorev.metin, stil))
         g.setTextViewText(R.id.satirAlt, altSatir(gorev))
         g.setViewVisibility(R.id.satirAlt, View.VISIBLE)
         g.setOnClickFillInIntent(R.id.satirKutu, WidgetEylemActivity.gorevDoldurma(gorev))

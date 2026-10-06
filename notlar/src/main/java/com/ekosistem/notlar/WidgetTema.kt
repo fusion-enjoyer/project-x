@@ -82,6 +82,13 @@ object WidgetTema {
         return if (p.gece) secenek.koyu else secenek.acik
     }
 
+    /** Not satırlarını uygulamadaki gibi biçimlemek için renkler ([NotOnizleme]). */
+    fun stil(c: Context): NotOnizleme.Stil {
+        val p = palet(c)
+        val soluk = p?.ikincil ?: androidx.core.content.ContextCompat.getColor(c, R.color.metin_ikincil)
+        return NotOnizleme.Stil(vurgu(c), soluk, p?.gece ?: Renkler.geceMi(c))
+    }
+
     /** Gecikmiş görev ve tarih rengi; `fark_silindi` ile aynı tonlar. */
     fun gecikmis(c: Context): Int {
         val gece = palet(c)?.gece ?: Renkler.geceMi(c)

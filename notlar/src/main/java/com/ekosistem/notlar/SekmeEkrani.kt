@@ -8,8 +8,6 @@ import android.graphics.drawable.GradientDrawable
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextUtils
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -62,6 +60,7 @@ class SekmeEkrani(
     private val metinRengi = ContextCompat.getColor(activity, R.color.metin)
     private val ikincil = ContextCompat.getColor(activity, R.color.metin_ikincil)
     private val vurgu = Renkler.vurgu(activity)
+    private val stil = NotOnizleme.uygulamaStili(activity)
 
     fun kapat() {
         dialog?.dismiss()
@@ -188,7 +187,7 @@ class SekmeEkrani(
             for (kart in kopya) {
                 if (kart.gizli) continue
                 val ham = runCatching { icerik(kart) }.getOrNull() ?: continue
-                val hazir = onizleme(ham, kart.baslik)
+                val hazir = onizleme(ham, kart.baslik, stil)
                 activity.runOnUiThread {
                     kart.onizleme = hazir
                     val sira = liste.indexOf(kart)
@@ -265,7 +264,7 @@ class SekmeEkrani(
             val govde = TextView(activity)
             govde.textSize = 10.5f
             govde.setLineSpacing(2 * y, 1f)
-            govde.setTextColor(ikincil)
+            govde.setTextColor(metinRengi)
             govde.setPadding((12 * y).toInt(), 0, (12 * y).toInt(), (10 * y).toInt())
             kok.addView(govde, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
             return Tutucu(kok, baslik, kapatma, govde)
@@ -311,68 +310,44 @@ class SekmeEkrani(
         private const val EN_COK_SATIR = 40
 
         /**
-         * Önizleme: Markdown işaretleri sadeleşir (başlık kalın, madde "•",
-         * görev "☐/☑", alıntı "│"), ilk satır başlıkla aynıysa atlanır.
+         * Kartın önizlemesi: satırlar uygulamadaki gibi biçimli ([NotOnizleme]);
+         * ilk satır kartın başlığıyla aynıysa atlanır, kod bloğu eş aralıklı.
          */
-        fun onizleme(ham: String, baslik: String): CharSequence {
+        fun onizleme(ham: String, baslik: String, stil: NotOnizleme.Stil): CharSequence {
             val sb = SpannableStringBuilder()
             var ilk = true
             var kodda = false
+            var kutuRengi: Int? = null
             var sayi = 0
             for (satir0 in ham.lineSequence()) {
                 if (sayi >= EN_COK_SATIR) break
                 val satir = satir0.trimEnd()
-                if (satir.trimStart().startsWith("```") || satir.trimStart().startsWith("~~~")) {
+                if (MarkdownBicimci.KOD_CITI.containsMatchIn(satir)) {
                     kodda = !kodda
                     continue
                 }
                 if (ilk) {
                     if (satir.isBlank()) continue
                     ilk = false
-                    if (satir.trimStart('#', ' ') == baslik.trim()) continue
+                    if (NotOnizleme.sade(satir) == baslik.trim()) continue
                 }
-                val (metin, baslikMi) = if (kodda) satir to false else sadelestir(satir)
-                if (metin.isBlank() && (sb.isEmpty() || sb.endsWith("\n\n"))) continue
                 val bas = sb.length
-                sb.append(metin)
-                if (baslikMi) {
-                    sb.setSpan(StyleSpan(Typeface.BOLD), bas, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    sb.setSpan(RelativeSizeSpan(1.1f), bas, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                if (kodda) {
+                    sb.append(satir)
+                    sb.setSpan(android.text.style.TypefaceSpan("monospace"), bas, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                } else {
+                    val cozulen = NotOnizleme.coz(satir)
+                    cozulen.kutuTuru?.let { kutuRengi = stil.kutuRengi(it) }
+                    if (cozulen.kutuTuru == null && !cozulen.alinti) kutuRengi = null
+                    val metin = NotOnizleme.bicimli(cozulen, stil, if (cozulen.alinti) kutuRengi else null)
+                    // Art arda boş satırlar teke iner.
+                    if (metin.isBlank() && (sb.isEmpty() || sb.endsWith("\n\n"))) continue
+                    sb.append(metin)
                 }
                 sb.append('\n')
                 sayi++
             }
             return sb.trimEnd()
         }
-
-        /** Tek satırın sade hâli; ikinci değer satır başlık mı. */
-        fun sadelestir(satir: String): Pair<String, Boolean> {
-            val girinti = satir.takeWhile { it == ' ' || it == '\t' }
-            var s = satir.substring(girinti.length)
-            var baslikMi = false
-            val boslukluGirinti = if (girinti.isEmpty()) "" else "  "
-            s = when {
-                s.startsWith("#") && s.trimStart('#').startsWith(" ") -> {
-                    baslikMi = true
-                    s.trimStart('#').trim()
-                }
-                s.startsWith("- [ ] ") || s.startsWith("* [ ] ") -> boslukluGirinti + "☐ " + s.substring(6)
-                s.startsWith("- [x] ", true) || s.startsWith("* [x] ", true) -> boslukluGirinti + "☑ " + s.substring(6)
-                s.startsWith("- ") || s.startsWith("* ") || s.startsWith("+ ") -> boslukluGirinti + "• " + s.substring(2)
-                // Obsidian kutusunun türü ([!tip]) önizlemede görünmez.
-                s.startsWith("> ") -> "│ " + s.substring(2).replace(KUTU_TURU, "")
-                s == "---" || s == "***" -> "―――"
-                else -> boslukluGirinti + s
-            }
-            s = s.replace(GORSEL, "🖼")
-                .replace(BAGLANTI_MD, "$1")
-                .replace("[[", "").replace("]]", "")
-                .replace("**", "").replace("__", "").replace("~~", "").replace("`", "")
-            return s to baslikMi
-        }
-
-        private val KUTU_TURU = Regex("^\\[![^\\]]*]\\s*")
-        private val GORSEL = Regex("!\\[[^\\]]*]\\([^)]*\\)")
-        private val BAGLANTI_MD = Regex("\\[([^\\]]+)]\\([^)]*\\)")
     }
 }

@@ -9,13 +9,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.text.SpannableString
+import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.StrikethroughSpan
-import android.text.style.StyleSpan
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import java.util.Calendar
@@ -295,7 +294,7 @@ class TekNotWidget : NotWidgetSaglayici() {
         val ilk = satirlar.indexOfFirst { it.isNotBlank() }
         g.setTextViewText(
             R.id.widgetBaslik,
-            if (ilk >= 0) TekNotFabrikasi.temizle(satirlar[ilk]) else context.getString(R.string.widget_bos)
+            if (ilk >= 0) NotOnizleme.sade(satirlar[ilk]) else context.getString(R.string.widget_bos)
         )
         // Kilitli notun gövdesi ana ekranda gösterilmez; liste boş kalır, yerine "Kilitli" yazar.
         g.setTextViewText(
@@ -335,7 +334,8 @@ class TekNotFabrikasi(
     private val widgetId: Int
 ) : RemoteViewsService.RemoteViewsFactory {
 
-    private class Satir(val metin: CharSequence, val gorev: Gorev?)
+    /** [kutu]: satır bir Obsidian kutusunun parçası; zemini o kutunun renginde (editördeki gibi). */
+    private class Satir(val metin: CharSequence, val gorev: Gorev?, val kutu: Int? = null)
 
     private var adres: String? = null
     private var satirlar: List<Satir> = emptyList()
@@ -358,6 +358,10 @@ class TekNotFabrikasi(
         val ilk = hepsi.indexOfFirst { it.isNotBlank() }
         if (ilk < 0) return emptyList()
         val sonuc = mutableListOf<Satir>()
+        // Satırlar uygulamadaki gibi: başlık, kalın, bağlantı, renkli kutu (NotOnizleme).
+        val stil = WidgetTema.stil(context)
+        var kutuRengi: Int? = null
+        var kodda = false
         var oncekiBos = true
         for (no in ilk + 1 until hepsi.size) {
             val ham = hepsi[no]
@@ -366,25 +370,45 @@ class TekNotFabrikasi(
             if (ham.isBlank()) {
                 if (!oncekiBos) sonuc.add(Satir("", null))
                 oncekiBos = true
+                kutuRengi = null
                 continue
             }
             oncekiBos = false
+            // Kod bloğu olduğu gibi, eş aralıklı; çit satırı (```) görünmez.
+            if (MarkdownBicimci.KOD_CITI.containsMatchIn(ham)) {
+                kodda = !kodda
+                continue
+            }
+            if (kodda) {
+                val kod = SpannableString(ham)
+                kod.setSpan(android.text.style.TypefaceSpan("monospace"), 0, ham.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                sonuc.add(Satir(kod, null))
+                continue
+            }
             val onay = MarkdownBicimci.ONAY.find(ham)
             if (onay != null) {
+                kutuRengi = null
                 val isaretli = !onay.groupValues[2].equals(" ", true)
                 val metin = SonTarih.temizle(ham.substring(onay.value.length))
                 val gorev = Gorev(uri, "", no, metin, isaretli)
-                val gosterilen = SpannableString(metin)
-                if (isaretli) gosterilen.setSpan(StrikethroughSpan(), 0, metin.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                val gosterilen = SpannableStringBuilder(NotOnizleme.bicimli(metin, stil))
+                if (isaretli) gosterilen.setSpan(StrikethroughSpan(), 0, gosterilen.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 sonuc.add(Satir(gosterilen, gorev))
             } else {
-                val metin = temizle(ham)
-                val gosterilen = SpannableString(metin)
-                // Başlık satırları kalın; Markdown işaretleri atılır.
-                if (ham.trimStart().startsWith("#") && metin.isNotEmpty()) {
-                    gosterilen.setSpan(StyleSpan(Typeface.BOLD), 0, metin.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                val cozulen = NotOnizleme.coz(ham)
+                // Kutu başlığından sonraki "> " satırları kutunun gövdesi: çizgi kutunun renginde.
+                cozulen.kutuTuru?.let { kutuRengi = stil.kutuRengi(it) }
+                if (cozulen.kutuTuru == null && !cozulen.alinti) kutuRengi = null
+                val kutu = if (cozulen.kutuTuru != null || cozulen.alinti) kutuRengi else null
+                var gosterilen = NotOnizleme.bicimli(cozulen, stil, if (cozulen.alinti) kutuRengi else null)
+                // Kutu başlığının solunda da gövdedeki renkli çizgi olsun.
+                if (cozulen.kutuTuru != null && kutu != null) {
+                    gosterilen = SpannableStringBuilder("▍ ").apply {
+                        setSpan(android.text.style.ForegroundColorSpan(kutu), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }.append(gosterilen)
                 }
-                sonuc.add(Satir(gosterilen, null))
+                if (gosterilen.isEmpty()) continue
+                sonuc.add(Satir(gosterilen, null, kutu))
             }
             if (sonuc.size >= EN_FAZLA_SATIR) break
         }
@@ -413,8 +437,15 @@ class TekNotFabrikasi(
         val a = adres
         if (satir == null || a == null) return g
         g.setTextViewText(R.id.satirMetin, satir.metin)
+        if (gorev == null) {
+            // Kutu satırları kutunun renginin açık tonunda (editördeki zemin); başlatıcı
+            // satırı yeniden kullandığında öteki satırlara taşınmasın diye her seferinde.
+            val zemin = satir.kutu?.let { (it and 0x00FFFFFF) or 0x24000000 } ?: 0
+            g.setInt(R.id.satirKok, "setBackgroundColor", zemin)
+        }
         when {
-            gorev == null -> WidgetTema.ikincil(context, g, R.id.satirMetin)
+            // Not gövdesi uygulamadaki gibi ana yazı renginde (önceden griydi).
+            gorev == null -> WidgetTema.metin(context, g, R.id.satirMetin)
             gorev.isaretli -> {
                 WidgetTema.ikincil(context, g, R.id.satirMetin)
                 NotWidget.vurguyaBoya(context, g, R.id.satirKutu)
@@ -440,16 +471,6 @@ class TekNotFabrikasi(
     companion object {
         const val OKUMA_SINIRI = 8192
         private const val EN_FAZLA_SATIR = 80
-
-        /** Satırdaki Markdown işaretleri atılır (görev olmayan satırlar). */
-        fun temizle(satir: String): String {
-            val t = satir.trim().trimStart('#', '>', ' ')
-            // Şablondaki boş madde ("- ") tek başına "-" olarak görünmesin.
-            if (t == "-" || t == "*") return ""
-            return t.removePrefix("- ")
-                .replace("**", "")
-                .replace("`", "")
-        }
     }
 }
 

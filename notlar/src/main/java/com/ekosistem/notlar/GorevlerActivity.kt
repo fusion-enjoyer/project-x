@@ -142,7 +142,8 @@ class GorevAdapter(
     override fun onBindViewHolder(t: Tutucu, pozisyon: Int) {
         val gorev = gorevler[pozisyon]
         t.metin.typeface = YaziTipleri.yazi(t.itemView.context)
-        t.metin.text = gorev.metin
+        // Notun içindeki gibi: işaretler gizli, kalın, bağlantı ve etiket renkli.
+        t.metin.text = NotOnizleme.bicimli(gorev.metin, NotOnizleme.uygulamaStili(t.itemView.context))
         t.not.text = altSatir(t.itemView.context, gorev)
 
         if (gorev.isaretli) {

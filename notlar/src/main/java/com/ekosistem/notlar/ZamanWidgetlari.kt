@@ -64,11 +64,15 @@ class YaklasanlarFabrikasi(private val context: Context) : RemoteViewsService.Re
     )
 
     private var satirlar: List<Yaklasan> = emptyList()
+
+    /** Görev metni uygulamadaki gibi biçimli; tema değişince tazelenir. */
+    private var stil = WidgetTema.stil(context)
     private val etiketci = TarihEtiketi(context)
 
     override fun onCreate() {}
 
     override fun onDataSetChanged() {
+        stil = WidgetTema.stil(context)
         satirlar = try {
             topla()
         } catch (_: Exception) {
@@ -160,7 +164,7 @@ class YaklasanlarFabrikasi(private val context: Context) : RemoteViewsService.Re
         g.setInt(R.id.satirIkon, "setColorFilter", s.renk)
         g.setTextColor(R.id.satirAlt, s.renk)
         g.setTextViewText(R.id.satirAlt, s.etiket)
-        g.setTextViewText(R.id.satirMetin, s.metin)
+        g.setTextViewText(R.id.satirMetin, NotOnizleme.bicimli(s.metin, stil))
         g.setOnClickFillInIntent(R.id.satirKok, WidgetEylemActivity.acDoldurma(s.adres))
         return g
     }

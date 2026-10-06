@@ -190,7 +190,7 @@ class ListeOnbellegi {
     }
 
     companion object {
-        /** 4: görev sayıları. Eski dosya yok sayılır, liste bir kez yeniden kurulur. */
-        private const val SURUM = 4
+        /** 5: özetler NotOnizleme ile ([!tip] gibi işaretler gizli). Eski dosya yok sayılır, liste bir kez yeniden kurulur. */
+        private const val SURUM = 5
     }
 }

@@ -1133,18 +1133,11 @@ class NotDeposu(private val context: Context) {
             return gorev to biten
         }
 
-        /** Kart önizlemesi için satırdaki Markdown işaretlerini söker. */
-        fun mdTemizle(satir: String): String =
-            satir.trim()
-                // Görsel bağlantısı önizlemede ham metin olarak görünmesin.
-                .replace(MarkdownBicimci.GORSEL, "")
-                .replace(MarkdownBicimci.GORSEL_WIKI, "")
-                // [metin](adres) kartta yalnızca metin olarak görünsün.
-                .replace(MarkdownBicimci.MD_BAGLANTI) { it.groupValues[1] }
-                .trimStart('#', '>', ' ')
-                .removePrefix("- [ ]").removePrefix("- [x]").removePrefix("- [X]").removePrefix("- ")
-                .replace(ISARETLER, "")
-                .trim()
+        /**
+         * Kart önizlemesi için satırın okunan metni ([NotOnizleme.sade]):
+         * kutu işareti (`[!tip]`), bağlantı adresi, görsel gizlenir.
+         */
+        fun mdTemizle(satir: String): String = NotOnizleme.sade(satir)
 
         /**
          * Sürüm geçmişi klasörünün adı. Ana klasördeki not yalnızca adıyla
@@ -1156,6 +1149,5 @@ class NotDeposu(private val context: Context) {
             val ad = parcalar.last().removeSuffix(".md").removeSuffix(".txt")
             return (parcalar.dropLast(1) + ad).joinToString("__")
         }
-        private val ISARETLER = Regex("\\*{1,3}|~~|__|`|\\[\\[|]]")
     }
 }

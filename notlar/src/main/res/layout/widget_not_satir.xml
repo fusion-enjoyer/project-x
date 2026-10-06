@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tek not widget'ında görev olmayan satır: düz, ikincil renkte metin. -->
+<!-- Tek not widget'ında görev olmayan satır: uygulamadaki gibi ana yazı renginde, biçimli (NotOnizleme). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/satirKok"
     android:layout_width="match_parent"
@@ -15,7 +15,7 @@
         android:ellipsize="end"
         android:lineSpacingExtra="2dp"
         android:maxLines="4"
-        android:textColor="@color/metin_ikincil"
+        android:textColor="@color/metin"
         android:textSize="13sp" />
 
 </LinearLayout>
