@@ -84,7 +84,9 @@ Each app's page lists its own plans in more detail.
 Download the APK from [Releases](https://github.com/fusion-enjoyer/project-x/releases) and open it. All apps are signed with the same key:
 
 ```
-SHA-256: e0:55:84:ff:75:ff:a6:b0:76:55:f3:b9:03:05:6d:e4:95:a9:ae:20:16:7f:61:c0:82:6f:39:75:c7:0c:d2:6c
+SHA-256:
+e0:55:84:ff:75:ff:a6:b0:76:55:f3:b9:03:05:6d:e4
+95:a9:ae:20:16:7f:61:c0:82:6f:39:75:c7:0c:d2:6c
 ```
 
 ## Build
