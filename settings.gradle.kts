@@ -16,3 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "project-x"
 include(":notlar")
+include(":tasarim")
+include(":saat")
+include(":takvim")
