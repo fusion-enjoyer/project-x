@@ -8,5 +8,9 @@
         <activity
             android:name=".IcsDenemeActivity"
             android:exported="true" />
+        <!-- Yalnız debug: tanıtım ekran görüntüleri için örnek takvim ve etkinlikler. -->
+        <activity
+            android:name=".TanitimVerisiActivity"
+            android:exported="true" />
     </application>
 </manifest>
