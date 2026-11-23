@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Yüzen alt gezinme: yalnız ikonlu hap. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/nav_zemin" />
+    <corners android:radius="36dp" />
+</shape>

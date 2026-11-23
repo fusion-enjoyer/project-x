@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/izleyici_zemin"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/ustCubuk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="8dp"
+        android:paddingRight="16dp">
+
+        <ImageButton
+            android:id="@+id/btnIptal"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/vazgec"
+            android:src="@drawable/ic_kapat" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:text="@string/kirp"
+            android:textColor="@color/izleyici_metin"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/btnSifirla"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginRight="8dp"
+            android:background="@drawable/bg_izleyici_cip"
+            android:gravity="center"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:text="@string/sifirla"
+            android:textColor="@color/izleyici_metin"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btnKaydet"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_cip_secili"
+            android:backgroundTint="#FFFFFF"
+            android:gravity="center"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:text="@string/kopya_kaydet"
+            android:textColor="#000000"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.ekosistem.galeri.KirpmaGorunumu
+            android:id="@+id/kirpma"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/kirp_alani" />
+
+        <ProgressBar
+            android:id="@+id/yukleniyor"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/izleyici_metin" />
+    </FrameLayout>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/oranlar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingTop="8dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="4dp" />
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:id="@+id/altCubuk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnSola"
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/sola_dondur"
+            android:src="@drawable/ic_dondur_sol" />
+
+        <ImageButton
+            android:id="@+id/btnSaga"
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/saga_dondur"
+            android:src="@drawable/ic_dondur" />
+    </LinearLayout>
+</LinearLayout>

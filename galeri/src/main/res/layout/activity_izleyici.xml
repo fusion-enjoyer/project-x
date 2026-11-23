@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/izleyici_zemin">
+
+    <!-- Aşağı çekip kapatma; yatay sürükleme içteki ViewPager2'de kalır. -->
+    <com.ekosistem.galeri.KapatmaCercevesi
+        android:id="@+id/kapatma"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/sayfalar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </com.ekosistem.galeri.KapatmaCercevesi>
+
+    <LinearLayout
+        android:id="@+id/ustCubuk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_ust_gecis"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="8dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="24dp">
+
+        <ImageButton
+            android:id="@+id/btnGeri"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/geri"
+            android:src="@drawable/ic_geri" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/izleyiciBaslik"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif"
+                android:maxLines="1"
+                android:textColor="@color/izleyici_metin"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/izleyiciAlt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="monospace"
+                android:maxLines="1"
+                android:textColor="#B3FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnKaydet"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_cip_secili"
+            android:backgroundTint="#FFFFFF"
+            android:gravity="center"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:text="@string/kopya_kaydet"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Alt eylemler: etiketsiz çizgi ikonlar (adları basılı tutunca ve ekran okuyucuda). -->
+    <LinearLayout
+        android:id="@+id/altCubuk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_alt_gecis"
+        android:orientation="horizontal"
+        android:paddingTop="32dp">
+
+        <ImageButton
+            android:id="@+id/btnPaylas"
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/paylas"
+            android:src="@drawable/ic_paylas" />
+
+        <ImageButton
+            android:id="@+id/btnDondur"
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/dondur"
+            android:src="@drawable/ic_dondur" />
+
+        <ImageButton
+            android:id="@+id/btnKirp"
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/kirp"
+            android:src="@drawable/ic_kirp" />
+
+        <ImageButton
+            android:id="@+id/btnBilgi"
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/bilgi"
+            android:src="@drawable/ic_bilgi" />
+    </LinearLayout>
+</FrameLayout>

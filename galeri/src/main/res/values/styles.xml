@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Görüntüleyici ve kırpma ekranının alt çubuğundaki etiketsiz ikon düğme -->
+    <style name="IzleyiciIkon">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:tint">@color/izleyici_metin</item>
+    </style>
+
+    <!-- Ekranın büyük, ince başlığı (Fotoğraflar, Albümler, Ara). -->
+    <style name="BuyukBaslik">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:accessibilityHeading">true</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingRight">24dp</item>
+        <item name="android:paddingTop">40dp</item>
+        <item name="android:paddingBottom">28dp</item>
+        <item name="android:textColor">@color/metin</item>
+        <item name="android:textSize">44sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <!-- Sayılar ve tarih/saat: eşaralıklı yazı. -->
+    <style name="EsaralikliYazi">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textColor">@color/metin_ikincil</item>
+    </style>
+</resources>

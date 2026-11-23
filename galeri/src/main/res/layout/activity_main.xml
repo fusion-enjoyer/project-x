@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/baslik"
+            style="@style/BuyukBaslik" />
+
+        <!-- Ara sekmesinde görünür: hap biçimli arama alanı -->
+        <EditText
+            android:id="@+id/etAra"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_album_kart"
+            android:drawableStart="@drawable/ic_ara"
+            android:drawablePadding="14dp"
+            android:drawableTint="@color/metin"
+            android:hint="@string/ara_ipucu"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:paddingLeft="22dp"
+            android:paddingRight="22dp"
+            android:textColor="@color/metin"
+            android:textColorHint="@color/metin_ikincil"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <!-- Android 14+: kullanıcı yalnız bazı fotoğraflara izin verdiyse -->
+        <TextView
+            android:id="@+id/kismiUyari"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_album_kart"
+            android:minHeight="48dp"
+            android:padding="16dp"
+            android:text="@string/kismi_erisim"
+            android:textColor="@color/metin"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/liste"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="104dp"
+                android:scrollbars="none" />
+
+            <ProgressBar
+                android:id="@+id/yukleniyor"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="64dp"
+                android:indeterminateTint="@color/metin_ikincil"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/bosDurum"
+                layout="@layout/bos_durum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="64dp" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- Yüzen alt gezinme: yalnız ikonlar, seçili olanın arkasında daire. -->
+    <LinearLayout
+        android:id="@+id/sekmeler"
+        android:layout_width="wrap_content"
+        android:layout_height="68dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_nav_hap"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp" />
+</FrameLayout>

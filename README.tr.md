@@ -28,7 +28,7 @@ Telefonunu Google'dan arındıranlar ve eski telefonuna yeniden hayat vermek ist
 | 📝 | **[Notlar](notlar/README.tr.md)** | Düz dosyalarda Markdown notlar; sekmeler, görevler ve 10 widget | 0.24.0 | [İndir](https://github.com/fusion-enjoyer/project-x/releases/tag/notlar-v0.24.0) |
 | ⏰ | **[Saat](saat/README.tr.md)** | Alarm, zamanlayıcı, kronometre ve dünya saati. Alarmın çalar. | 0.11.0 | [İndir](https://github.com/fusion-enjoyer/project-x/releases/tag/saat-v0.11.0) |
 | 📅 | **[Takvim](takvim/README.tr.md)** | Telefonunun takvimi: ay, yıl, hafta, gün ve gündem | 0.11.0 | [İndir](https://github.com/fusion-enjoyer/project-x/releases/tag/takvim-v0.11.0) |
-| 🖼️ | Galeri | Fotoğraf ve videolar, çevrimdışı | Geliştiriliyor | |
+| 🖼️ | **[Galeri](galeri/README.tr.md)** | Fotoğraf ve videolar, çevrimdışı: göz at, ara, döndür, kırp | Geliştiriliyor | |
 | 👤 | Rehber | | Planlandı | |
 | 🎵 | Müzik | | Planlandı | |
 | 🏠 | Başlatıcı (launcher) | | Planlandı | |

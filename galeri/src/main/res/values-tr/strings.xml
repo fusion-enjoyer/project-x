@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Galeri</string>
+    <string name="geri">Geri</string>
+    <string name="ara">Ara</string>
+    <string name="fotograflar">Fotoğraflar</string>
+    <string name="albumler">Albümler</string>
+    <string name="fotograf">Fotoğraf</string>
+    <string name="video">Video</string>
+    <plurals name="oge_sayisi">
+        <item quantity="one">%d öge</item>
+        <item quantity="other">%d öge</item>
+    </plurals>
+    <plurals name="sonuc_sayisi">
+        <item quantity="one">%d sonuç</item>
+        <item quantity="other">%d sonuç</item>
+    </plurals>
+
+    <string name="bos_baslik">Henüz fotoğraf yok</string>
+    <string name="bos_aciklama">Bu telefondaki fotoğraf ve videolar burada görünür.</string>
+    <string name="album_bos">Bu albüm boş</string>
+    <string name="album_bos_aciklama">Fotoğrafları taşınmış ya da silinmiş olabilir.</string>
+    <string name="izin_baslik">Galeri\'nin fotoğraflarına erişmesi gerekiyor</string>
+    <string name="izin_aciklama">Fotoğrafların bu telefonda kalır. Galeri\'nin internet izni yok.</string>
+    <string name="izin_ver">Erişime izin ver</string>
+    <string name="ayarlari_ac">Ayarları aç</string>
+    <string name="kismi_erisim">Yalnız seçtiğin fotoğraflar görünüyor. Daha fazlası için dokun.</string>
+
+    <string name="ara_ipucu">Ad, albüm, ay ya da yıl</string>
+    <string name="ara_baslik">Fotoğraflarında ara</string>
+    <string name="ara_aciklama">"Ekim 2024", "ekran görüntüsü", "video" ya da bir albüm adı dene.</string>
+    <string name="ara_sonuc_yok">Bir şey bulunamadı</string>
+    <string name="ara_sonuc_yok_aciklama">Daha kısa bir kelime ya da ay ve yıl dene.</string>
+
+    <string name="sira_n">%1$d / %2$d</string>
+    <string name="paylas">Paylaş</string>
+    <string name="dondur">Döndür</string>
+    <string name="kirp">Kırp</string>
+    <string name="bilgi">Bilgi</string>
+    <string name="oynat">Videoyu oynat</string>
+    <string name="acilamadi">Bu dosya açılamadı.</string>
+    <string name="kopya_kaydet">Kopya kaydet</string>
+    <string name="kopya_kaydedildi">%1$s klasörüne yeni fotoğraf olarak kaydedildi. Orijinal aynen duruyor.</string>
+    <string name="kaydedilemedi">Kopya kaydedilemedi.</string>
+    <string name="degisiklik_yok">Henüz bir değişiklik yok.</string>
+    <string name="bilgi_album">Albüm: %1$s</string>
+    <string name="bilgi_boyut">%1$d × %2$d · %3$s MP</string>
+    <string name="bilgi_dosya">Boyut: %1$s</string>
+    <string name="bilgi_sure">Süre: %1$s</string>
+
+    <string name="vazgec">Vazgeç</string>
+    <string name="sifirla">Sıfırla</string>
+    <string name="kirp_alani">Kırpma alanı. Boyutlamak için köşeleri sürükle.</string>
+    <string name="sola_dondur">Sola döndür</string>
+    <string name="saga_dondur">Sağa döndür</string>
+    <string name="oran_serbest">Serbest</string>
+    <string name="oran_kare">Kare</string>
+    <string name="oran_4_3">4:3</string>
+    <string name="oran_3_4">3:4</string>
+    <string name="oran_16_9">16:9</string>
+    <string name="oran_9_16">9:16</string>
+    <string name="video_oynatilamadi">Bu video bu telefonda oynatılamıyor.</string>
+    <string name="bugun">Bugün</string>
+    <string name="dun">Dün</string>
+    <string name="bilgi_kamera">Kamera</string>
+    <string name="bilgi_konum">Klasör</string>
+    <string name="bilgi_ad">Ad</string>
+</resources>
