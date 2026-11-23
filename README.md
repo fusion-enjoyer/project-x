@@ -28,7 +28,7 @@ Made for people who de-Google their phones and for people who want to give an ol
 | 📝 | **[Notes](notlar/README.md)** | Markdown notes in plain files, with tabs, tasks and 10 widgets | 0.24.0 | [Download](https://github.com/fusion-enjoyer/project-x/releases/tag/notlar-v0.24.0) |
 | ⏰ | **[Clock](saat/README.md)** | Alarm, timer, stopwatch and world clock. Your alarm rings. | 0.11.0 | [Download](https://github.com/fusion-enjoyer/project-x/releases/tag/saat-v0.11.0) |
 | 📅 | **[Calendar](takvim/README.md)** | Your phone's calendar, with month, year, week, day and agenda | 0.11.0 | [Download](https://github.com/fusion-enjoyer/project-x/releases/tag/takvim-v0.11.0) |
-| 🖼️ | Gallery | Photos and videos, offline | In development | |
+| 🖼️ | **[Gallery](galeri/README.md)** | Photos and videos, offline: browse, search, rotate, crop | In development | |
 | 👤 | Contacts | | Planned | |
 | 🎵 | Music | | Planned | |
 | 🏠 | Launcher | | Planned | |

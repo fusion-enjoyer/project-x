@@ -25,6 +25,9 @@ object MedyaDeposu {
         if (Build.VERSION.SDK_INT >= 29) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
 
+    fun adres(video: Boolean, id: Long): Uri =
+        ContentUris.withAppendedId(if (video) videoAdresi else resimAdresi, id)
+
     /** Bütün fotoğraf ve videolar, yeniden eskiye. Ana iş parçacığında çağırma. */
     fun hepsi(c: Context): List<Medya> {
         val liste = ArrayList<Medya>()
@@ -90,7 +93,6 @@ object MedyaDeposu {
                 if (Build.VERSION.SDK_INT >= 29 && yon % 180 != 0) { val t = gen; gen = yuk; yuk = t }
                 hedef += Medya(
                     id = id,
-                    uri = ContentUris.withAppendedId(adres, id),
                     ad = (if (iAd >= 0) k.getString(iAd) else null).orEmpty(),
                     albumId = (if (iKova >= 0) k.getString(iKova) else null).orEmpty(),
                     albumAdi = (if (iKovaAd >= 0) k.getString(iKovaAd) else null) ?: "—",

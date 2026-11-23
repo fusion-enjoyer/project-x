@@ -5,7 +5,6 @@ import android.net.Uri
 /** Telefonun medya deposundaki bir fotoğraf ya da video. */
 data class Medya(
     val id: Long,
-    val uri: Uri,
     val ad: String,
     val albumId: String,
     val albumAdi: String,
@@ -19,7 +18,10 @@ data class Medya(
     val sureMs: Long,
     val boyut: Long,
     val mime: String
-)
+) {
+    /** content://media/… adresi; ilk kullanımda kurulur (testler Uri'siz çalışsın). */
+    val uri: Uri by lazy { MedyaDeposu.adres(video, id) }
+}
 
 /** Telefondaki bir klasör (MediaStore "bucket"). */
 data class Album(
