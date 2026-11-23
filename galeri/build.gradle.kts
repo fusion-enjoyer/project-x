@@ -35,6 +35,14 @@ android {
     }
 
     signingConfigs {
+        // Önizleme APK'ları (GitHub Actions) hep aynı anahtarla imzalansın ki telefonda
+        // kaldırmadan güncellenebilsin. Bilinen parolalı hata ayıklama anahtarı; sır değil.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (imza != null) {
             create("yayin") {
                 storeFile = file(imza.getProperty("storeFile"))

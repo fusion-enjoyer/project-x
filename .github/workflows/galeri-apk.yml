@@ -1,0 +1,56 @@
+# Galeri önizleme APK'sı: her push'ta testler + debug APK. Çıkan APK "galeri-onizleme"
+# ön sürümüne eklenir; telefondan tek dokunuşla indirilir.
+name: Galeri APK
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["galeri/**", "tasarim/**", "*.kts", "gradle/**", ".github/workflows/galeri-apk.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: galeri-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Birim testleri
+        run: ./gradlew :galeri:testDebugUnitTest --stacktrace
+
+      - name: Debug APK
+        run: ./gradlew :galeri:assembleDebug --stacktrace
+
+      - name: APK'yı adlandır
+        run: |
+          kisa=$(git rev-parse --short HEAD)
+          cp galeri/build/outputs/apk/debug/galeri-debug.apk "galeri-onizleme.apk"
+          echo "KISA=$kisa" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: galeri-onizleme-${{ env.KISA }}
+          path: galeri-onizleme.apk
+
+      - name: Ön sürüme yükle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          not="Galeri önizleme (debug). Commit ${KISA}, dal ${GITHUB_REF_NAME}. Yayın değildir."
+          if gh release view galeri-onizleme >/dev/null 2>&1; then
+            gh release edit galeri-onizleme --prerelease --notes "$not" --target "$GITHUB_SHA"
+          else
+            gh release create galeri-onizleme --prerelease --title "Galeri önizleme" --notes "$not" --target "$GITHUB_SHA"
+          fi
+          gh release upload galeri-onizleme galeri-onizleme.apk --clobber
