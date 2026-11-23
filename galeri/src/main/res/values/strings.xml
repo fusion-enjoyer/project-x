@@ -60,4 +60,9 @@
     <string name="oran_16_9">16:9</string>
     <string name="oran_9_16">9:16</string>
     <string name="video_oynatilamadi">This video can\'t be played on this phone.</string>
+    <string name="bugun">Today</string>
+    <string name="dun">Yesterday</string>
+    <string name="bilgi_kamera">Camera</string>
+    <string name="bilgi_konum">Folder</string>
+    <string name="bilgi_ad">Name</string>
 </resources>

@@ -21,6 +21,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.ekosistem.tasarim.AltSayfa
+import com.ekosistem.tasarim.ipucuVer
 import java.util.concurrent.Executors
 
 /**
@@ -68,8 +69,8 @@ class IzleyiciActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.kok)) { _, kenar ->
             val c = kenar.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            ustCubuk.setPadding(c.left + dp(8), c.top, c.right + dp(16), 0)
-            altCubuk.setPadding(c.left, 0, c.right, c.bottom)
+            ustCubuk.setPadding(c.left + dp(8), c.top, c.right + dp(16), dp(24))
+            altCubuk.setPadding(c.left, dp(32), c.right, c.bottom)
             kenar
         }
 
@@ -114,6 +115,10 @@ class IzleyiciActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnKirp).setOnClickListener { kirp() }
         findViewById<View>(R.id.btnBilgi).setOnClickListener { bilgi() }
         kaydet.setOnClickListener { kopyaKaydet() }
+        ipucuVer(
+            findViewById(R.id.btnPaylas), findViewById(R.id.btnDondur),
+            findViewById(R.id.btnKirp), findViewById(R.id.btnBilgi)
+        )
 
         ekAci = savedInstanceState?.getInt("aci") ?: 0
         val gelen = intent.data
@@ -169,8 +174,8 @@ class IzleyiciActivity : AppCompatActivity() {
         val alt = findViewById<TextView>(R.id.izleyiciAlt)
         val m = s.m
         if (m != null) {
-            baslik.text = Metinler.tamTarih(m.tarih)
-            alt.text = getString(R.string.sira_n, sira + 1, liste.size) + " · " + m.albumAdi
+            baslik.text = m.albumAdi
+            alt.text = Metinler.gunAdi(this, m.tarih) + "  " + Metinler.saat(this, m.tarih)
         } else {
             baslik.text = s.uri.lastPathSegment.orEmpty()
             alt.text = ""
@@ -371,25 +376,78 @@ class IzleyiciActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Bilgi sayfası: büyük gün adı, "Bugün | 12:33", sonra kartlar. Sayılar eşaralıklı
+     * yazıyla: çözünürlük, megapiksel, boyut, süre; altta klasör ve dosya adı.
+     */
     private fun bilgi() {
         val s = simdiki() ?: return
         val m = s.m
-        val satirlar = mutableListOf<String>()
-        if (m != null) {
-            satirlar += Metinler.tarihSaat(this, m.tarih)
-            satirlar += m.ad
-            satirlar += getString(R.string.bilgi_album, m.albumAdi)
-            if (m.genislik > 0 && m.yukseklik > 0) {
-                val (g, y) = Kirpma.donmusBoyut(m.genislik, m.yukseklik, m.yon)
-                val mp = g.toLong() * y / 1_000_000.0
-                satirlar += getString(R.string.bilgi_boyut, g, y, "%.1f".format(mp))
-            }
-            if (m.boyut > 0) satirlar += getString(R.string.bilgi_dosya, Metinler.boyut(this, m.boyut))
-            if (m.video) satirlar += getString(R.string.bilgi_sure, Metinler.sure(m.sureMs))
-        } else {
-            satirlar += s.uri.toString()
+        val d = resources.displayMetrics.density
+        fun px(n: Int) = (n * d).toInt()
+        val metin = androidx.core.content.ContextCompat.getColor(this, com.ekosistem.tasarim.R.color.metin)
+        val ikincil = androidx.core.content.ContextCompat.getColor(this, com.ekosistem.tasarim.R.color.metin_ikincil)
+        val kok = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+
+        fun yazi(t: String, boy: Float, renk: Int, es: Boolean = false) = TextView(this).apply {
+            text = t
+            textSize = boy
+            setTextColor(renk)
+            typeface = if (es) android.graphics.Typeface.MONOSPACE else android.graphics.Typeface.SANS_SERIF
         }
-        AltSayfa(this).baslik(getString(R.string.bilgi)).mesaj(satirlar.joinToString("\n")).goster()
+        fun kart() = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.bg_bilgi_kart)
+            setPadding(px(18), px(16), px(18), px(16))
+        }
+        fun tam() = android.widget.LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        if (m == null) {
+            kok.addView(yazi(s.uri.toString(), 14f, metin))
+            AltSayfa(this).icerik(kok).goster()
+            return
+        }
+        kok.addView(yazi(Metinler.gunAdi(this, m.tarih), 28f, metin))
+        kok.addView(yazi(Metinler.tamTarih(m.tarih) + "  |  " + Metinler.saat(this, m.tarih), 15f, ikincil, es = true),
+            tam().apply { topMargin = px(4); bottomMargin = px(16) })
+
+        // Sayılar kartı: üç sütun, eşaralıklı.
+        val sayilar = kart()
+        val satir = android.widget.LinearLayout(this)
+        val ogeler = mutableListOf<String>()
+        if (m.genislik > 0 && m.yukseklik > 0) {
+            val (g, y) = Kirpma.donmusBoyut(m.genislik, m.yukseklik, m.yon)
+            ogeler += "$g × $y"
+            if (!m.video) ogeler += "%.1f MP".format(g.toLong() * y / 1_000_000.0)
+        }
+        if (m.video) ogeler += Metinler.sure(m.sureMs)
+        if (m.boyut > 0) ogeler += Metinler.boyut(this, m.boyut)
+        ogeler.forEachIndexed { i, o ->
+            val t = yazi(o, 14f, metin, es = true)
+            t.gravity = when (i) {
+                0 -> android.view.Gravity.START
+                ogeler.lastIndex -> android.view.Gravity.END
+                else -> android.view.Gravity.CENTER
+            }
+            satir.addView(t, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }
+        sayilar.addView(satir)
+        if (ogeler.isNotEmpty()) kok.addView(sayilar, tam())
+
+        // Altta yan yana iki kart: klasör ve dosya adı.
+        val ikili = android.widget.LinearLayout(this)
+        for ((baslik, deger) in listOf(getString(R.string.bilgi_konum) to m.albumAdi, getString(R.string.bilgi_ad) to m.ad)) {
+            val k = kart()
+            k.addView(yazi(baslik, 14f, metin))
+            k.addView(yazi(deger, 14f, ikincil), tam().apply { topMargin = px(6) })
+            ikili.addView(k, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
+                if (ikili.childCount > 0) leftMargin = px(8)
+            })
+        }
+        kok.addView(ikili, tam().apply { topMargin = px(8) })
+        AltSayfa(this).icerik(kok).goster()
     }
 
     override fun onDestroy() {

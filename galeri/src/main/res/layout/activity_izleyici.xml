@@ -22,11 +22,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
-        android:background="@color/izleyici_cubuk"
+        android:background="@drawable/bg_ust_gecis"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingLeft="8dp"
-        android:paddingRight="16dp">
+        android:paddingRight="16dp"
+        android:paddingBottom="24dp">
 
         <ImageButton
             android:id="@+id/btnGeri"
@@ -39,77 +40,81 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
+            android:layout_marginLeft="4dp"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
             <TextView
                 android:id="@+id/izleyiciBaslik"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="sans-serif"
                 android:maxLines="1"
                 android:textColor="@color/izleyici_metin"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/izleyiciAlt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
+                android:fontFamily="monospace"
                 android:maxLines="1"
                 android:textColor="#B3FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/btnKaydet"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_height="40dp"
             android:background="@drawable/bg_cip_secili"
+            android:backgroundTint="#FFFFFF"
             android:gravity="center"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
             android:text="@string/kopya_kaydet"
-            android:textColor="#FFFFFF"
+            android:textColor="#000000"
             android:textSize="14sp"
-            android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
 
+    <!-- Alt eylemler: etiketsiz çizgi ikonlar (adları basılı tutunca ve ekran okuyucuda). -->
     <LinearLayout
         android:id="@+id/altCubuk"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/izleyici_cubuk"
-        android:orientation="horizontal">
+        android:background="@drawable/bg_alt_gecis"
+        android:orientation="horizontal"
+        android:paddingTop="32dp">
 
-        <TextView
+        <ImageButton
             android:id="@+id/btnPaylas"
-            style="@style/IzleyiciDugme"
-            android:drawableTop="@drawable/ic_paylas"
-            android:text="@string/paylas" />
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/paylas"
+            android:src="@drawable/ic_paylas" />
 
-        <TextView
+        <ImageButton
             android:id="@+id/btnDondur"
-            style="@style/IzleyiciDugme"
-            android:drawableTop="@drawable/ic_dondur"
-            android:text="@string/dondur" />
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/dondur"
+            android:src="@drawable/ic_dondur" />
 
-        <TextView
+        <ImageButton
             android:id="@+id/btnKirp"
-            style="@style/IzleyiciDugme"
-            android:drawableTop="@drawable/ic_kirp"
-            android:text="@string/kirp" />
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/kirp"
+            android:src="@drawable/ic_kirp" />
 
-        <TextView
+        <ImageButton
             android:id="@+id/btnBilgi"
-            style="@style/IzleyiciDugme"
-            android:drawableTop="@drawable/ic_bilgi"
-            android:text="@string/bilgi" />
+            style="@style/IzleyiciIkon"
+            android:contentDescription="@string/bilgi"
+            android:src="@drawable/ic_bilgi" />
     </LinearLayout>
 </FrameLayout>

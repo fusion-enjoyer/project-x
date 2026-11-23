@@ -4,9 +4,8 @@
     android:layout_height="wrap_content"
     android:accessibilityHeading="true"
     android:paddingLeft="20dp"
-    android:paddingTop="18dp"
+    android:paddingTop="28dp"
     android:paddingRight="20dp"
-    android:paddingBottom="8dp"
+    android:paddingBottom="14dp"
     android:textColor="@color/metin"
-    android:textSize="15sp"
-    android:textStyle="bold" />
+    android:textSize="18sp" />

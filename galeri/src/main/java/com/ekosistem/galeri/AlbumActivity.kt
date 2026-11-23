@@ -25,7 +25,7 @@ class AlbumActivity : AppCompatActivity() {
         val bos = findViewById<View>(R.id.bosDurum)
         val yukleniyor = findViewById<View>(R.id.yukleniyor)
         izgara = IzgaraAdapter(this) { Kaynak.Klasor(albumId) }
-        izgara.yerlestir(liste, sutunSayisi(this, 100))
+        izgara.yerlestir(liste, sutunSayisi(this))
         vm.durum.observe(this) { d ->
             yukleniyor.visibility = if (d is MedyaDurumu.Yukleniyor) View.VISIBLE else View.GONE
             val medyalar = (d as? MedyaDurumu.Hazir)?.medyalar ?: emptyList()

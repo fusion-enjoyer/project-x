@@ -1,41 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
-    android:orientation="vertical"
-    android:padding="6dp">
+    android:padding="5dp">
 
-    <com.ekosistem.galeri.KareCerceve
+    <LinearLayout
+        android:id="@+id/albumKart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_kapak">
+        android:background="@drawable/bg_album_kart"
+        android:foreground="?attr/selectableItemBackground"
+        android:orientation="vertical"
+        android:padding="7dp">
 
-        <ImageView
-            android:id="@+id/albumKapak"
+        <com.ekosistem.galeri.KareCerceve
+            android:id="@+id/albumCerceve"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:importantForAccessibility="no"
-            android:scaleType="centerCrop" />
-    </com.ekosistem.galeri.KareCerceve>
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_kapak">
 
-    <TextView
-        android:id="@+id/albumAd"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:paddingLeft="2dp"
-        android:textColor="@color/metin"
-        android:textSize="15sp"
-        android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/albumKapak"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop" />
+        </com.ekosistem.galeri.KareCerceve>
 
-    <TextView
-        android:id="@+id/albumAdet"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingLeft="2dp"
-        android:textColor="@color/metin_ikincil"
-        android:textSize="13sp" />
-</LinearLayout>
+        <TextView
+            android:id="@+id/albumAd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:textColor="@color/metin"
+            android:textSize="17sp" />
+
+        <TextView
+            android:id="@+id/albumAdet"
+            style="@style/EsaralikliYazi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="10dp"
+            android:gravity="center"
+            android:textSize="14sp" />
+    </LinearLayout>
+</FrameLayout>

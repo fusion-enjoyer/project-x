@@ -39,6 +39,39 @@ object Metinler {
 
     fun boyut(c: Context, bayt: Long): String = Formatter.formatShortFileSize(c, bayt)
 
+    /** Aynı günün anahtarı (yıl * 400 + yılın günü). */
+    fun gunAnahtari(an: Long): Int {
+        val t = Calendar.getInstance().apply { timeInMillis = an }
+        return t.get(Calendar.YEAR) * 400 + t.get(Calendar.DAY_OF_YEAR)
+    }
+
+    /** Izgara bölümü: "Bugün", "Dün", "21 Kasım", geçen yıllar için "21 Kasım 2024". */
+    fun gunBaslik(c: Context, an: Long, simdi: Long = System.currentTimeMillis()): String {
+        val g = gunAnahtari(an)
+        val bugun = gunAnahtari(simdi)
+        val dun = gunAnahtari(simdi - 86_400_000L)
+        return when {
+            g == bugun -> c.getString(R.string.bugun)
+            g == dun -> c.getString(R.string.dun)
+            g / 400 == bugun / 400 -> bicim("dMMMM", an)
+            else -> bicim("dMMMMy", an)
+        }
+    }
+
+    /** Görüntüleyici başlığı: "Bugün", "Dün" ya da haftanın günü ("Pazartesi") / tarih. */
+    fun gunAdi(c: Context, an: Long, simdi: Long = System.currentTimeMillis()): String {
+        val g = gunAnahtari(an)
+        return when {
+            g == gunAnahtari(simdi) -> c.getString(R.string.bugun)
+            g == gunAnahtari(simdi - 86_400_000L) -> c.getString(R.string.dun)
+            simdi - an in 0..6 * 86_400_000L -> bicim("EEEE", an).basHarfBuyuk()
+            else -> gunBaslik(c, an, simdi)
+        }
+    }
+
+    /** "12:33" (telefonun 12/24 saat ayarına göre). */
+    fun saat(c: Context, an: Long): String = DateFormat.getTimeFormat(c).format(Date(an))
+
     /** Aynı ayın anahtarı: 2026*12+9. */
     fun ayAnahtari(an: Long): Int {
         val t = Calendar.getInstance().apply { timeInMillis = an }

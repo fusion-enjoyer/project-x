@@ -22,17 +22,17 @@ class KareCerceve @JvmOverloads constructor(c: Context, a: AttributeSet? = null)
     }
 }
 
-/** Ekran genişliğine göre sütun sayısı: telefonda 4, yatayda/tablette daha çok. */
-fun sutunSayisi(c: Context, hucreDp: Int): Int {
+/** Ekran genişliğine göre sütun sayısı: telefonda 3, yatayda/tablette daha çok. */
+fun sutunSayisi(c: Context, hucreDp: Int = 125): Int {
     val dp = c.resources.configuration.screenWidthDp
-    return maxOf(4, dp / hucreDp)
+    return maxOf(3, dp / hucreDp)
 }
 
-/** Izgaranın satırı: ay başlığı ya da fotoğraf. */
+/** Izgaranın satırı: gün başlığı ya da fotoğraf. */
 sealed class Satir {
     abstract val anahtar: Long
-    data class Baslik(val metin: String, val ay: Int) : Satir() {
-        override val anahtar get() = -ay.toLong() - 1
+    data class Baslik(val metin: String, val gun: Int) : Satir() {
+        override val anahtar get() = -gun.toLong() - 1
     }
     data class Oge(val m: Medya, val sira: Int) : Satir() {
         override val anahtar get() = if (m.video) -(m.id shl 1) - 1_000_000_000L else m.id shl 1
@@ -45,7 +45,7 @@ sealed class Satir {
 }
 
 /**
- * Fotoğraf ızgarası; aylara göre başlıklı. Değişiklikler DiffUtil ile arka planda
+ * Fotoğraf ızgarası; günlere göre başlıklı (Bugün, Dün, 21 Kasım). Değişiklikler DiffUtil ile arka planda
  * hesaplanır, yeni fotoğraf gelince liste titremez ve kaydırma yeri korunur.
  */
 class IzgaraAdapter(
@@ -61,11 +61,12 @@ class IzgaraAdapter(
 
     fun ayarla(medyalar: List<Medya>, basliklar: Boolean = true, bitti: (() -> Unit)? = null) {
         val yeni = ArrayList<Satir>(medyalar.size + 24)
-        var sonAy = Int.MIN_VALUE
+        var sonGun = Int.MIN_VALUE
+        val simdi = System.currentTimeMillis()
         medyalar.forEachIndexed { i, m ->
             if (basliklar) {
-                val ay = Metinler.ayAnahtari(m.tarih)
-                if (ay != sonAy) { yeni += Satir.Baslik(Metinler.ayYil(m.tarih), ay); sonAy = ay }
+                val gun = Metinler.gunAnahtari(m.tarih)
+                if (gun != sonGun) { yeni += Satir.Baslik(Metinler.gunBaslik(activity, m.tarih, simdi), gun); sonGun = gun }
             }
             yeni += Satir.Oge(m, i)
         }
@@ -74,6 +75,7 @@ class IzgaraAdapter(
 
     fun yerlestir(liste: RecyclerView, sutun: Int) {
         pikselBoyu = (activity.resources.displayMetrics.widthPixels / sutun).coerceIn(96, 512)
+        liste.setPadding(0, 0, 0, liste.paddingBottom)
         val yonetici = GridLayoutManager(activity, sutun)
         yonetici.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int) =
@@ -129,6 +131,8 @@ class AlbumAdapter(private val activity: Activity) : ListAdapter<Album, Recycler
 
     fun yerlestir(liste: RecyclerView, sutun: Int) {
         pikselBoyu = (activity.resources.displayMetrics.widthPixels / sutun).coerceIn(128, 640)
+        val pay = (11 * activity.resources.displayMetrics.density).toInt()
+        liste.setPadding(pay, 0, pay, liste.paddingBottom)
         liste.layoutManager = GridLayoutManager(activity, sutun)
         liste.adapter = this
     }
@@ -136,7 +140,7 @@ class AlbumAdapter(private val activity: Activity) : ListAdapter<Album, Recycler
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
         // Kapak köşeleri yuvarlak: çerçevenin zemini kadar kırp.
-        (v.findViewById<View>(R.id.albumKapak).parent as View).clipToOutline = true
+        v.findViewById<View>(R.id.albumCerceve).clipToOutline = true
         return object : RecyclerView.ViewHolder(v) {}
     }
 
@@ -146,9 +150,10 @@ class AlbumAdapter(private val activity: Activity) : ListAdapter<Album, Recycler
         KucukResimler.yukle(activity, a.kapak, v.findViewById(R.id.albumKapak), pikselBoyu)
         v.findViewById<TextView>(R.id.albumAd).text = a.ad
         val adet = activity.resources.getQuantityString(R.plurals.oge_sayisi, a.adet, a.adet)
-        v.findViewById<TextView>(R.id.albumAdet).text = adet
-        v.contentDescription = a.ad + ", " + adet
-        v.setOnClickListener {
+        v.findViewById<TextView>(R.id.albumAdet).text = a.adet.toString()
+        val kart = v.findViewById<View>(R.id.albumKart)
+        kart.contentDescription = a.ad + ", " + adet
+        kart.setOnClickListener {
             activity.startActivity(
                 Intent(activity, AlbumActivity::class.java)
                     .putExtra(AlbumActivity.EK_ID, a.id)

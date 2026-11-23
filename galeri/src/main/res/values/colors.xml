@@ -7,4 +7,8 @@
     <color name="izleyici_metin">#FFFFFF</color>
     <color name="izleyici_cubuk">#99000000</color>
     <color name="kare_bos">#14808080</color>
+    <!-- Yüzen alt gezinme hapı ve seçili sekmenin dairesi -->
+    <color name="nav_zemin">#F2ECEAE6</color>
+    <color name="nav_secili">#FFFFFFFF</color>
+    <color name="nav_ikon">#171614</color>
 </resources>
