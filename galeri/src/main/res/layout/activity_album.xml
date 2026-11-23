@@ -65,6 +65,13 @@
             android:paddingBottom="24dp"
             android:scrollbars="vertical" />
 
+        <ProgressBar
+            android:id="@+id/yukleniyor"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
         <include
             android:id="@+id/bosDurum"
             layout="@layout/bos_durum"

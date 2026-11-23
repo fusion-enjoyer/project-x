@@ -5,29 +5,10 @@
     android:layout_height="match_parent"
     android:background="@color/izleyici_zemin">
 
-    <com.ekosistem.galeri.ZoomGorunumu
-        android:id="@+id/resim"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/sayfalar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:contentDescription="@string/fotograf" />
-
-    <ImageButton
-        android:id="@+id/btnOynat"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_gravity="center"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/oynat"
-        android:src="@drawable/ic_oynat"
-        android:visibility="gone" />
-
-    <ProgressBar
-        android:id="@+id/yukleniyor"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_gravity="center"
-        android:indeterminateTint="@color/izleyici_metin"
-        android:visibility="gone" />
+        android:layout_height="match_parent" />
 
     <LinearLayout
         android:id="@+id/ustCubuk"

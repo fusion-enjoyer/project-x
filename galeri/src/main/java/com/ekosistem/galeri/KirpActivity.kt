@@ -80,7 +80,7 @@ class KirpActivity : AppCompatActivity() {
         yurutucu.execute {
             val b = runCatching { Cozucu.tamResim(this, uri, yon, hedef) }.getOrNull()
             runOnUiThread {
-                if (isDestroyed) { b?.recycle(); return@runOnUiThread }
+                if (isDestroyed) return@runOnUiThread
                 yukleniyor.visibility = View.GONE
                 if (b == null) {
                     Toast.makeText(this, R.string.acilamadi, Toast.LENGTH_SHORT).show()
@@ -101,14 +101,12 @@ class KirpActivity : AppCompatActivity() {
 
     private fun onizle() {
         val t = temel ?: return
-        val eski = gosterilen
         gosterilen = if (aci == 0) t else {
             val m = android.graphics.Matrix().apply { postRotate(aci.toFloat()) }
             Bitmap.createBitmap(t, 0, 0, t.width, t.height, m, true)
         }
         kirpma.oran = oranlar[secilenOran].deger
         kirpma.resim(gosterilen)
-        if (eski != null && eski !== t && eski !== gosterilen) eski.recycle()
     }
 
     private fun oranlariKur() {

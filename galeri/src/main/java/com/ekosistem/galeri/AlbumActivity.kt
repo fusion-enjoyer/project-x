@@ -4,49 +4,47 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.ekosistem.tasarim.BosDurum
-import java.util.concurrent.Executors
 
 /** Bir klasörün fotoğraf ve videoları. */
 class AlbumActivity : AppCompatActivity() {
 
-    private val yurutucu = Executors.newSingleThreadExecutor()
+    private lateinit var vm: MedyaViewModel
     private lateinit var izgara: IzgaraAdapter
     private val albumId by lazy { intent.getStringExtra(EK_ID).orEmpty() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_album)
+        vm = ViewModelProvider(this)[MedyaViewModel::class.java]
         findViewById<View>(R.id.btnGeri).setOnClickListener { finish() }
         findViewById<TextView>(R.id.baslik).text = intent.getStringExtra(EK_AD).orEmpty()
+        val liste = findViewById<RecyclerView>(R.id.liste)
+        val bos = findViewById<View>(R.id.bosDurum)
+        val yukleniyor = findViewById<View>(R.id.yukleniyor)
         izgara = IzgaraAdapter(this) { Kaynak.Klasor(albumId) }
-        izgara.yerlestir(findViewById(R.id.liste), maxOf(4, sutunSayisi(this, 100)))
+        izgara.yerlestir(liste, sutunSayisi(this, 100))
+        vm.durum.observe(this) { d ->
+            yukleniyor.visibility = if (d is MedyaDurumu.Yukleniyor) View.VISIBLE else View.GONE
+            val medyalar = (d as? MedyaDurumu.Hazir)?.medyalar ?: emptyList()
+            if (d is MedyaDurumu.Hazir && medyalar.isEmpty() || d is MedyaDurumu.IzinYok) {
+                liste.visibility = View.GONE
+                BosDurum.goster(bos, R.drawable.ic_klasor, getString(R.string.album_bos), getString(R.string.album_bos_aciklama))
+            } else {
+                liste.visibility = View.VISIBLE
+                bos.visibility = View.GONE
+            }
+            findViewById<TextView>(R.id.altBaslik).text =
+                if (d is MedyaDurumu.Hazir) resources.getQuantityString(R.plurals.oge_sayisi, medyalar.size, medyalar.size) else ""
+            izgara.ayarla(medyalar)
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        yurutucu.execute {
-            val liste = if (Izin.okunabilir(this)) MedyaDeposu.kaynaktan(this, Kaynak.Klasor(albumId)) else emptyList()
-            runOnUiThread {
-                if (isDestroyed) return@runOnUiThread
-                val r = findViewById<RecyclerView>(R.id.liste)
-                if (liste.isEmpty()) {
-                    r.visibility = View.GONE
-                    BosDurum.goster(findViewById(R.id.bosDurum), R.drawable.ic_klasor, getString(R.string.album_bos), getString(R.string.album_bos_aciklama))
-                } else {
-                    r.visibility = View.VISIBLE
-                    findViewById<View>(R.id.bosDurum).visibility = View.GONE
-                }
-                findViewById<TextView>(R.id.altBaslik).text = resources.getQuantityString(R.plurals.oge_sayisi, liste.size, liste.size)
-                izgara.ayarla(liste)
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        yurutucu.shutdown()
-        super.onDestroy()
+        vm.yukle(Kaynak.Klasor(albumId))
     }
 
     companion object {

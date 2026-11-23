@@ -87,6 +87,7 @@ object Arama {
     fun ara(sorgu: String, medyalar: List<Medya>, dilim: TimeZone = TimeZone.getDefault()): List<Medya> {
         val k = kelimeler(sorgu)
         if (k.isEmpty()) return emptyList()
-        return medyalar.filter { eslesir(k, aramaMetni(it, dilim)) }
+        val varsayilan = dilim == TimeZone.getDefault()
+        return medyalar.filter { eslesir(k, if (varsayilan) it.aramaMetni else aramaMetni(it, dilim)) }
     }
 }

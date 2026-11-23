@@ -10,20 +10,16 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.appcompat.widget.AppCompatImageView
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
 
 /**
  * Yakınlaştırılabilir resim: iki parmakla büyüt, çift dokunuşla 1×/2,5×,
- * büyükken sürükle. Büyütülmemişken yatay fırlatma bir sonraki/önceki
- * resme geçer ([gecis]); tek dokunuş çubukları açıp kapatır ([dokunus]).
+ * büyükken sürükle. Büyütülmemişken yatay sürükleme ViewPager2'ye kalır
+ * (sayfa geçişi); tek dokunuş çubukları açıp kapatır ([dokunus]).
  */
 class ZoomGorunumu @JvmOverloads constructor(c: Context, a: AttributeSet? = null) : AppCompatImageView(c, a) {
 
     var dokunus: (() -> Unit)? = null
-    /** +1 sonraki, -1 önceki. */
-    var gecis: ((Int) -> Unit)? = null
 
     private val matris = Matrix()
     private var temelOlcek = 1f
@@ -118,33 +114,32 @@ class ZoomGorunumu @JvmOverloads constructor(c: Context, a: AttributeSet? = null
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
             if (!buyutulmus) return false
+            // Büyütülmüş resim kenarına dayandıysa yatay sürükleme sonraki sayfaya geçsin.
+            val r = RectF(0f, 0f, bmpG.toFloat(), bmpY.toFloat())
+            matris.mapRect(r)
+            val sagda = r.right <= width + 1f
+            val solda = r.left >= -1f
+            if (kotlin.math.abs(dx) > kotlin.math.abs(dy) && ((dx > 0 && sagda) || (dx < 0 && solda))) {
+                birak = true
+                return false
+            }
             matris.postTranslate(-dx, -dy)
             sinirla()
             return true
         }
-
-        override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-            if (buyutulmus || e1 == null) return false
-            val ddx = e2.x - e1.x
-            val ddy = e2.y - e1.y
-            if (abs(ddx) > 48 * d && abs(ddx) > abs(ddy) * 1.5f && abs(vx) > 400 * d) {
-                gecis?.invoke(if (ddx < 0) +1 else -1)
-                return true
-            }
-            return false
-        }
     })
 
+    /** Bu dokunuşta sayfa kaydırması ViewPager2'ye bırakıldı mı. */
+    private var birak = false
+
     override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (e.actionMasked == MotionEvent.ACTION_DOWN) birak = false
         olcekAlgilayici.onTouchEvent(e)
         if (!olcekAlgilayici.isInProgress) hareketAlgilayici.onTouchEvent(e)
         // Büyütülmüşken üstteki görünümler dokunuşu kapmasın.
-        parent?.requestDisallowInterceptTouchEvent(buyutulmus || e.pointerCount > 1)
+        parent?.requestDisallowInterceptTouchEvent((buyutulmus && !birak) || e.pointerCount > 1)
         return true
     }
 
     override fun performClick(): Boolean = super.performClick()
-
-    /** Kaydırma sırasında az kalan kaydırma payı (test ve erişilebilirlik için). */
-    fun olcekOrani(): Float = if (temelOlcek == 0f) 1f else max(1f, olcek / temelOlcek)
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Görüntüleyicinin bir sayfası: yakınlaştırılabilir resim, video ise oynat düğmesi. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/izleyici_zemin">
+
+    <com.ekosistem.galeri.ZoomGorunumu
+        android:id="@+id/resim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:id="@+id/yukleniyor"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/izleyici_metin"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/btnOynat"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/oynat"
+        android:src="@drawable/ic_oynat"
+        android:visibility="gone" />
+</FrameLayout>

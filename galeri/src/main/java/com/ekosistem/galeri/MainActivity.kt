@@ -9,66 +9,90 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
+import android.transition.ChangeBounds
+import android.transition.Fade
+import android.transition.TransitionManager
+import android.transition.TransitionSet
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.ekosistem.tasarim.BosDurum
 import com.ekosistem.tasarim.Tasarim
 import com.ekosistem.tasarim.ipucuVer
-import java.util.concurrent.Executors
 import com.ekosistem.tasarim.R as TR
 
-/** Ana ekran: bütün fotoğraflar (aylara göre) ya da albümler. */
+/**
+ * Ana ekran: bütün fotoğraflar (aylara göre) ya da albümler. Altta ailenin
+ * yüzen kapsül gezinmesi (Saat, Takvim ile aynı), sağında vurgulu kamera düğmesi.
+ */
 class MainActivity : AppCompatActivity() {
 
-    private val yurutucu = Executors.newSingleThreadExecutor()
     private val isleyici = Handler(Looper.getMainLooper())
+    private lateinit var vm: MedyaViewModel
     private lateinit var liste: RecyclerView
     private lateinit var bosDurum: View
+    private lateinit var yukleniyor: View
     private lateinit var izgara: IzgaraAdapter
     private lateinit var albumAdapter: AlbumAdapter
-    private var albumSekmesi = false
-    private var nesil = 0
-    private var degisti = false
+    private var sekme = SEKME_FOTOGRAFLAR
+    private var soruldu = false
+    private val vurgu by lazy { Tasarim.vurgu(this) }
+
+    /** Albümler sekmesinde geri, uygulamadan çıkmaz; Fotoğraflar'a döner. */
+    private val geriSekme = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = sekmeyeGec(SEKME_FOTOGRAFLAR)
+    }
 
     // Kamera yeni fotoğraf çekince ya da kopya kaydedilince liste kendiliğinden yenilensin.
     private val gozlemci = object : ContentObserver(isleyici) {
         override fun onChange(selfChange: Boolean) {
             MedyaDeposu.gecersizKil()
-            degisti = true
             isleyici.removeCallbacks(yenile)
             isleyici.postDelayed(yenile, 600)
         }
     }
-    private val yenile = Runnable { if (!isFinishing) yukle() }
+    private val yenile = Runnable { if (!isFinishing) vm.yenile() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        vm = ViewModelProvider(this)[MedyaViewModel::class.java]
         liste = findViewById(R.id.liste)
         bosDurum = findViewById(R.id.bosDurum)
+        yukleniyor = findViewById(R.id.yukleniyor)
         izgara = IzgaraAdapter(this) { Kaynak.Hepsi }
         albumAdapter = AlbumAdapter(this)
-        albumSekmesi = savedInstanceState?.getBoolean("album") ?: false
+        sekme = savedInstanceState?.getInt(EK_SEKME) ?: SEKME_FOTOGRAFLAR
+        onBackPressedDispatcher.addCallback(this, geriSekme)
 
         val ara = findViewById<View>(R.id.btnAra)
         ara.setOnClickListener { startActivity(Intent(this, AramaActivity::class.java)) }
-        ipucuVer(ara)
-        findViewById<View>(R.id.sekmeFotograflar).setOnClickListener { sekmeSec(false) }
-        findViewById<View>(R.id.sekmeAlbumler).setOnClickListener { sekmeSec(true) }
+        val kamera = findViewById<View>(R.id.btnKamera)
+        kamera.setOnClickListener { kameraAc() }
+        kamera.backgroundTintList = ColorStateList.valueOf(vurgu)
+        (kamera as ImageView).imageTintList = ColorStateList.valueOf(Tasarim.vurguUzeri(this))
+        ipucuVer(ara, kamera)
         findViewById<View>(R.id.kismiUyari).setOnClickListener { Izin.iste(this) }
-        sekmeBoya()
-        yerlestir()
 
+        sekmeleriKur()
+        yerlestir()
+        vm.durum.observe(this) { ciz(it) }
         if (!Izin.okunabilir(this)) Izin.iste(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean("album", albumSekmesi)
+        outState.putInt(EK_SEKME, sekme)
     }
 
     override fun onStart() {
@@ -77,7 +101,9 @@ class MainActivity : AppCompatActivity() {
             contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, gozlemci)
             contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, gozlemci)
         }
-        yukle()
+        findViewById<View>(R.id.kismiUyari).visibility = if (Izin.kismi(this)) View.VISIBLE else View.GONE
+        // İzin ayarlardan değişmiş olabilir; önbellek varsa ucuz.
+        vm.yukle(Kaynak.Hepsi, albumler = true)
     }
 
     override fun onStop() {
@@ -85,62 +111,154 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    private fun sekmeSec(album: Boolean) {
-        if (album == albumSekmesi) {
+    private fun ciz(d: MedyaDurumu) {
+        yukleniyor.visibility = if (d is MedyaDurumu.Yukleniyor) View.VISIBLE else View.GONE
+        when (d) {
+            MedyaDurumu.Yukleniyor -> {
+                liste.visibility = View.INVISIBLE
+                bosDurum.visibility = View.GONE
+            }
+            MedyaDurumu.IzinYok -> izinYok()
+            is MedyaDurumu.Hazir -> {
+                if (d.medyalar.isEmpty()) {
+                    liste.visibility = View.GONE
+                    BosDurum.goster(bosDurum, R.drawable.ic_foto, getString(R.string.bos_baslik), getString(R.string.bos_aciklama))
+                } else {
+                    bosDurum.visibility = View.GONE
+                    liste.visibility = View.VISIBLE
+                }
+                izgara.ayarla(d.medyalar)
+                albumAdapter.ayarla(d.albumler)
+            }
+        }
+    }
+
+    // --- Kapsül gezinme -------------------------------------------------------
+
+    private class Hap(val no: Int, val kutu: LinearLayout, val ikon: ImageView, val yazi: TextView)
+
+    private val haplar = ArrayList<Hap>()
+
+    private fun sekmeleriKur() {
+        val kutu = findViewById<LinearLayout>(R.id.sekmeler)
+        val d = resources.displayMetrics.density
+        val sekmeler = listOf(
+            Triple(SEKME_FOTOGRAFLAR, R.drawable.ic_foto, R.string.fotograflar),
+            Triple(SEKME_ALBUMLER, R.drawable.ic_klasor, R.string.albumler)
+        )
+        for ((no, ikon, ad) in sekmeler) {
+            val kapsayici = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                contentDescription = getString(ad)
+                setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
+                setBackgroundResource(R.drawable.bg_sekme)
+                setOnClickListener { sekmeyeGec(no) }
+            }
+            val simge = ImageView(this).apply {
+                setImageResource(ikon)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+            kapsayici.addView(simge, LinearLayout.LayoutParams((22 * d).toInt(), (22 * d).toInt()))
+            val yazi = TextView(this).apply {
+                text = getString(ad)
+                textSize = 14f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(vurgu)
+                maxLines = 1
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+            kapsayici.addView(yazi, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { leftMargin = (6 * d).toInt() })
+            kutu.addView(kapsayici, LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f))
+            haplar.add(Hap(no, kapsayici, simge, yazi))
+            ipucuVer(kapsayici)
+        }
+        sekmeDurumunuGuncelle(animasyonlu = false)
+    }
+
+    private fun sekmeyeGec(yeni: Int) {
+        if (yeni == sekme) {
+            // Seçili sekmeye yeniden dokunmak başa kaydırır.
             liste.smoothScrollToPosition(0)
             return
         }
-        albumSekmesi = album
-        sekmeBoya()
+        sekme = yeni
+        sekmeDurumunuGuncelle(animasyonlu = true)
         yerlestir()
-        yukle()
     }
 
-    private fun sekmeBoya() {
-        val vurgu = Tasarim.vurgu(this)
-        for ((id, secili) in listOf(R.id.sekmeFotograflar to !albumSekmesi, R.id.sekmeAlbumler to albumSekmesi)) {
-            val t = findViewById<TextView>(id)
-            t.isSelected = secili
-            t.backgroundTintList = ColorStateList.valueOf(if (secili) vurgu else ContextCompat.getColor(this, TR.color.kart))
-            t.setTextColor(if (secili) Tasarim.vurguUzeri(this) else ContextCompat.getColor(this, TR.color.metin))
+    /**
+     * Seçili sekme hap olur (simge + ad), diğerleri yalnız simge. Yer değişimi,
+     * hap rengi ve simge renkleri [animasyonlu] ise yumuşak geçişle olur.
+     */
+    private fun sekmeDurumunuGuncelle(animasyonlu: Boolean) {
+        geriSekme.isEnabled = sekme != SEKME_FOTOGRAFLAR
+        findViewById<TextView>(R.id.baslik).setText(if (sekme == SEKME_ALBUMLER) R.string.albumler else R.string.fotograflar)
+        val kutu = findViewById<LinearLayout>(R.id.sekmeler)
+        val d = resources.displayMetrics.density
+        val pasif = ContextCompat.getColor(this, TR.color.metin_ikincil)
+        val pastel = Tasarim.pastel(vurgu)
+        if (animasyonlu) {
+            val gecis = TransitionSet().apply {
+                addTransition(ChangeBounds())
+                addTransition(Fade())
+                duration = 260
+                interpolator = android.view.animation.DecelerateInterpolator(1.4f)
+            }
+            TransitionManager.beginDelayedTransition(kutu, gecis)
+        }
+        for (h in haplar) {
+            val secili = h.no == sekme
+            h.kutu.isSelected = secili
+            h.yazi.visibility = if (secili) View.VISIBLE else View.GONE
+            h.kutu.layoutParams = if (secili) {
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (44 * d).toInt())
+            } else {
+                LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f)
+            }
+            val hedefHap = if (secili) pastel else (pastel and 0x00FFFFFF)
+            val hedefSimge = if (secili) vurgu else pasif
+            val eskiHap = h.kutu.backgroundTintList?.defaultColor ?: (pastel and 0x00FFFFFF)
+            val eskiSimge = h.ikon.imageTintList?.defaultColor ?: hedefSimge
+            if (animasyonlu) {
+                android.animation.ValueAnimator.ofObject(android.animation.ArgbEvaluator(), eskiHap, hedefHap).apply {
+                    duration = 260
+                    addUpdateListener { h.kutu.backgroundTintList = ColorStateList.valueOf(it.animatedValue as Int) }
+                    start()
+                }
+                android.animation.ValueAnimator.ofObject(android.animation.ArgbEvaluator(), eskiSimge, hedefSimge).apply {
+                    duration = 260
+                    addUpdateListener { h.ikon.imageTintList = ColorStateList.valueOf(it.animatedValue as Int) }
+                    start()
+                }
+            } else {
+                h.kutu.backgroundTintList = ColorStateList.valueOf(hedefHap)
+                h.ikon.imageTintList = ColorStateList.valueOf(hedefSimge)
+            }
         }
     }
 
     private fun yerlestir() {
-        if (albumSekmesi) albumAdapter.yerlestir(liste, maxOf(2, resources.configuration.screenWidthDp / 180))
-        else izgara.yerlestir(liste, maxOf(4, sutunSayisi(this, 100)))
+        if (sekme == SEKME_ALBUMLER) albumAdapter.yerlestir(liste, maxOf(2, resources.configuration.screenWidthDp / 180))
+        else izgara.yerlestir(liste, sutunSayisi(this, 100))
     }
 
-    private fun yukle() {
-        findViewById<View>(R.id.kismiUyari).visibility = if (Izin.kismi(this)) View.VISIBLE else View.GONE
-        if (!Izin.okunabilir(this)) {
-            izinYok()
-            return
-        }
-        val n = ++nesil
-        val taze = degisti
-        degisti = false
-        yurutucu.execute {
-            val hepsi = if (taze) MedyaDeposu.hepsi(this) else MedyaDeposu.onbellek ?: MedyaDeposu.hepsi(this)
-            val albumler = if (albumSekmesi) Albumler.kur(hepsi) else emptyList()
-            runOnUiThread {
-                if (n != nesil || isDestroyed) return@runOnUiThread
-                if (hepsi.isEmpty()) {
-                    liste.visibility = View.GONE
-                    BosDurum.goster(bosDurum, R.drawable.ic_foto, getString(R.string.bos_baslik), getString(R.string.bos_aciklama))
-                    return@runOnUiThread
-                }
-                bosDurum.visibility = View.GONE
-                liste.visibility = View.VISIBLE
-                if (albumSekmesi) albumAdapter.ayarla(albumler) else izgara.ayarla(hepsi)
-            }
+    // --- Eylemler -------------------------------------------------------------
+
+    private fun kameraAc() {
+        val niyet = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+        runCatching { startActivity(niyet) }.onFailure {
+            Toast.makeText(this, R.string.kamera_yok, Toast.LENGTH_LONG).show()
         }
     }
 
     private fun izinYok() {
         liste.visibility = View.GONE
         // Kullanıcı "bir daha sorma" dediyse sistem penceresi açılmaz; ayarlara yönlendir.
-        val sorulabilir = Izin.istenecekler().any { ActivityCompat.shouldShowRequestPermissionRationale(this, it) } || !soruldu
+        val sorulabilir = !soruldu ||
+            Izin.istenecekler().any { ActivityCompat.shouldShowRequestPermissionRationale(this, it) }
         BosDurum.goster(
             bosDurum, R.drawable.ic_kilit, getString(R.string.izin_baslik), getString(R.string.izin_aciklama),
             if (sorulabilir) getString(R.string.izin_ver) to { Izin.iste(this) }
@@ -153,19 +271,22 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private var soruldu = false
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != Izin.ISTEK) return
         soruldu = true
-        degisti = true
-        yukle()
+        findViewById<View>(R.id.kismiUyari).visibility = if (Izin.kismi(this)) View.VISIBLE else View.GONE
+        vm.yukle(Kaynak.Hepsi, albumler = true, taze = true)
     }
 
     override fun onDestroy() {
         isleyici.removeCallbacks(yenile)
-        yurutucu.shutdown()
         super.onDestroy()
+    }
+
+    companion object {
+        const val SEKME_FOTOGRAFLAR = 0
+        const val SEKME_ALBUMLER = 1
+        private const val EK_SEKME = "sekme"
     }
 }

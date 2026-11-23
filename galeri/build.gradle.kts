@@ -80,6 +80,11 @@ dependencies {
     implementation(project(":tasarim"))
     // Binlerce küçük resimli ızgara için geri dönüştürülen liste şart.
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    // Görüntüleyicide parmakla sürüklenen sayfalar.
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+    // Ekran durumu döndürmede kaybolmasın (ViewModel + LiveData); AppCompat'ın getirdiği sürüm.
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-livedata-core:2.6.1")
     // Başka uygulamadan gelen resimlerin EXIF yönü (eski sürümlerde de akıştan okur).
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 

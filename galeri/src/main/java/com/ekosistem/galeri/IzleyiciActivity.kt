@@ -4,8 +4,11 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ProgressBar
+import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,47 +16,48 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.ekosistem.tasarim.AltSayfa
 import java.util.concurrent.Executors
 
 /**
- * Tam ekran görüntüleyici. Liste [Kaynak]'tan kurulur (hepsi, albüm, arama sonucu);
- * başka uygulamadan "Galeri ile aç" ile gelince tek resim gösterilir.
+ * Tam ekran görüntüleyici. Sayfalar parmakla sürüklenir (ViewPager2); resim
+ * yakınlaştırılmışsa sürükleme resmi gezdirir, kenara gelince sayfa geçer.
+ * Liste [Kaynak]'tan kurulur (hepsi, albüm, arama sonucu); başka uygulamadan
+ * "Galeri ile aç" ile gelince tek sayfa.
  *
- * Döndür: önizleme hemen döner, "Kopya kaydet" ile yeni dosya yazılır; orijinal aynen kalır.
+ * Döndür: önizleme döner, "Kopya kaydet" ile yeni dosya yazılır; orijinal aynen kalır.
  */
 class IzleyiciActivity : AppCompatActivity() {
 
-    private val yurutucu = Executors.newSingleThreadExecutor()
-    private lateinit var resim: ZoomGorunumu
+    /** Bir sayfa: medya deposundaki öge ya da dışarıdan gelen adres. */
+    private data class Sayfa(val m: Medya?, val uri: Uri, val yon: Int) {
+        val video get() = m?.video == true
+    }
+
+    private val yurutucu = Executors.newFixedThreadPool(2)
+    private val isleyici = Handler(Looper.getMainLooper())
+    private lateinit var sayfalar: ViewPager2
     private lateinit var ustCubuk: View
     private lateinit var altCubuk: View
     private lateinit var kaydet: View
-    private lateinit var yukleniyor: ProgressBar
-    private lateinit var oynat: View
+    private val adapter = SayfaAdapter()
 
-    private var liste: List<Medya> = emptyList()
+    private var liste: List<Sayfa> = emptyList()
     private var sira = 0
-    /** Dışarıdan açılan tek resim (MediaStore'da olmayabilir). */
-    private var disUri: Uri? = null
-    private var disYon = 0
+    /** Yalnız [sira]daki sayfaya uygulanan kullanıcı döndürmesi. */
     private var ekAci = 0
     private var cubuklarAcik = true
-    private var nesil = 0
-    private var gosterilen: Bitmap? = null
-    /** Gösterilen resmi biz mi çözdük (bırakabiliriz) yoksa küçük resim önbelleğinden mi geldi. */
-    private var gosterilenBizim = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_izleyici)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        resim = findViewById(R.id.resim)
+        sayfalar = findViewById(R.id.sayfalar)
         ustCubuk = findViewById(R.id.ustCubuk)
         altCubuk = findViewById(R.id.altCubuk)
         kaydet = findViewById(R.id.btnKaydet)
-        yukleniyor = findViewById(R.id.yukleniyor)
-        oynat = findViewById(R.id.btnOynat)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.kok)) { _, kenar ->
             val c = kenar.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
@@ -62,105 +66,134 @@ class IzleyiciActivity : AppCompatActivity() {
             kenar
         }
 
-        resim.dokunus = { cubuklariCevir() }
-        resim.gecis = { yon -> git(sira + yon, yon) }
+        sayfalar.adapter = adapter
+        sayfalar.offscreenPageLimit = 1
+        sayfalar.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                if (position == sira) return
+                val eski = sira
+                sira = position
+                // Döndürülmüş ama kaydedilmemiş sayfadan çıkınca önizleme geri döner.
+                if (ekAci != 0) { ekAci = 0; adapter.notifyItemChanged(eski) }
+                cubuklariYaz()
+            }
+        })
+
         findViewById<View>(R.id.btnGeri).setOnClickListener { finish() }
         findViewById<View>(R.id.btnPaylas).setOnClickListener { paylas() }
         findViewById<View>(R.id.btnDondur).setOnClickListener { dondur() }
         findViewById<View>(R.id.btnKirp).setOnClickListener { kirp() }
         findViewById<View>(R.id.btnBilgi).setOnClickListener { bilgi() }
         kaydet.setOnClickListener { kopyaKaydet() }
-        oynat.setOnClickListener { videoOynat() }
 
         ekAci = savedInstanceState?.getInt("aci") ?: 0
         val gelen = intent.data
         if (intent.action == Intent.ACTION_VIEW && gelen != null) {
-            disUri = gelen
             yurutucu.execute {
-                disYon = Cozucu.exifYonu(this, gelen)
-                runOnUiThread { goster() }
+                val yon = Cozucu.exifYonu(this, gelen)
+                runOnUiThread { listeyiKur(listOf(Sayfa(null, gelen, yon)), 0) }
             }
             return
         }
-        sira = savedInstanceState?.getInt("sira") ?: intent.getIntExtra(EK_SIRA, 0)
+        val ilkSira = savedInstanceState?.getInt("sira") ?: intent.getIntExtra(EK_SIRA, 0)
         val id = savedInstanceState?.getLong("id") ?: intent.getLongExtra(EK_ID, -1)
         val kaynak = Kaynak.coz(intent.getStringExtra(EK_KAYNAK))
         yurutucu.execute {
-            val l = MedyaDeposu.kaynaktan(this, kaynak)
+            val l = MedyaDeposu.kaynaktan(this, kaynak).map { Sayfa(it, it.uri, it.yon) }
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
-                liste = l
+                if (l.isEmpty()) { finish(); return@runOnUiThread }
                 // Liste değiştiyse (yeni fotoğraf geldi) sıra kayar; kimlikten bul.
-                if (liste.getOrNull(sira)?.id != id) liste.indexOfFirst { it.id == id }.let { if (it >= 0) sira = it }
-                if (liste.isEmpty()) finish() else goster()
+                var s = ilkSira
+                if (l.getOrNull(s)?.m?.id != id) l.indexOfFirst { it.m?.id == id }.let { if (it >= 0) s = it }
+                listeyiKur(l, s.coerceIn(0, l.size - 1))
             }
         }
+    }
+
+    private fun listeyiKur(l: List<Sayfa>, s: Int) {
+        liste = l
+        sira = s
+        @Suppress("NotifyDataSetChanged")
+        adapter.notifyDataSetChanged()
+        sayfalar.setCurrentItem(s, false)
+        cubuklariYaz()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt("sira", sira)
         outState.putInt("aci", ekAci)
-        simdiki()?.let { outState.putLong("id", it.id) }
+        simdiki()?.m?.let { outState.putLong("id", it.id) }
     }
 
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
-    private fun simdiki(): Medya? = liste.getOrNull(sira)
+    private fun simdiki(): Sayfa? = liste.getOrNull(sira)
 
-    private fun git(yeni: Int, yon: Int) {
-        if (disUri != null || yeni !in liste.indices) return
-        sira = yeni
-        ekAci = 0
-        // Kısa kayma: hangi yöne geçildiği hissedilsin.
-        resim.translationX = yon * resim.width * 0.15f
-        resim.alpha = 0.4f
-        resim.animate().translationX(0f).alpha(1f).setDuration(160).start()
-        goster()
-    }
-
-    private fun goster() {
-        val m = simdiki()
-        val uri = m?.uri ?: disUri ?: return
-        val video = m?.video == true
-        val yon = m?.yon ?: disYon
+    private fun cubuklariYaz() {
+        val s = simdiki() ?: return
         kaydet.visibility = if (ekAci != 0) View.VISIBLE else View.GONE
-        oynat.visibility = if (video) View.VISIBLE else View.GONE
-        findViewById<View>(R.id.btnDondur).visibility = if (video) View.GONE else View.VISIBLE
-        findViewById<View>(R.id.btnKirp).visibility = if (video) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.btnDondur).visibility = if (s.video) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.btnKirp).visibility = if (s.video) View.GONE else View.VISIBLE
         val baslik = findViewById<TextView>(R.id.izleyiciBaslik)
         val alt = findViewById<TextView>(R.id.izleyiciAlt)
+        val m = s.m
         if (m != null) {
             baslik.text = Metinler.tamTarih(m.tarih)
             alt.text = getString(R.string.sira_n, sira + 1, liste.size) + " · " + m.albumAdi
         } else {
-            baslik.text = uri.lastPathSegment.orEmpty()
+            baslik.text = s.uri.lastPathSegment.orEmpty()
             alt.text = ""
         }
-        val n = ++nesil
-        yukleniyor.visibility = View.VISIBLE
-        val hedef = maxOf(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)
-        val aci = ekAci
-        yurutucu.execute {
-            val bmp = runCatching {
-                if (video && m != null) Cozucu.kucukResim(this, m, hedef / 2)
-                else Cozucu.tamResim(this, uri, yon, hedef, aci)
-            }.getOrNull()
-            runOnUiThread {
-                if (n != nesil || isDestroyed) { if (!video) bmp?.recycle(); return@runOnUiThread }
-                yukleniyor.visibility = View.GONE
-                val eski = gosterilen
-                val eskiBizim = gosterilenBizim
-                gosterilen = bmp
-                gosterilenBizim = !video
-                resim.setImageBitmap(bmp)
-                resim.contentDescription = getString(if (video) R.string.video else R.string.fotograf) + ", " + baslik.text
-                // Videonun küçük resmi ızgaranın önbelleğinde de duruyor; yalnız kendi çözdüğümüzü bırak.
-                if (eski != null && eski !== bmp && eskiBizim) eski.recycle()
-                if (bmp == null) Toast.makeText(this, R.string.acilamadi, Toast.LENGTH_SHORT).show()
+    }
+
+    // --- Sayfalar -------------------------------------------------------------
+
+    private inner class SayfaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        override fun getItemCount() = liste.size
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val v = LayoutInflater.from(parent.context).inflate(R.layout.item_sayfa, parent, false)
+            v.findViewById<ZoomGorunumu>(R.id.resim).dokunus = { cubuklariCevir() }
+            return object : RecyclerView.ViewHolder(v) {}
+        }
+
+        override fun onBindViewHolder(h: RecyclerView.ViewHolder, position: Int) {
+            val s = liste[position]
+            val v = h.itemView
+            val resim = v.findViewById<ZoomGorunumu>(R.id.resim)
+            val yukleniyor = v.findViewById<View>(R.id.yukleniyor)
+            val oynat = v.findViewById<View>(R.id.btnOynat)
+            oynat.visibility = if (s.video) View.VISIBLE else View.GONE
+            oynat.setOnClickListener { videoOynat(s) }
+            val aci = if (position == sira) ekAci else 0
+            val anahtar = "${s.uri}|$aci"
+            resim.tag = anahtar
+            resim.setImageBitmap(null)
+            resim.contentDescription = getString(if (s.video) R.string.video else R.string.fotograf) +
+                (s.m?.let { ", " + Metinler.tamTarih(it.tarih) } ?: "")
+            yukleniyor.visibility = View.VISIBLE
+            val hedef = maxOf(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)
+            yurutucu.execute {
+                if (resim.tag != anahtar) return@execute
+                val bmp: Bitmap? = runCatching {
+                    val m = s.m
+                    if (s.video && m != null) Cozucu.kucukResim(this@IzleyiciActivity, m, hedef / 2)
+                    else Cozucu.tamResim(this@IzleyiciActivity, s.uri, s.yon, hedef, aci)
+                }.getOrNull()
+                isleyici.post {
+                    if (resim.tag != anahtar || isDestroyed) return@post
+                    yukleniyor.visibility = View.GONE
+                    resim.setImageBitmap(bmp)
+                    if (bmp == null) Toast.makeText(this@IzleyiciActivity, R.string.acilamadi, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
+
+    // --- Eylemler -------------------------------------------------------------
 
     private fun cubuklariCevir() {
         cubuklarAcik = !cubuklarAcik
@@ -172,22 +205,23 @@ class IzleyiciActivity : AppCompatActivity() {
             k.hide(WindowInsetsCompat.Type.systemBars())
         }
         for (v in listOf(ustCubuk, altCubuk)) {
-            v.animate().alpha(if (cubuklarAcik) 1f else 0f).setDuration(150)
-                .withEndAction { v.visibility = if (cubuklarAcik) View.VISIBLE else View.INVISIBLE }.start()
+            v.animate().cancel()
             if (cubuklarAcik) v.visibility = View.VISIBLE
+            v.animate().alpha(if (cubuklarAcik) 1f else 0f).setDuration(150)
+                .withEndAction { if (!cubuklarAcik) v.visibility = View.INVISIBLE }.start()
         }
     }
 
     private fun paylas() {
-        val uri = simdiki()?.uri ?: disUri ?: return
-        val mime = simdiki()?.mime?.ifBlank { null } ?: "image/*"
-        val niyet = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri)
+        val s = simdiki() ?: return
+        val mime = s.m?.mime?.ifBlank { null } ?: contentResolver.getType(s.uri) ?: "image/*"
+        val niyet = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, s.uri)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         runCatching { startActivity(Intent.createChooser(niyet, getString(R.string.paylas))) }
     }
 
-    private fun videoOynat() {
-        val m = simdiki() ?: return
+    private fun videoOynat(s: Sayfa) {
+        val m = s.m ?: return
         // Galeri video oynatıcı taşımıyor (MVP); telefondaki oynatıcıya verilir.
         val niyet = Intent(Intent.ACTION_VIEW).setDataAndType(m.uri, m.mime.ifBlank { "video/*" })
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -198,44 +232,39 @@ class IzleyiciActivity : AppCompatActivity() {
 
     private fun dondur() {
         ekAci = Kirpma.aciDuzelt(ekAci + 90)
-        // Önizleme anında döner; kaydedilene kadar dosyaya bir şey olmaz.
-        gosterilen?.let {
-            val yeni = Cozucu.dondur(it, 90)
-            gosterilen = yeni
-            resim.setImageBitmap(yeni)
-        } ?: goster()
+        // Önizleme döner; kaydedilene kadar dosyaya bir şey olmaz.
+        adapter.notifyItemChanged(sira)
         kaydet.visibility = if (ekAci != 0) View.VISIBLE else View.GONE
     }
 
     private fun kirp() {
-        val m = simdiki()
-        val uri = m?.uri ?: disUri ?: return
+        val s = simdiki() ?: return
         startActivity(
             Intent(this, KirpActivity::class.java)
-                .setData(uri)
-                .putExtra(KirpActivity.EK_YON, m?.yon ?: disYon)
+                .setData(s.uri)
+                .putExtra(KirpActivity.EK_YON, s.yon)
                 .putExtra(KirpActivity.EK_ACI, ekAci)
-                .putExtra(KirpActivity.EK_AD, m?.ad ?: uri.lastPathSegment.orEmpty())
-                .putExtra(KirpActivity.EK_MIME, m?.mime ?: contentResolver.getType(uri).orEmpty())
-                .putExtra(KirpActivity.EK_TARIH, m?.tarih ?: System.currentTimeMillis())
+                .putExtra(KirpActivity.EK_AD, s.m?.ad ?: s.uri.lastPathSegment.orEmpty())
+                .putExtra(KirpActivity.EK_MIME, s.m?.mime ?: contentResolver.getType(s.uri).orEmpty())
+                .putExtra(KirpActivity.EK_TARIH, s.m?.tarih ?: System.currentTimeMillis())
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         )
     }
 
     private fun kopyaKaydet() {
-        val uri = simdiki()?.uri ?: disUri ?: return
+        val s = simdiki() ?: return
         if (!Izin.yazabilir(this)) {
             Izin.iste(this)
             return
         }
-        val m = simdiki()
-        val aci = Kirpma.aciDuzelt((m?.yon ?: disYon) + ekAci)
+        val aci = Kirpma.aciDuzelt(s.yon + ekAci)
         kaydet.isEnabled = false
         yurutucu.execute {
             val sonuc = runCatching {
                 Kaydedici.kaydet(
-                    this, uri, m?.ad ?: uri.lastPathSegment.orEmpty(), m?.mime ?: contentResolver.getType(uri).orEmpty(),
-                    m?.tarih ?: System.currentTimeMillis(), Kutu(0f, 0f, 1f, 1f), aci
+                    this, s.uri, s.m?.ad ?: s.uri.lastPathSegment.orEmpty(),
+                    s.m?.mime ?: contentResolver.getType(s.uri).orEmpty(),
+                    s.m?.tarih ?: System.currentTimeMillis(), Kutu(0f, 0f, 1f, 1f), aci
                 )
             }.getOrNull()
             runOnUiThread {
@@ -244,9 +273,9 @@ class IzleyiciActivity : AppCompatActivity() {
                 if (sonuc != null) {
                     MedyaDeposu.gecersizKil()
                     ekAci = 0
+                    adapter.notifyItemChanged(sira)
                     kaydet.visibility = View.GONE
                     Toast.makeText(this, getString(R.string.kopya_kaydedildi, "Pictures/" + Kaydedici.KLASOR), Toast.LENGTH_LONG).show()
-                    goster()
                 } else {
                     Toast.makeText(this, R.string.kaydedilemedi, Toast.LENGTH_LONG).show()
                 }
@@ -255,7 +284,8 @@ class IzleyiciActivity : AppCompatActivity() {
     }
 
     private fun bilgi() {
-        val m = simdiki()
+        val s = simdiki() ?: return
+        val m = s.m
         val satirlar = mutableListOf<String>()
         if (m != null) {
             satirlar += Metinler.tarihSaat(this, m.tarih)
@@ -269,13 +299,13 @@ class IzleyiciActivity : AppCompatActivity() {
             if (m.boyut > 0) satirlar += getString(R.string.bilgi_dosya, Metinler.boyut(this, m.boyut))
             if (m.video) satirlar += getString(R.string.bilgi_sure, Metinler.sure(m.sureMs))
         } else {
-            satirlar += disUri.toString()
+            satirlar += s.uri.toString()
         }
         AltSayfa(this).baslik(getString(R.string.bilgi)).mesaj(satirlar.joinToString("\n")).goster()
     }
 
     override fun onDestroy() {
-        yurutucu.shutdown()
+        yurutucu.shutdownNow()
         super.onDestroy()
     }
 

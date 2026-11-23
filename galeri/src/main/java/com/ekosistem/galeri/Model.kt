@@ -21,6 +21,9 @@ data class Medya(
 ) {
     /** content://media/… adresi; ilk kullanımda kurulur (testler Uri'siz çalışsın). */
     val uri: Uri by lazy { MedyaDeposu.adres(video, id) }
+
+    /** Aranacak metin; her harfte yeniden kurulmasın diye bir kez hesaplanır. */
+    val aramaMetni: String by lazy { Arama.aramaMetni(this) }
 }
 
 /** Telefondaki bir klasör (MediaStore "bucket"). */

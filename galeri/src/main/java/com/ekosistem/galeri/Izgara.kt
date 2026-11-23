@@ -10,7 +10,9 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 /** Genişliği kadar yüksek kare (ızgara hücresi). */
@@ -23,54 +25,67 @@ class KareCerceve @JvmOverloads constructor(c: Context, a: AttributeSet? = null)
 /** Ekran genişliğine göre sütun sayısı: telefonda 4, yatayda/tablette daha çok. */
 fun sutunSayisi(c: Context, hucreDp: Int): Int {
     val dp = c.resources.configuration.screenWidthDp
-    return maxOf(3, dp / hucreDp)
+    return maxOf(4, dp / hucreDp)
+}
+
+/** Izgaranın satırı: ay başlığı ya da fotoğraf. */
+sealed class Satir {
+    abstract val anahtar: Long
+    data class Baslik(val metin: String, val ay: Int) : Satir() {
+        override val anahtar get() = -ay.toLong() - 1
+    }
+    data class Oge(val m: Medya, val sira: Int) : Satir() {
+        override val anahtar get() = if (m.video) -(m.id shl 1) - 1_000_000_000L else m.id shl 1
+    }
+
+    object Fark : DiffUtil.ItemCallback<Satir>() {
+        override fun areItemsTheSame(a: Satir, b: Satir) = a.anahtar == b.anahtar
+        override fun areContentsTheSame(a: Satir, b: Satir) = a == b
+    }
 }
 
 /**
- * Fotoğraf ızgarası; aylara göre başlıklı. Dokununca görüntüleyici [kaynak]
- * listesinin o ögesiyle açılır.
+ * Fotoğraf ızgarası; aylara göre başlıklı. Değişiklikler DiffUtil ile arka planda
+ * hesaplanır, yeni fotoğraf gelince liste titremez ve kaydırma yeri korunur.
  */
 class IzgaraAdapter(
     private val activity: Activity,
     private val kaynak: () -> Kaynak
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+) : ListAdapter<Satir, RecyclerView.ViewHolder>(Satir.Fark) {
 
-    private sealed class Satir {
-        data class Baslik(val metin: String) : Satir()
-        data class Oge(val m: Medya, val sira: Int) : Satir()
-    }
-
-    private var satirlar: List<Satir> = emptyList()
     private var pikselBoyu = 256
 
-    fun ayarla(medyalar: List<Medya>, basliklar: Boolean = true) {
+    init {
+        setHasStableIds(true)
+    }
+
+    fun ayarla(medyalar: List<Medya>, basliklar: Boolean = true, bitti: (() -> Unit)? = null) {
         val yeni = ArrayList<Satir>(medyalar.size + 24)
         var sonAy = Int.MIN_VALUE
         medyalar.forEachIndexed { i, m ->
             if (basliklar) {
                 val ay = Metinler.ayAnahtari(m.tarih)
-                if (ay != sonAy) { yeni += Satir.Baslik(Metinler.ayYil(m.tarih)); sonAy = ay }
+                if (ay != sonAy) { yeni += Satir.Baslik(Metinler.ayYil(m.tarih), ay); sonAy = ay }
             }
             yeni += Satir.Oge(m, i)
         }
-        satirlar = yeni
-        @Suppress("NotifyDataSetChanged")
-        notifyDataSetChanged()
+        submitList(yeni) { bitti?.invoke() }
     }
 
     fun yerlestir(liste: RecyclerView, sutun: Int) {
         pikselBoyu = (activity.resources.displayMetrics.widthPixels / sutun).coerceIn(96, 512)
         val yonetici = GridLayoutManager(activity, sutun)
         yonetici.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-            override fun getSpanSize(position: Int) = if (satirlar.getOrNull(position) is Satir.Baslik) sutun else 1
+            override fun getSpanSize(position: Int) =
+                if (currentList.getOrNull(position) is Satir.Baslik) sutun else 1
         }
         liste.layoutManager = yonetici
         liste.adapter = this
     }
 
-    override fun getItemCount() = satirlar.size
+    override fun getItemId(position: Int) = getItem(position).anahtar
 
-    override fun getItemViewType(position: Int) = if (satirlar[position] is Satir.Baslik) 0 else 1
+    override fun getItemViewType(position: Int) = if (getItem(position) is Satir.Baslik) 0 else 1
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inf = LayoutInflater.from(parent.context)
@@ -79,7 +94,7 @@ class IzgaraAdapter(
     }
 
     override fun onBindViewHolder(h: RecyclerView.ViewHolder, position: Int) {
-        when (val s = satirlar[position]) {
+        when (val s = getItem(position)) {
             is Satir.Baslik -> (h.itemView as TextView).text = s.metin
             is Satir.Oge -> kareBagla(h.itemView, s.m) { izleyiciAc(activity, kaynak(), s.sira, s.m.id) }
         }
@@ -89,38 +104,34 @@ class IzgaraAdapter(
         val resim = v.findViewById<ImageView>(R.id.kareResim)
         KucukResimler.yukle(activity, m, resim, pikselBoyu)
         val sure = v.findViewById<TextView>(R.id.kareSure)
-        if (m.video) {
-            sure.visibility = View.VISIBLE
-            sure.text = Metinler.sure(m.sureMs)
-        } else {
-            sure.visibility = if (m.mime == "image/gif") View.VISIBLE else View.GONE
-            sure.text = "GIF"
+        when {
+            m.video -> { sure.visibility = View.VISIBLE; sure.text = Metinler.sure(m.sureMs) }
+            m.mime == "image/gif" -> { sure.visibility = View.VISIBLE; sure.text = "GIF" }
+            else -> sure.visibility = View.GONE
         }
-        v.contentDescription = (if (m.video) activity.getString(R.string.video) else activity.getString(R.string.fotograf)) +
+        v.contentDescription = activity.getString(if (m.video) R.string.video else R.string.fotograf) +
             ", " + Metinler.tamTarih(m.tarih)
         v.setOnClickListener { tikla() }
     }
 }
 
 /** Albüm listesi: kapak, ad, adet. */
-class AlbumAdapter(private val activity: Activity) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class AlbumAdapter(private val activity: Activity) : ListAdapter<Album, RecyclerView.ViewHolder>(Fark) {
 
-    private var albumler: List<Album> = emptyList()
+    private object Fark : DiffUtil.ItemCallback<Album>() {
+        override fun areItemsTheSame(a: Album, b: Album) = a.id == b.id
+        override fun areContentsTheSame(a: Album, b: Album) = a == b
+    }
+
     private var pikselBoyu = 384
 
-    fun ayarla(liste: List<Album>) {
-        albumler = liste
-        @Suppress("NotifyDataSetChanged")
-        notifyDataSetChanged()
-    }
+    fun ayarla(liste: List<Album>) = submitList(liste)
 
     fun yerlestir(liste: RecyclerView, sutun: Int) {
         pikselBoyu = (activity.resources.displayMetrics.widthPixels / sutun).coerceIn(128, 640)
         liste.layoutManager = GridLayoutManager(activity, sutun)
         liste.adapter = this
     }
-
-    override fun getItemCount() = albumler.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
@@ -130,11 +141,13 @@ class AlbumAdapter(private val activity: Activity) : RecyclerView.Adapter<Recycl
     }
 
     override fun onBindViewHolder(h: RecyclerView.ViewHolder, position: Int) {
-        val a = albumler[position]
+        val a = getItem(position)
         val v = h.itemView
         KucukResimler.yukle(activity, a.kapak, v.findViewById(R.id.albumKapak), pikselBoyu)
         v.findViewById<TextView>(R.id.albumAd).text = a.ad
-        v.findViewById<TextView>(R.id.albumAdet).text = activity.resources.getQuantityString(R.plurals.oge_sayisi, a.adet, a.adet)
+        val adet = activity.resources.getQuantityString(R.plurals.oge_sayisi, a.adet, a.adet)
+        v.findViewById<TextView>(R.id.albumAdet).text = adet
+        v.contentDescription = a.ad + ", " + adet
         v.setOnClickListener {
             activity.startActivity(
                 Intent(activity, AlbumActivity::class.java)

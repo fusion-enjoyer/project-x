@@ -60,4 +60,6 @@
     <string name="oran_3_4">3:4</string>
     <string name="oran_16_9">16:9</string>
     <string name="oran_9_16">9:16</string>
+    <string name="kamera_ac">Kamerayı aç</string>
+    <string name="kamera_yok">Bu telefonda kamera uygulaması bulunamadı.</string>
 </resources>
