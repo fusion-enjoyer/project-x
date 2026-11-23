@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zemin"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="20dp"
+        android:paddingTop="24dp"
+        android:paddingRight="12dp">
+
+        <TextView
+            android:id="@+id/baslik"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:accessibilityHeading="true"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/app_name"
+            android:textColor="@color/metin"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnAra"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_daire"
+            android:backgroundTint="@color/kart"
+            android:contentDescription="@string/ara"
+            android:src="@drawable/ic_ara"
+            app:tint="@color/metin" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/sekmeler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="20dp"
+        android:paddingTop="14dp"
+        android:paddingRight="20dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:id="@+id/sekmeFotograflar"
+            style="@style/GaleriCip"
+            android:text="@string/fotograflar" />
+
+        <TextView
+            android:id="@+id/sekmeAlbumler"
+            style="@style/GaleriCip"
+            android:layout_marginLeft="8dp"
+            android:text="@string/albumler" />
+    </LinearLayout>
+
+    <!-- Android 14+: kullanıcı yalnız bazı fotoğraflara izin verdiyse -->
+    <TextView
+        android:id="@+id/kismiUyari"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginRight="20dp"
+        android:background="@drawable/bg_kapak"
+        android:padding="14dp"
+        android:text="@string/kismi_erisim"
+        android:textColor="@color/metin"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/liste"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="24dp"
+            android:scrollbars="vertical" />
+
+        <include
+            android:id="@+id/bosDurum"
+            layout="@layout/bos_durum"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="64dp" />
+    </FrameLayout>
+</LinearLayout>

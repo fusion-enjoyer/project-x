@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ana ekran sekmesi: seçili olan vurgu renginde dolu (MainActivity.sekmeBoya). -->
+    <style name="GaleriCip">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:textColor">@color/metin</item>
+    </style>
+
+    <!-- Görüntüleyici ve kırpma ekranının alt çubuğundaki ikonlu düğme -->
+    <style name="IzleyiciDugme">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:drawablePadding">4dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/izleyici_metin</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:drawableTint">@color/izleyici_metin</item>
+    </style>
+</resources>

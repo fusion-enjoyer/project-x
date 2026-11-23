@@ -72,6 +72,8 @@ dependencies {
     implementation(project(":tasarim"))
     // Binlerce küçük resimli ızgara için geri dönüştürülen liste şart.
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    // Başka uygulamadan gelen resimlerin EXIF yönü (eski sürümlerde de akıştan okur).
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
     testImplementation("junit:junit:4.13.2")
 }

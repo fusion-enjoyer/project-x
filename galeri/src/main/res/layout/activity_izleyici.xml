@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/izleyici_zemin">
+
+    <com.ekosistem.galeri.ZoomGorunumu
+        android:id="@+id/resim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/fotograf" />
+
+    <ImageButton
+        android:id="@+id/btnOynat"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/oynat"
+        android:src="@drawable/ic_oynat"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/yukleniyor"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/izleyici_metin"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/ustCubuk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@color/izleyici_cubuk"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="8dp"
+        android:paddingRight="16dp">
+
+        <ImageButton
+            android:id="@+id/btnGeri"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/geri"
+            android:src="@drawable/ic_geri" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/izleyiciBaslik"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/izleyici_metin"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/izleyiciAlt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnKaydet"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_cip_secili"
+            android:gravity="center"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:text="@string/kopya_kaydet"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/altCubuk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/izleyici_cubuk"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btnPaylas"
+            style="@style/IzleyiciDugme"
+            android:drawableTop="@drawable/ic_paylas"
+            android:text="@string/paylas" />
+
+        <TextView
+            android:id="@+id/btnDondur"
+            style="@style/IzleyiciDugme"
+            android:drawableTop="@drawable/ic_dondur"
+            android:text="@string/dondur" />
+
+        <TextView
+            android:id="@+id/btnKirp"
+            style="@style/IzleyiciDugme"
+            android:drawableTop="@drawable/ic_kirp"
+            android:text="@string/kirp" />
+
+        <TextView
+            android:id="@+id/btnBilgi"
+            style="@style/IzleyiciDugme"
+            android:drawableTop="@drawable/ic_bilgi"
+            android:text="@string/bilgi" />
+    </LinearLayout>
+</FrameLayout>
