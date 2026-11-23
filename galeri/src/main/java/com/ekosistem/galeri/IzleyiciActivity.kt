@@ -9,7 +9,9 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.MediaController
 import android.widget.TextView
+import android.widget.VideoView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -49,6 +51,11 @@ class IzleyiciActivity : AppCompatActivity() {
     /** Yalnız [sira]daki sayfaya uygulanan kullanıcı döndürmesi. */
     private var ekAci = 0
     private var cubuklarAcik = true
+    /** Şu an oynayan video (sayfa değişince durur). */
+    private var oynayan: VideoView? = null
+    private var oynayanSira = -1
+    /** Konumdaki sayfanın görünümü: aşağı çekmeden önce büyütülmüş mü diye bakmak için. */
+    private val bagliSayfalar = HashMap<Int, View>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +73,26 @@ class IzleyiciActivity : AppCompatActivity() {
             kenar
         }
 
+        val kok = findViewById<View>(R.id.kok)
+        val kapatma = findViewById<KapatmaCercevesi>(R.id.kapatma)
+        kapatma.hedef = sayfalar
+        kapatma.izinVar = {
+            bagliSayfalar[sira]?.findViewById<ZoomGorunumu>(R.id.resim)?.buyutulmus != true
+        }
+        kapatma.ilerleme = { oran ->
+            kok.setBackgroundColor(((1f - oran) * 255).toInt().coerceIn(0, 255) shl 24)
+            if (cubuklarAcik) {
+                ustCubuk.alpha = 1f - oran
+                altCubuk.alpha = 1f - oran
+            }
+        }
+        kapatma.kapat = {
+            videoyuDurdur()
+            finish()
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
+
         sayfalar.adapter = adapter
         sayfalar.offscreenPageLimit = 1
         sayfalar.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
@@ -73,8 +100,10 @@ class IzleyiciActivity : AppCompatActivity() {
                 if (position == sira) return
                 val eski = sira
                 sira = position
+                videoyuDurdur()
                 // Döndürülmüş ama kaydedilmemiş sayfadan çıkınca önizleme geri döner.
-                if (ekAci != 0) { ekAci = 0; adapter.notifyItemChanged(eski) }
+                // Kaydırma geri çağrısında listeyi değiştirmek RecyclerView'u uyarır; bir sonraki kareye bırak.
+                if (ekAci != 0) { ekAci = 0; isleyici.post { adapter.notifyItemChanged(eski) } }
                 cubuklariYaz()
             }
         })
@@ -152,6 +181,16 @@ class IzleyiciActivity : AppCompatActivity() {
 
     private inner class SayfaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+        override fun onViewRecycled(h: RecyclerView.ViewHolder) {
+            bagliSayfalar.entries.removeAll { it.value === h.itemView }
+            val v = h.itemView.findViewById<VideoView>(R.id.video)
+            if (v === oynayan) {
+                runCatching { v.stopPlayback() }
+                oynayan = null
+                oynayanSira = -1
+            }
+        }
+
         override fun getItemCount() = liste.size
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -166,8 +205,13 @@ class IzleyiciActivity : AppCompatActivity() {
             val resim = v.findViewById<ZoomGorunumu>(R.id.resim)
             val yukleniyor = v.findViewById<View>(R.id.yukleniyor)
             val oynat = v.findViewById<View>(R.id.btnOynat)
+            val video = v.findViewById<VideoView>(R.id.video)
+            bagliSayfalar.entries.removeAll { it.value === v }
+            bagliSayfalar[position] = v
+            video.visibility = View.GONE
+            resim.visibility = View.VISIBLE
             oynat.visibility = if (s.video) View.VISIBLE else View.GONE
-            oynat.setOnClickListener { videoOynat(s) }
+            oynat.setOnClickListener { videoOynat(s, v, position) }
             val aci = if (position == sira) ekAci else 0
             val anahtar = "${s.uri}|$aci"
             resim.tag = anahtar
@@ -220,14 +264,58 @@ class IzleyiciActivity : AppCompatActivity() {
         runCatching { startActivity(Intent.createChooser(niyet, getString(R.string.paylas))) }
     }
 
-    private fun videoOynat(s: Sayfa) {
+    /**
+     * Video sayfanın içinde oynar. Önceden sistem oynatıcısına veriliyordu; Google'sız
+     * telefonlarda çoğu zaman oynatıcı yok, video hiç açılmıyordu.
+     */
+    private fun videoOynat(s: Sayfa, sayfa: View, konum: Int) {
         val m = s.m ?: return
-        // Galeri video oynatıcı taşımıyor (MVP); telefondaki oynatıcıya verilir.
-        val niyet = Intent(Intent.ACTION_VIEW).setDataAndType(m.uri, m.mime.ifBlank { "video/*" })
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        runCatching { startActivity(niyet) }.onFailure {
-            Toast.makeText(this, R.string.oynatici_yok, Toast.LENGTH_LONG).show()
+        videoyuDurdur()
+        val video = sayfa.findViewById<VideoView>(R.id.video)
+        val resim = sayfa.findViewById<View>(R.id.resim)
+        val oynat = sayfa.findViewById<View>(R.id.btnOynat)
+        val kontrol = MediaController(this)
+        kontrol.setAnchorView(sayfa)
+        video.setMediaController(kontrol)
+        video.setOnPreparedListener {
+            // İlk kare gelene kadar küçük resim görünsün; siyah ekran yanıp sönmesin.
+            resim.visibility = View.INVISIBLE
         }
+        video.setOnCompletionListener {
+            resim.visibility = View.VISIBLE
+            oynat.visibility = View.VISIBLE
+            video.visibility = View.GONE
+            oynayan = null
+        }
+        video.setOnErrorListener { _, _, _ ->
+            video.visibility = View.GONE
+            resim.visibility = View.VISIBLE
+            oynat.visibility = View.VISIBLE
+            oynayan = null
+            Toast.makeText(this, R.string.video_oynatilamadi, Toast.LENGTH_LONG).show()
+            true
+        }
+        oynat.visibility = View.GONE
+        video.visibility = View.VISIBLE
+        video.setVideoURI(m.uri)
+        video.start()
+        oynayan = video
+        oynayanSira = konum
+        if (cubuklarAcik) cubuklariCevir()
+    }
+
+    private fun videoyuDurdur() {
+        val v = oynayan ?: return
+        runCatching { v.stopPlayback() }
+        oynayan = null
+        val konum = oynayanSira
+        oynayanSira = -1
+        if (konum in liste.indices) isleyici.post { adapter.notifyItemChanged(konum) }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        oynayan?.pause()
     }
 
     private fun dondur() {
@@ -305,6 +393,7 @@ class IzleyiciActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        oynayan?.let { runCatching { it.stopPlayback() } }
         yurutucu.shutdownNow()
         super.onDestroy()
     }

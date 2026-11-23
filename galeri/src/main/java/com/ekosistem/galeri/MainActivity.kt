@@ -19,7 +19,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -32,8 +31,8 @@ import com.ekosistem.tasarim.ipucuVer
 import com.ekosistem.tasarim.R as TR
 
 /**
- * Ana ekran: bütün fotoğraflar (aylara göre) ya da albümler. Altta ailenin
- * yüzen kapsül gezinmesi (Saat, Takvim ile aynı), sağında vurgulu kamera düğmesi.
+ * Ana ekran: bütün fotoğraflar (aylara göre) ya da albümler. Altta ortada küçük,
+ * yüzen kapsül gezinme (ailenin sekme hapı dili).
  */
 class MainActivity : AppCompatActivity() {
 
@@ -77,11 +76,7 @@ class MainActivity : AppCompatActivity() {
 
         val ara = findViewById<View>(R.id.btnAra)
         ara.setOnClickListener { startActivity(Intent(this, AramaActivity::class.java)) }
-        val kamera = findViewById<View>(R.id.btnKamera)
-        kamera.setOnClickListener { kameraAc() }
-        kamera.backgroundTintList = ColorStateList.valueOf(vurgu)
-        (kamera as ImageView).imageTintList = ColorStateList.valueOf(Tasarim.vurguUzeri(this))
-        ipucuVer(ara, kamera)
+        ipucuVer(ara)
         findViewById<View>(R.id.kismiUyari).setOnClickListener { Izin.iste(this) }
 
         sekmeleriKur()
@@ -151,7 +146,8 @@ class MainActivity : AppCompatActivity() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
                 contentDescription = getString(ad)
-                setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
+                setPadding((12 * d).toInt(), 0, (12 * d).toInt(), 0)
+                minimumWidth = (48 * d).toInt()
                 setBackgroundResource(R.drawable.bg_sekme)
                 setOnClickListener { sekmeyeGec(no) }
             }
@@ -159,10 +155,10 @@ class MainActivity : AppCompatActivity() {
                 setImageResource(ikon)
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
-            kapsayici.addView(simge, LinearLayout.LayoutParams((22 * d).toInt(), (22 * d).toInt()))
+            kapsayici.addView(simge, LinearLayout.LayoutParams((20 * d).toInt(), (20 * d).toInt()))
             val yazi = TextView(this).apply {
                 text = getString(ad)
-                textSize = 14f
+                textSize = 13f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(vurgu)
                 maxLines = 1
@@ -171,7 +167,7 @@ class MainActivity : AppCompatActivity() {
             kapsayici.addView(yazi, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { leftMargin = (6 * d).toInt() })
-            kutu.addView(kapsayici, LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f))
+            kutu.addView(kapsayici, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (44 * d).toInt()))
             haplar.add(Hap(no, kapsayici, simge, yazi))
             ipucuVer(kapsayici)
         }
@@ -197,7 +193,6 @@ class MainActivity : AppCompatActivity() {
         geriSekme.isEnabled = sekme != SEKME_FOTOGRAFLAR
         findViewById<TextView>(R.id.baslik).setText(if (sekme == SEKME_ALBUMLER) R.string.albumler else R.string.fotograflar)
         val kutu = findViewById<LinearLayout>(R.id.sekmeler)
-        val d = resources.displayMetrics.density
         val pasif = ContextCompat.getColor(this, TR.color.metin_ikincil)
         val pastel = Tasarim.pastel(vurgu)
         if (animasyonlu) {
@@ -207,17 +202,13 @@ class MainActivity : AppCompatActivity() {
                 duration = 260
                 interpolator = android.view.animation.DecelerateInterpolator(1.4f)
             }
-            TransitionManager.beginDelayedTransition(kutu, gecis)
+            // Kapsül içeriği kadar geniş: genişlik değişimi de yumuşak olsun.
+            TransitionManager.beginDelayedTransition(kutu.parent as ViewGroup, gecis)
         }
         for (h in haplar) {
             val secili = h.no == sekme
             h.kutu.isSelected = secili
             h.yazi.visibility = if (secili) View.VISIBLE else View.GONE
-            h.kutu.layoutParams = if (secili) {
-                LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (44 * d).toInt())
-            } else {
-                LinearLayout.LayoutParams(0, (44 * d).toInt(), 1f)
-            }
             val hedefHap = if (secili) pastel else (pastel and 0x00FFFFFF)
             val hedefSimge = if (secili) vurgu else pasif
             val eskiHap = h.kutu.backgroundTintList?.defaultColor ?: (pastel and 0x00FFFFFF)
@@ -246,13 +237,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     // --- Eylemler -------------------------------------------------------------
-
-    private fun kameraAc() {
-        val niyet = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
-        runCatching { startActivity(niyet) }.onFailure {
-            Toast.makeText(this, R.string.kamera_yok, Toast.LENGTH_LONG).show()
-        }
-    }
 
     private fun izinYok() {
         liste.visibility = View.GONE

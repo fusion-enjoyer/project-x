@@ -5,10 +5,17 @@
     android:layout_height="match_parent"
     android:background="@color/izleyici_zemin">
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/sayfalar"
+    <!-- Aşağı çekip kapatma; yatay sürükleme içteki ViewPager2'de kalır. -->
+    <com.ekosistem.galeri.KapatmaCercevesi
+        android:id="@+id/kapatma"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/sayfalar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </com.ekosistem.galeri.KapatmaCercevesi>
 
     <LinearLayout
         android:id="@+id/ustCubuk"

@@ -38,7 +38,6 @@
     <string name="kirp">Kırp</string>
     <string name="bilgi">Bilgi</string>
     <string name="oynat">Videoyu oynat</string>
-    <string name="oynatici_yok">Bu telefonda video oynatıcı bulunamadı.</string>
     <string name="acilamadi">Bu dosya açılamadı.</string>
     <string name="kopya_kaydet">Kopya kaydet</string>
     <string name="kopya_kaydedildi">%1$s klasörüne yeni fotoğraf olarak kaydedildi. Orijinal aynen duruyor.</string>
@@ -60,6 +59,5 @@
     <string name="oran_3_4">3:4</string>
     <string name="oran_16_9">16:9</string>
     <string name="oran_9_16">9:16</string>
-    <string name="kamera_ac">Kamerayı aç</string>
-    <string name="kamera_yok">Bu telefonda kamera uygulaması bulunamadı.</string>
+    <string name="video_oynatilamadi">Bu video bu telefonda oynatılamıyor.</string>
 </resources>

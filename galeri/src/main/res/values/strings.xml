@@ -38,7 +38,6 @@
     <string name="kirp">Crop</string>
     <string name="bilgi">Details</string>
     <string name="oynat">Play video</string>
-    <string name="oynatici_yok">No video player found on this phone.</string>
     <string name="acilamadi">Couldn\'t open this file.</string>
     <string name="kopya_kaydet">Save copy</string>
     <string name="kopya_kaydedildi">Saved as a new photo in %1$s. The original is unchanged.</string>
@@ -60,6 +59,5 @@
     <string name="oran_3_4">3:4</string>
     <string name="oran_16_9">16:9</string>
     <string name="oran_9_16">9:16</string>
-    <string name="kamera_ac">Open camera</string>
-    <string name="kamera_yok">No camera app found on this phone.</string>
+    <string name="video_oynatilamadi">This video can\'t be played on this phone.</string>
 </resources>

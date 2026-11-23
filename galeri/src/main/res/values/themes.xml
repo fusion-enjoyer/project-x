@@ -9,4 +9,13 @@
         <item name="android:navigationBarColor">@color/izleyici_zemin</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
     </style>
+
+    <!-- Görüntüleyici saydam pencere: aşağı çekerken arkadaki ızgara görünsün. -->
+    <style name="Theme.Galeri.Izleyici.Saydam" parent="Theme.Galeri.Izleyici">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>

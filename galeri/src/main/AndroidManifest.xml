@@ -59,7 +59,7 @@
             android:name=".IzleyiciActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="true"
-            android:theme="@style/Theme.Galeri.Izleyici">
+            android:theme="@style/Theme.Galeri.Izleyici.Saydam">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
