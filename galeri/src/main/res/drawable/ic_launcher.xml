@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Geçici simge: vurgu renginde daire, beyaz dağ ve güneş. Marka sonra. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#534AB7"
+        android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"/>
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="6"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M36,30h36a8,8 0,0 1,8 8v32a8,8 0,0 1,-8 8H36a8,8 0,0 1,-8 -8V38a8,8 0,0 1,8 -8zM30,70l16,-16 10,10 8,-8 14,14"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M64,44m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+</vector>
